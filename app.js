@@ -241,10 +241,15 @@ async function loginWithSpotify() {
 async function fetchAiPlaylist(mood, language) {
   try {
     const res = await fetch(`${API_BASE_URL}/ai-playlist`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mood, language }),
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    mood: data.mood?.type || data.mood || "relaxed",
+    language: currentLanguage,
+    token: spotifyAccessToken || null,
+  }),
+});
+
 
     const text = await res.text();
     let data;
@@ -410,4 +415,5 @@ locationInput.addEventListener("keypress", (e) => e.key === "Enter" && handleSea
 
 // init
 restoreAuth();
+
 
