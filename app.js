@@ -224,6 +224,22 @@ async function loginWithSpotify() {
         showError('Failed to initiate Spotify login: ' + error.message);
     }
 }
+async function fetchAiPlaylist(mood, language) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/ai-playlist`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mood, language }),
+        });
+
+        if (!response.ok) throw new Error("AI Playlist API failed");
+        const data = await response.json();
+        return data.playlist || [];
+    } catch (error) {
+        console.error("AI Playlist Error:", error);
+        return [];
+    }
+}
 
 // =======================================================================================
 // === WEATHER + AI PLAYLIST ============================================================
@@ -315,3 +331,4 @@ locationInput.addEventListener('keypress', (e) => {
 // =======================================================================================
 
 restoreAuth();
+
