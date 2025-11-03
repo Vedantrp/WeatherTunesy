@@ -21,7 +21,7 @@ export async function getAiPlaylist(mood = "relaxed", language = "english") {
     `;
 
     // ✅ Use the correct model name for the public Gemini endpoint
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+   const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
@@ -49,3 +49,4 @@ export default async function handler(req, res) {
 
   res.status(200).json({ mood, language, playlist });
 }
+
