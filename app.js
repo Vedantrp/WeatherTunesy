@@ -342,6 +342,10 @@ restoreAuth();
 // === SPOTIFY PLAYLIST CREATION =========================================================
 // =======================================================================================
 
+// =======================================================================================
+// === SPOTIFY PLAYLIST CREATION =========================================================
+// =======================================================================================
+
 async function createSpotifyPlaylist() {
   if (!spotifyAccessToken || !currentUser) {
     showError("Please login to Spotify first.");
@@ -398,5 +402,57 @@ async function createSpotifyPlaylist() {
       );
 
       const searchData = await searchRes.json();
-      const uri = searchData?.tracks?.items?.[0]?.uri
+      const uri = searchData?.tracks?.items?.[0]?.uri;
+      if (uri) trackUris.push(uri);
+    }
 
+    // 3️⃣ Add songs to the playlist
+    if (trackUris.length > 0) {
+      await fetch(
+        `https://api.spotify.com/v1/playlists/${playlistData.id}/tracks`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${spotifyAccessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ uris: trackUris }),
+        }
+      );
+    }
+
+    // 4️⃣ Display success and show link
+    createdPlaylist.classList.remove("hidden");
+    playlistLink.href = playlistData.external_urls.spotify;
+    playlistLink.textContent = "Open in Spotify";
+    createPlaylistText.textContent = "Playlist Created ✅";
+    showSuccessToast("Your AI playlist is ready!");
+  } catch (err) {
+    console.error("Create playlist failed:", err);
+    showError(err.message);
+  } finally {
+    createPlaylistBtn.disabled = false;
+  }
+}
+
+// ✅ Helper to show small success toast
+function showSuccessToast(msg) {
+  const toast = document.createElement("div");
+  toast.textContent = msg;
+  toast.className =
+    "fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in";
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// =======================================================================================
+// === EVENT: CREATE PLAYLIST BUTTON =====================================================
+// =======================================================================================
+
+createPlaylistBtn.addEventListener("click", createSpotifyPlaylist);
+
+// =======================================================================================
+// === INIT (Ensure everything runs) =====================================================
+// =======================================================================================
+
+restoreAuth();
