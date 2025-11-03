@@ -1,82 +1,80 @@
 // /api/ai-playlist.js
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Only POST requests allowed" });
+    return res.status(405).json({ error: "Only POST requests are supported" });
   }
 
-  const { mood = "relaxed", language = "english" } = req.body;
-  const hfKey = process.env.HUGGINGFACE_API_KEY;
+  const { mood, language } = req.body;
+  const hfToken = process.env.HUGGINGFACE_API_KEY;
 
-  if (!hfKey) {
+  if (!hfToken) {
     return res.status(500).json({ error: "Missing Hugging Face API key" });
   }
 
   try {
     const prompt = `
-      Suggest 35 popular ${language} songs that match a ${mood} mood.
-      Each item should look like: Song Name - Artist Name.
-      Do NOT add extra commentary.
-    `;
+You are a music recommendation AI. Generate 35 unique songs that match the user's mood and language.
 
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${hfKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ inputs: prompt }),
-      }
-    );
+Mood: ${mood?.type || mood}
+Language: ${language}
+
+Return a JSON array of songs like:
+[
+  { "title": "Song Name", "artist": "Artist Name" }
+]
+Make sure songs are real and match the given language and mood.
+`;
+
+    // ✅ New Hugging Face router endpoint (replaces old inference.huggingface.co)
+    const response = await fetch("https://router.huggingface.co/hf/api/text-generation", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${hfToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "mistralai/Mistral-7B-Instruct", // ✅ stable open model
+        inputs: prompt,
+        parameters: { max_new_tokens: 500, temperature: 0.8 },
+      }),
+    });
 
     const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { generated_text: text };
+    }
 
+    // Extract text properly depending on HuggingFace output structure
+    const rawOutput = data?.generated_text || data?.[0]?.generated_text || "";
+
+    // Try to parse JSON playlist from AI response
+    const jsonStart = rawOutput.indexOf("[");
+    const jsonEnd = rawOutput.lastIndexOf("]");
     let playlist = [];
 
-    // Try to parse valid JSON first
-    const jsonMatch = text.match(/\[.*\]/s);
-    if (jsonMatch) {
+    if (jsonStart !== -1 && jsonEnd !== -1) {
       try {
-        playlist = JSON.parse(jsonMatch[0]);
-      } catch (err) {
-        playlist = [];
+        playlist = JSON.parse(rawOutput.slice(jsonStart, jsonEnd + 1));
+      } catch (e) {
+        console.error("Failed to parse playlist:", e);
       }
     }
 
-    // 🧩 If JSON parsing fails, use text-based fallback
     if (!playlist.length) {
-      const lines = text
-        .split("\n")
-        .filter((l) => l.trim().length > 3)
-        .slice(0, 35);
-
-      playlist = lines.map((line) => {
-        const parts = line.replace(/^[\d\.\-\*\s]+/, "").split("-");
-        return {
-          title: parts[0]?.trim() || "Unknown Title",
-          artist: parts[1]?.trim() || "Unknown Artist",
-        };
-      });
+      playlist = [
+        { title: "No songs generated", artist: "AI issue" }
+      ];
     }
 
-    // Filter empty or invalid items
-    playlist = playlist.filter((s) => s.title && s.artist).slice(0, 35);
-
-    if (!playlist.length) {
-      return res.status(200).json({
-        mood,
-        language,
-        playlist: [],
-        note: "AI returned no valid songs — try again later",
-      });
-    }
-
-    res.status(200).json({ mood, language, playlist });
-  } catch (err) {
-    console.error("AI Playlist Error:", err);
-    res.status(500).json({ error: "AI playlist generation failed" });
+    return res.status(200).json({ mood, language, playlist });
+  } catch (error) {
+    console.error("AI generation failed:", error);
+    return res.status(500).json({
+      error: "AI generation failed",
+      details: error.message || error.toString(),
+    });
   }
 }
