@@ -1,22 +1,20 @@
 // WeatherTunes - Frontend Application
 
 // =======================================================================================
-// === ENVIRONMENT / API CONFIGURATION ===================================================
+// === ENVIRONMENT / API CONFIGURATION (Vercel Fix Applied) ==============================
 // =======================================================================================
 
-// Detect API base URL: Use a remote/deployed API URL.
+// Detect API base URL: Dynamically use the current domain (Vercel) and append /api.
 const getApiBaseUrl = () => {
-    // ⚠️ CRITICAL: REPLACE THIS URL with the base domain of your DEPLOYED API
-    const API_DOMAIN = 'https://api.weathertunes.com'; 
-
-    // This returns the full path (e.g., https://api.weathertunes.com/api)
-    return `${API_DOMAIN}/api`;
+    // 💡 FIX: Using window.location.origin dynamically captures the current domain.
+    // In production, this resolves to "https://weather-tunes-kappa.vercel.app/api"
+    return `${window.location.origin}/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();
 
 // =======================================================================================
-// === STATE & DOM ELEMENTS ==============================================================
+// === STATE & DOM ELEMENTS (Unchanged) =================================================
 // =======================================================================================
 
 // State
@@ -36,10 +34,7 @@ const loading = document.getElementById('loading');
 const weatherCard = document.getElementById('weatherCard');
 const playlistCard = document.getElementById('playlistCard');
 const error = document.getElementById('error');
-// Removed local server elements as we assume a constantly running remote API
-// const serverStatus = document.getElementById('serverStatus');
-// const serverHelpLink = document.getElementById('serverHelpLink');
-// const serverHelp = document.getElementById('serverHelp');
+// Local server status elements have been removed for the remote deployment context
 
 // Auth elements
 const loginBtn = document.getElementById('loginBtn');
@@ -74,7 +69,7 @@ const aiSongList = document.getElementById('aiSongList');
 
 
 // =======================================================================================
-// === HELPER FUNCTIONS ==================================================================
+// === HELPER FUNCTIONS (Unchanged) ======================================================
 // =======================================================================================
 
 // Helper function to get emoji
@@ -187,14 +182,10 @@ async function refreshAccessToken() {
     return false;
 }
 
-// Removed checkServerStatus - Assuming a constantly running remote server
-
-// Show error message (Modified to remove local server specific error)
+// Show error message (modified for remote API)
 function showError(message) {
     error.textContent = message;
     error.classList.remove('hidden');
-    
-    // Original local server error logic removed
     
     setTimeout(() => {
         error.classList.add('hidden');
@@ -298,7 +289,7 @@ function displayPlaylistSuggestion(combinedData) {
 
 
 // =======================================================================================
-// === CORE LOGIC FUNCTIONS (Modified for Remote API) ====================================
+// === CORE LOGIC FUNCTIONS (Using Dynamic Vercel API_BASE_URL) ==========================
 // =======================================================================================
 
 // Handle search (REFACTORED to use backend's combined API)
@@ -780,8 +771,6 @@ loginBtn.addEventListener('click', loginWithSpotify);
 logoutBtn.addEventListener('click', logout);
 createPlaylistBtn.addEventListener('click', createPlaylist);
 
-// Removed server help toggle event listeners
-
 locationInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         handleSearch();
@@ -790,7 +779,6 @@ locationInput.addEventListener('keypress', (e) => {
 
 // Initialize
 restoreAuth();
-// Removed checkServerStatus() - not needed for remote deployment
 
 // Initialize: Get weather for default location (if geolocation available)
 if (navigator.geolocation) {
