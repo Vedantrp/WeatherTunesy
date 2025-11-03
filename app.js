@@ -162,19 +162,23 @@ function displayPlaylistSuggestion(combinedData) {
 
 function displayAiSongsAndEnableCreation(aiSongs) {
   cachedAiSongs = aiSongs || [];
-
   aiSongList.innerHTML = "";
 
   if (!cachedAiSongs.length) {
     aiPlaylistSection.classList.add("hidden");
-    createPlaylistBtn.disabled = true;
-    createPlaylistText.textContent = "No songs found";
+    // Still allow playlist creation even if empty (for testing)
+    createPlaylistBtn.disabled = false;
+    createPlaylistText.textContent = "Create Empty Playlist";
+    createPlaylistBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    createPlaylistBtn.style.cursor = "pointer";
     return;
   }
 
+  // Normal case — AI gave you songs
   cachedAiSongs.forEach((song, index) => {
     const li = document.createElement("li");
-    li.className = "ai-song-item hover:bg-gray-800 px-3 py-1 rounded-lg transition";
+    li.className =
+      "ai-song-item hover:bg-gray-800 px-3 py-1 rounded-lg transition";
     li.textContent = `${index + 1}. ${song.title} — ${song.artist}`;
     aiSongList.appendChild(li);
   });
@@ -182,7 +186,6 @@ function displayAiSongsAndEnableCreation(aiSongs) {
   aiPlaylistSection.classList.remove("hidden");
   playlistCard.classList.remove("hidden");
 
-  // 👇 Smart logic to re-enable Create Playlist button
   if (spotifyAccessToken && currentUser) {
     createPlaylistBtn.disabled = false;
     createPlaylistText.textContent = "Create Playlist";
@@ -193,7 +196,6 @@ function displayAiSongsAndEnableCreation(aiSongs) {
     createPlaylistBtn.classList.add("opacity-50", "cursor-not-allowed");
   }
 
-  // Always add a visible cursor and pointer so it feels interactive
   createPlaylistBtn.style.cursor = "pointer";
 }
 
@@ -469,4 +471,5 @@ createPlaylistBtn.addEventListener("click", createSpotifyPlaylist);
 // =======================================================================================
 
 restoreAuth();
+
 
