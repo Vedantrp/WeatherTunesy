@@ -1,4 +1,3 @@
-import fetch from "node-fetch";
 import { getAiPlaylist } from "./ai-playlist.js";
 
 function mapWeatherToMood(condition) {
@@ -21,19 +20,20 @@ export default async function handler(req, res) {
       GEMINI_API_KEY: process.env.GEMINI_API_KEY ? "set" : "missing",
     });
 
-    // Validate request body
-    const { location, language } = req.body || {};
+    // ✅ Ensure body parsing works for both local and Vercel
+    const body = req.body || (await req.json?.());
+    const { location, language } = body || {};
+
     if (!location)
       return res.status(400).json({ error: "Missing location parameter" });
 
-    // Use env weather key or fallback to default
+    // Weather API call
     const weatherApiKey =
       process.env.WEATHER_API_KEY || "b15d294bfca84397a5682344252410";
     const weatherUrl = `http://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=${encodeURIComponent(
       location
     )}&aqi=no`;
 
-    // Fetch current weather
     const response = await fetch(weatherUrl);
     const data = await response.json();
 
@@ -42,7 +42,6 @@ export default async function handler(req, res) {
       throw new Error("WeatherAPI failed: " + (data.error?.message || "Unknown"));
     }
 
-    // Extract minimal weather info
     const weather = {
       condition: data.current.condition.text,
       icon: data.current.condition.icon,
@@ -55,11 +54,10 @@ export default async function handler(req, res) {
       localtime: data.location.localtime,
     };
 
-    // Map to a mood
     const mood = mapWeatherToMood(weather.condition);
     console.log(`Mapped "${weather.condition}" → mood "${mood}"`);
 
-    // Get AI playlist using Gemini
+    // Get AI playlist
     let playlist = [];
     try {
       playlist = await getAiPlaylist(mood, language || "english");
@@ -67,7 +65,6 @@ export default async function handler(req, res) {
       console.error("AI Playlist Error:", aiError);
     }
 
-    // Respond with combined data
     res.status(200).json({ weather, mood, playlist });
   } catch (error) {
     console.error("Weather Playlist Error:", error);
