@@ -284,45 +284,32 @@ async function fetchAiPlaylist(mood, language) {
 }
 
 // === WEATHER + PLAYLIST ===================================================
-async function handleSearch() {
-  const location = locationInput.value.trim();
-  currentLanguage = languageSelect.value || "english";
-  if (!location) return showError("Please enter a location");
-
-  hideAll();
-  loading.classList.remove("hidden");
-
+async function fetchAiPlaylist(mood, language) {
   try {
-    const res = await fetch(`${API_BASE_URL}/weather-playlist`, {
+    const res = await fetch(`${API_BASE_URL}/ai-playlist`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ location, language: currentLanguage }),
+      body: JSON.stringify({ mood, language }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed to fetch weather data");
 
-    currentWeatherData = {
-      current: {
-        condition: { text: data.weather.condition, icon: data.weather.icon },
-        temp_c: data.weather.temperature,
-        feelslike_c: data.weather.feelsLike,
-        humidity: data.weather.humidity,
-        wind_kph: data.weather.windSpeed,
-      },
-      location: data.weather,
-    };
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("Invalid AI response:", text);
+      throw new Error("AI returned invalid data");
+    }
 
-    displayWeather(currentWeatherData);
-    displayPlaylistSuggestion(data);
-
-    const aiSongs = await fetchAiPlaylist(data.mood, currentLanguage);
-    displayAiSongsAndEnableCreation(aiSongs);
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    loading.classList.add("hidden");
+    if (!res.ok) throw new Error(data.error || "AI playlist generation failed");
+    return data.playlist || [];
+  } catch (e) {
+    console.error("AI Playlist Error:", e);
+    showError(e.message || "AI playlist could not be created.");
+    return [];
   }
 }
+
 
 // === SPOTIFY PLAYLIST CREATION ===========================================
 async function createSpotifyPlaylist() {
@@ -391,3 +378,4 @@ locationInput.addEventListener("keypress", (e) => e.key === "Enter" && handleSea
 
 // === INIT ================================================================
 restoreAuth();
+
