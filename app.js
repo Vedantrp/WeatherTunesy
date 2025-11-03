@@ -302,6 +302,92 @@ searchBtn.addEventListener("click", handleSearch);
 loginBtn.addEventListener("click", loginWithSpotify);
 logoutBtn.addEventListener("click", logout);
 locationInput.addEventListener("keypress", (e) => e.key === "Enter" && handleSearch());
+async function createSpotifyPlaylist() {
+  try {
+    // Check Spotify login
+    if (!spotifyAccessToken || !currentUser) {
+      showError("Please login to Spotify first.");
+      return;
+    }
+
+    // Check AI songs
+    if (!cachedAiSongs.length) {
+      showError("No songs available to create a playlist.");
+      return;
+    }
+
+    // Disable button while creating
+    createPlaylistBtn.disabled = true;
+    createPlaylistText.textContent = "Creating...";
+
+    // 1️⃣ Create playlist on Spotify
+    const playlistRes = await fetch(
+      `https://api.spotify.com/v1/users/${currentUser.id}/playlists`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${spotifyAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: `WeatherTunes – ${currentMoodData?.type || "Vibes"}`,
+          description: `Auto-generated ${currentLanguage} songs for ${currentMoodData?.type || "your"} mood 🌦️`,
+          public: false,
+        }),
+      }
+    );
+
+    if (playlistRes.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) return createSpotifyPlaylist(); // retry after token refresh
+      throw new Error("Spotify token expired. Please login again.");
+    }
+
+    const playlistData = await playlistRes.json();
+    if (!playlistData.id) throw new Error("Failed to create playlist.");
+
+    // 2️⃣ Search each AI song and collect track URIs
+    const trackUris = [];
+    for (const song of cachedAiSongs.slice(0, 35)) {
+      const query = encodeURIComponent(`${song.title} ${song.artist}`);
+      const searchRes = await fetch(
+        `https://api.spotify.com/v1/search?q=${query}&type=track&limit=1`,
+        { headers: { Authorization: `Bearer ${spotifyAccessToken}` } }
+      );
+      const searchData = await searchRes.json();
+      const uri = searchData?.tracks?.items?.[0]?.uri;
+      if (uri) trackUris.push(uri);
+    }
+
+    // 3️⃣ Add tracks to the playlist
+    if (trackUris.length) {
+      await fetch(
+        `https://api.spotify.com/v1/playlists/${playlistData.id}/tracks`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${spotifyAccessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ uris: trackUris }),
+        }
+      );
+    }
+
+    // 4️⃣ Update UI
+    createdPlaylist.classList.remove("hidden");
+    playlistLink.href = playlistData.external_urls.spotify;
+    playlistLink.textContent = "Open Playlist on Spotify →";
+    createPlaylistText.textContent = "Playlist Created ✅";
+    showSuccessToast("✅ Your Spotify playlist is ready!");
+  } catch (err) {
+    console.error("Create playlist error:", err);
+    showError(err.message || "Playlist creation failed.");
+  } finally {
+    createPlaylistBtn.disabled = false;
+  }
+}
 
 // ======================= INIT =========================================================
 restoreAuth();
+
