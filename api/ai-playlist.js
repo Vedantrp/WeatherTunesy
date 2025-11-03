@@ -25,7 +25,8 @@ export async function getAiPlaylist(mood = "relaxed", language = "english") {
       ]
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+   const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+
     const result = await model.generateContent(prompt);
     const text = await result.response.text();
 
@@ -78,3 +79,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "Failed to generate AI playlist" });
   }
 }
+
