@@ -1,13 +1,23 @@
 // WeatherTunes - Frontend Application
 
-// Detect API base URL: We are back to the simple local Express server.
+// =======================================================================================
+// === ENVIRONMENT / API CONFIGURATION ===================================================
+// =======================================================================================
+
+// Detect API base URL: Use a remote/deployed API URL.
 const getApiBaseUrl = () => {
-    // This ensures the frontend matches the http://127.0.0.1:3000 backend address.
-    const backendUrl = `http://127.0.0.1:3000`; // Force 127.0.0.1
-    return `${backendUrl}/api`;
+    // ⚠️ CRITICAL: REPLACE THIS URL with the base domain of your DEPLOYED API
+    const API_DOMAIN = 'https://api.weathertunes.com'; 
+
+    // This returns the full path (e.g., https://api.weathertunes.com/api)
+    return `${API_DOMAIN}/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();
+
+// =======================================================================================
+// === STATE & DOM ELEMENTS ==============================================================
+// =======================================================================================
 
 // State
 let spotifyAccessToken = null;
@@ -26,9 +36,10 @@ const loading = document.getElementById('loading');
 const weatherCard = document.getElementById('weatherCard');
 const playlistCard = document.getElementById('playlistCard');
 const error = document.getElementById('error');
-const serverStatus = document.getElementById('serverStatus');
-const serverHelpLink = document.getElementById('serverHelpLink');
-const serverHelp = document.getElementById('serverHelp');
+// Removed local server elements as we assume a constantly running remote API
+// const serverStatus = document.getElementById('serverStatus');
+// const serverHelpLink = document.getElementById('serverHelpLink');
+// const serverHelp = document.getElementById('serverHelp');
 
 // Auth elements
 const loginBtn = document.getElementById('loginBtn');
@@ -62,7 +73,11 @@ const aiPlaylistSection = document.getElementById('aiPlaylistSection');
 const aiSongList = document.getElementById('aiSongList');
 
 
-// Helper function to get emoji (maintains UI flair without complex mapping)
+// =======================================================================================
+// === HELPER FUNCTIONS ==================================================================
+// =======================================================================================
+
+// Helper function to get emoji
 function getMoodEmoji(mood) {
     const emojiMap = {
         'upbeat': '☀️', 'cozy': '🌧️', 'relaxed': '☁️', 'balanced': '⛅',
@@ -106,10 +121,6 @@ function displayWeather(data) {
     
     weatherCard.classList.remove('hidden');
 }
-
-// =======================================================================================
-// === CORE AUTH AND HELPER FUNCTIONS (Defined early to ensure hoisting works) ===========
-// =======================================================================================
 
 function updateAuthUI() {
     if (spotifyAccessToken && currentUser) {
@@ -176,37 +187,14 @@ async function refreshAccessToken() {
     return false;
 }
 
-// Check server status on load
-async function checkServerStatus() {
-    try {
-        const response = await fetch(`${API_BASE_URL.replace('/api', '')}/api/health`, {
-            method: 'GET',
-            signal: AbortSignal.timeout(2000)
-        });
-        
-        if (response.ok) {
-            serverStatus.classList.add('hidden');
-            return true;
-        }
-    } catch (err) {
-        // Server not running
-        serverStatus.classList.remove('hidden');
-        return false;
-    }
-    return false;
-}
+// Removed checkServerStatus - Assuming a constantly running remote server
 
-// Show error message
+// Show error message (Modified to remove local server specific error)
 function showError(message) {
     error.textContent = message;
     error.classList.remove('hidden');
     
-    // Show server status if connection refused
-    if (message.includes('Backend server') || message.includes('not running') || message.includes('ERR_CONNECTION_REFUSED')) {
-        serverStatus.classList.remove('hidden');
-    } else {
-        serverStatus.classList.add('hidden');
-    }
+    // Original local server error logic removed
     
     setTimeout(() => {
         error.classList.add('hidden');
@@ -309,6 +297,10 @@ function displayPlaylistSuggestion(combinedData) {
 }
 
 
+// =======================================================================================
+// === CORE LOGIC FUNCTIONS (Modified for Remote API) ====================================
+// =======================================================================================
+
 // Handle search (REFACTORED to use backend's combined API)
 async function handleSearch() {
     const location = locationInput.value.trim();
@@ -341,7 +333,6 @@ async function handleSearch() {
         const data = await response.json();
         
         // Adapt the backend's data structure to fit existing display functions
-        // The backend gives us pre-processed data (e.g., condition text, temp_c)
         currentWeatherData = {
             current: { 
                 condition: { 
@@ -386,10 +377,9 @@ async function handleSearch() {
         displayPlaylistSuggestion(data);
         
     } catch (err) {
-        // If the error is 'Failed to fetch', assume server is down
-        if (err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED')) {
-            showError('❌ Backend server is not running! Please open a terminal and run: npm start');
-            checkServerStatus(); // Re-run check to display help info
+        // Generic error handling for a remote fetch failure
+        if (err.message.includes('Failed to fetch')) {
+            showError('❌ Could not connect to the API server. Please check the network connection.');
         } else {
             showError(`Error: ${err.message}`);
         }
@@ -401,26 +391,7 @@ async function handleSearch() {
 // Spotify Authentication Functions
 async function loginWithSpotify() {
     try {
-        // Check if backend server is accessible first
-        try {
-            const healthCheck = await fetch(`${API_BASE_URL.replace('/api', '')}/api/health`, {
-                method: 'GET',
-                signal: AbortSignal.timeout(2000) // 2 second timeout
-            });
-            
-            if (!healthCheck.ok) {
-                throw new Error('Backend server is not responding correctly');
-            }
-        } catch (err) {
-            if (err.name === 'AbortError' || err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED')) {
-                showError('❌ Backend server is not running! Please open a terminal and run: npm start');
-                return;
-            }
-            throw err;
-        }
-        
         // 1. Asynchronously fetch the actual Spotify redirect URL from the backend
-        // This MUST be the very first asynchronous operation to get the URL
         const authUrlResponse = await fetch(`${API_BASE_URL}/login`); 
         
         if (!authUrlResponse.ok) {
@@ -487,69 +458,6 @@ async function loginWithSpotify() {
     }
 }
 
-function logout() {
-    spotifyAccessToken = null;
-    spotifyRefreshToken = null;
-    currentUser = null;
-    
-    localStorage.removeItem('spotifyAccessToken');
-    localStorage.removeItem('spotifyRefreshToken');
-    localStorage.removeItem('spotifyUser');
-    
-    updateAuthUI();
-    createPlaylistBtn.disabled = true;
-    createdPlaylist.classList.add('hidden');
-}
-
-function updateAuthUI() {
-    if (spotifyAccessToken && currentUser) {
-        loginBtn.classList.add('hidden');
-        userInfo.classList.remove('hidden');
-        userName.textContent = `Logged in as ${currentUser.display_name || currentUser.id}`;
-    } else {
-        loginBtn.classList.remove('hidden');
-        userInfo.classList.add('hidden');
-    }
-}
-
-// Restore auth from localStorage
-function restoreAuth() {
-    const token = localStorage.getItem('spotifyAccessToken');
-    const refreshToken = localStorage.getItem('spotifyRefreshToken');
-    const userStr = localStorage.getItem('spotifyUser');
-    
-    if (token && refreshToken && userStr) {
-        spotifyAccessToken = token;
-        spotifyRefreshToken = refreshToken;
-        currentUser = JSON.parse(userStr);
-        updateAuthUI();
-    }
-}
-
-// Refresh access token if needed
-async function refreshAccessToken() {
-    if (!spotifyRefreshToken) return false;
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/refresh-token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: spotifyRefreshToken })
-        });
-        
-        const data = await response.json();
-        if (data.accessToken) {
-            spotifyAccessToken = data.accessToken;
-            localStorage.setItem('spotifyAccessToken', spotifyAccessToken);
-            return true;
-        }
-    } catch (error) {
-        console.error('Token refresh failed:', error);
-    }
-    
-    return false;
-}
-
 // Generate AI playlist suggestions
 async function generateAIPlaylist() {
     try {
@@ -606,7 +514,7 @@ async function createPlaylist() {
         
         try {
             createPlaylistText.textContent = 'AI curating playlist...';
-            aiSongs = await generateAIPlaylist();
+            aiSongs = cachedAiSongs || await generateAIPlaylist(); // Use cached songs if available
             
             // If we have AI suggestions, search for those specific songs first
             if (aiSongs && aiSongs.length > 0) {
@@ -861,9 +769,10 @@ function displayCreatedPlaylist(playlist) {
     createPlaylistBtn.disabled = true; // Disable after creation to prevent duplicates
 }
 
-function hideError() {
-    error.classList.add('hidden');
-}
+
+// =======================================================================================
+// === INITIALIZATION & EVENT LISTENERS ==================================================
+// =======================================================================================
 
 // Event Listeners
 searchBtn.addEventListener('click', handleSearch);
@@ -871,13 +780,7 @@ loginBtn.addEventListener('click', loginWithSpotify);
 logoutBtn.addEventListener('click', logout);
 createPlaylistBtn.addEventListener('click', createPlaylist);
 
-// Server help toggle
-if (serverHelpLink) {
-    serverHelpLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        serverHelp.classList.toggle('hidden');
-    });
-}
+// Removed server help toggle event listeners
 
 locationInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -887,7 +790,7 @@ locationInput.addEventListener('keypress', (e) => {
 
 // Initialize
 restoreAuth();
-checkServerStatus(); // Check if backend server is running
+// Removed checkServerStatus() - not needed for remote deployment
 
 // Initialize: Get weather for default location (if geolocation available)
 if (navigator.geolocation) {
