@@ -156,32 +156,45 @@ function displayPlaylistSuggestion(combinedData) {
   playlistCard.classList.remove("hidden");
 }
 
+// =======================================================================================
+// === RENDER AI SONGS + ENABLE PLAYLIST CREATION =======================================
+// =======================================================================================
+
 function displayAiSongsAndEnableCreation(aiSongs) {
-  cachedAiSongs = aiSongs;
+  cachedAiSongs = aiSongs || [];
+
   aiSongList.innerHTML = "";
 
-  if (!aiSongs || aiSongs.length === 0) {
+  if (!cachedAiSongs.length) {
     aiPlaylistSection.classList.add("hidden");
+    createPlaylistBtn.disabled = true;
+    createPlaylistText.textContent = "No songs found";
     return;
   }
 
-  aiSongs.forEach((song, i) => {
+  cachedAiSongs.forEach((song, index) => {
     const li = document.createElement("li");
-    li.className = "ai-song-item";
-    li.textContent = `${i + 1}. ${song.title} – ${song.artist}`;
+    li.className = "ai-song-item hover:bg-gray-800 px-3 py-1 rounded-lg transition";
+    li.textContent = `${index + 1}. ${song.title} — ${song.artist}`;
     aiSongList.appendChild(li);
   });
 
   aiPlaylistSection.classList.remove("hidden");
   playlistCard.classList.remove("hidden");
 
+  // 👇 Smart logic to re-enable Create Playlist button
   if (spotifyAccessToken && currentUser) {
     createPlaylistBtn.disabled = false;
     createPlaylistText.textContent = "Create Playlist";
+    createPlaylistBtn.classList.remove("opacity-50", "cursor-not-allowed");
   } else {
     createPlaylistBtn.disabled = true;
-    createPlaylistText.textContent = "Login to Create Playlist";
+    createPlaylistText.textContent = "Login to Create";
+    createPlaylistBtn.classList.add("opacity-50", "cursor-not-allowed");
   }
+
+  // Always add a visible cursor and pointer so it feels interactive
+  createPlaylistBtn.style.cursor = "pointer";
 }
 
 // =======================================================================================
@@ -456,3 +469,4 @@ createPlaylistBtn.addEventListener("click", createSpotifyPlaylist);
 // =======================================================================================
 
 restoreAuth();
+
