@@ -228,10 +228,6 @@ function restoreAuth() {
 
 // ======================= FETCH WEATHER + AI PLAYLIST ==================================
 async function fetchAiPlaylist(mood, language) {
-  if (!spotifyAccessToken) {
-    throw new Error("Missing Spotify token (login required)");
-  }
-
   try {
     const res = await fetch(`${API_BASE_URL}/ai-playlist`, {
       method: "POST",
@@ -244,18 +240,25 @@ async function fetchAiPlaylist(mood, language) {
     try {
       data = JSON.parse(text);
     } catch {
-      console.error("Invalid JSON from AI API:", text);
+      console.error("Invalid JSON returned from AI API:", text);
       throw new Error("Invalid AI response");
     }
 
-    if (!res.ok) throw new Error(data?.error || "AI playlist generation failed");
-    return data.playlist || [];
+    if (!res.ok || !data.playlist) {
+      throw new Error(data.error || "AI playlist generation failed");
+    }
+
+    // ✅ Save AI songs globally
+    cachedAiSongs = data.playlist;
+    console.log("AI playlist generated:", cachedAiSongs);
+    return cachedAiSongs;
   } catch (e) {
     console.error("AI Playlist Error:", e);
-    showError(e.message);
+    showError(e.message || "AI playlist could not be created.");
     return [];
   }
 }
+
 
 async function handleSearch() {
   const location = locationInput.value.trim();
@@ -390,4 +393,5 @@ async function createSpotifyPlaylist() {
 
 // ======================= INIT =========================================================
 restoreAuth();
+
 
