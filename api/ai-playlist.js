@@ -1,78 +1,52 @@
 // /api/ai-playlist.js
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end(); // Handle preflight requests
-  }
-
-  // ...rest of your logic below
-}
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Only POST requests allowed" });
+  }
+
+  const { mood = "relaxed", language = "english" } = req.body || {};
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Only POST requests allowed" });
-    }
-
-    const { mood = "relaxed", language = "english" } = req.body || {};
-
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY missing in environment" });
-    }
-
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // ✅ Correct model for public API (as of late 2025)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+    // ✅ Use valid model (works in both v1beta and v1)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-      Generate a list of 10 popular ${language} songs that fit a ${mood} mood.
-      Return JSON in this exact format:
+      Suggest 10 popular ${language} songs that match a ${mood} mood.
+      Return strictly in this JSON format:
       [
-        {"title": "Song Name", "artist": "Artist Name"},
-        {"title": "Another Song", "artist": "Artist Name"}
+        {"title": "Song Title", "artist": "Artist Name"},
+        ...
       ]
     `;
 
     const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const responseText = result.response.text();
 
-    // Try to safely parse JSON from model text output
-    const jsonMatch = text.match(/\[.*\]/s);
-    let playlist = [];
-    if (jsonMatch) {
-      try {
-        playlist = JSON.parse(jsonMatch[0]);
-      } catch {
-        console.warn("Gemini returned invalid JSON:", text);
-      }
+    // Try to extract JSON array
+    const match = responseText.match(/\[.*\]/s);
+    if (!match) {
+      console.warn("Invalid Gemini response:", responseText);
+      return res.status(200).json({ mood, language, playlist: [] });
     }
 
-    // Basic structure enforcement
-    playlist = (playlist || [])
-      .filter((s) => s.title && s.artist)
-      .map((s) => ({
-        title: s.title.trim(),
-        artist: s.artist.trim(),
-      }));
+    const playlist = JSON.parse(match[0]);
+    const validSongs = playlist.filter(
+      (s) => s.title && s.artist
+    );
 
-    // If still empty, add fallback
-    if (playlist.length === 0) {
-      playlist = [
-        { title: "Skyfall", artist: "Adele" },
-        { title: "Lovely", artist: "Billie Eilish" },
-        { title: "Summertime Sadness", artist: "Lana Del Rey" },
-      ];
-    }
-
-    res.status(200).json({ mood, language, playlist });
+    return res.status(200).json({ mood, language, playlist: validSongs });
   } catch (error) {
     console.error("AI Playlist Error:", error);
-    res.status(500).json({ error: error.message || "Failed to generate playlist" });
+    return res
+      .status(500)
+      .json({ error: "AI generation failed", details: error.message });
   }
 }
-
