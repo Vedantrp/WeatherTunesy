@@ -3,13 +3,17 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   try {
+    res.setHeader("Access-Control-Allow-Origin", "*");
     const code = req.query.code;
     const client_id = process.env.SPOTIFY_CLIENT_ID;
     const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirect_uri = (process.env.NEXTAUTH_URL || process.env.BASE_URL || "https://weather-tunes-kappa.vercel.app") + "/api/callback";
+    const redirect_uri = (process.env.NEXTAUTH_URL || "https://weather-tunes-kappa.vercel.app") + "/api/callback";
 
     if (!code) return res.status(400).send("Missing code");
-    if (!client_id || !client_secret) return res.status(500).send("Missing spotify client env");
+    if (!client_id || !client_secret) {
+      console.error("Missing Spotify client envs");
+      return res.status(500).send("Missing Spotify credentials");
+    }
 
     const body = new URLSearchParams({
       grant_type: "authorization_code",
@@ -39,7 +43,7 @@ export default async function handler(req, res) {
     });
     const userData = await userResp.json();
 
-    // send script to popup to postMessage to opener
+    // deliver token to popup
     return res.send(`
       <html><body>
         <script>
@@ -50,7 +54,7 @@ export default async function handler(req, res) {
               refreshToken: ${JSON.stringify(refresh_token)},
               user: ${JSON.stringify(userData)}
             }, "*");
-          } catch(e) {
+          } catch (e) {
             window.opener.postMessage({ type: "SPOTIFY_AUTH_ERROR", error: e?.message || "callback error" }, "*");
           }
           window.close();
