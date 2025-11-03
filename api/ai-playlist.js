@@ -1,76 +1,55 @@
-// /api/ai-playlist.js
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// ✅ This ensures Vercel keeps the function alive long enough
-export const config = {
-  runtime: "nodejs20.x",
-  regions: ["iad1"], // (Washington region, optional)
-};
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Only POST requests allowed" });
+    return res.status(405).json({ error: "Only POST requests are supported" });
   }
 
   const { mood = "relaxed", language = "english" } = req.body || {};
 
-  if (!process.env.GEMINI_API_KEY) {
-    console.error("❌ Missing GEMINI_API_KEY in environment variables.");
-    return res.status(500).json({ error: "Missing GEMINI_API_KEY" });
-  }
+  const prompt = `
+  Suggest 10 popular ${language} songs that match a ${mood} mood.
+  Return JSON format like this:
+  [
+    {"title": "Song name", "artist": "Artist name"}
+  ]
+  `;
 
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // 🧠 Use Hugging Face free inference API
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ inputs: prompt }),
+      }
+    );
 
-    // ✅ New stable model (as of November 2025)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    const result = await response.json();
 
-    const prompt = `
-      Suggest 10 ${language} songs that match a ${mood} mood.
-      Each entry should have "title" and "artist".
-      Return strictly valid JSON array only:
-      [
-        {"title": "Song Name", "artist": "Artist Name"},
-        ...
-      ]
-    `;
+    // Extract the generated text
+    const text =
+      result?.[0]?.generated_text ||
+      result?.generated_text ||
+      JSON.stringify(result);
 
-    // ✅ Generate
-    const result = await model.generateContent(prompt);
-    const text = await result.response.text();
-
-    // ✅ Try to find and parse JSON
+    // 🧩 Extract JSON array safely
     const jsonMatch = text.match(/\[.*\]/s);
     if (!jsonMatch) {
-      console.warn("⚠️ Gemini returned non-JSON text:", text);
-      return res.status(200).json({ mood, language, playlist: [] });
+      console.error("AI Response (invalid):", text);
+      return res
+        .status(500)
+        .json({ error: "Invalid AI response", raw: text.slice(0, 200) });
     }
 
-    let playlist = [];
-    try {
-      playlist = JSON.parse(jsonMatch[0]);
-    } catch (e) {
-      console.error("⚠️ JSON parse failed:", e, text);
-      playlist = [];
-    }
-
-    const validSongs = playlist
-      .filter((s) => s.title && s.artist)
-      .map((s) => ({
-        title: s.title.trim(),
-        artist: s.artist.trim(),
-      }));
-
-    return res.status(200).json({ mood, language, playlist: validSongs });
+    const playlist = JSON.parse(jsonMatch[0]);
+    return res.status(200).json({ mood, language, playlist });
   } catch (error) {
-    console.error("🔥 AI Playlist Error:", error);
-
-    // Add more diagnostic info in response
-    return res.status(500).json({
-      error: "AI generation failed",
-      details:
-        error.message ||
-        "Unknown Gemini error — check that your model and key are valid.",
-    });
+    console.error("AI Playlist Error:", error);
+    return res
+      .status(500)
+      .json({ error: "AI generation failed", details: error.message });
   }
 }
