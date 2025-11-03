@@ -338,3 +338,65 @@ locationInput.addEventListener("keypress", (e) => e.key === "Enter" && handleSea
 // =======================================================================================
 // === INIT ============================================================================
 restoreAuth();
+// =======================================================================================
+// === SPOTIFY PLAYLIST CREATION =========================================================
+// =======================================================================================
+
+async function createSpotifyPlaylist() {
+  if (!spotifyAccessToken || !currentUser) {
+    showError("Please login to Spotify first.");
+    return;
+  }
+
+  if (!cachedAiSongs || cachedAiSongs.length === 0) {
+    showError("No songs available to create a playlist.");
+    return;
+  }
+
+  try {
+    createPlaylistText.textContent = "Creating...";
+    createPlaylistBtn.disabled = true;
+
+    // 1️⃣ Create a new playlist for the user
+    const playlistName = `WeatherTunes – ${currentMoodData?.type || "Vibes"} Mood`;
+    const playlistDesc = `Auto-generated playlist for ${currentMoodData?.type || "your"} weather mood 🌦️`;
+
+    const createRes = await fetch(
+      `https://api.spotify.com/v1/users/${currentUser.id}/playlists`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${spotifyAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: playlistName,
+          description: playlistDesc,
+          public: false,
+        }),
+      }
+    );
+
+    if (createRes.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) return createSpotifyPlaylist(); // retry after refresh
+      throw new Error("Spotify token expired. Please login again.");
+    }
+
+    const playlistData = await createRes.json();
+    if (!playlistData.id) throw new Error("Failed to create playlist.");
+
+    // 2️⃣ Search each AI song and collect Spotify track URIs
+    const trackUris = [];
+    for (const song of cachedAiSongs) {
+      const q = encodeURIComponent(`${song.title} ${song.artist}`);
+      const searchRes = await fetch(
+        `https://api.spotify.com/v1/search?q=${q}&type=track&limit=1`,
+        {
+          headers: { Authorization: `Bearer ${spotifyAccessToken}` },
+        }
+      );
+
+      const searchData = await searchRes.json();
+      const uri = searchData?.tracks?.items?.[0]?.uri
+
