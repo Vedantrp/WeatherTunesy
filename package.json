@@ -1,25 +1,24 @@
 {
-  "name": "yourchoice-tunes",
+  "name": "weather-tunesy",
   "version": "1.0.0",
-  "main": "server.js",
+  "description": "WeatherTunesy – AI-powered weather and Spotify playlist app",
+  "main": "app.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "node app.js",
+    "start": "node app.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "@google/generative-ai": "^0.11.7",
     "node-fetch": "^3.3.2"
-    "dependencies": {
-  "@google/generative-ai": "^0.11.7",
-  "node-fetch": "^3.3.2",
-  
-}
-
   },
-  "devDependencies": {
-    "nodemon": "^3.0.0"
-  }
+  "keywords": [
+    "spotify",
+    "weather",
+    "ai",
+    "playlist",
+    "gemini"
+  ],
+  "author": "Vedant Puranik",
+  "license": "MIT"
 }
