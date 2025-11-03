@@ -141,6 +141,36 @@ function displayPlaylistSuggestion(combinedData) {
       genreTags.appendChild(tag);
     });
   }
+// Render the AI song list and enable playlist creation
+function displayAiSongsAndEnableCreation(aiSongs) {
+  cachedAiSongs = aiSongs; // store globally for use when creating Spotify playlists
+
+  aiSongList.innerHTML = ""; // clear old songs
+
+  if (!aiSongs || aiSongs.length === 0) {
+    aiPlaylistSection.classList.add("hidden");
+    return;
+  }
+
+  aiSongs.forEach((song, index) => {
+    const li = document.createElement("li");
+    li.className = "ai-song-item";
+    li.textContent = `${index + 1}. ${song.title} – ${song.artist}`;
+    aiSongList.appendChild(li);
+  });
+
+  aiPlaylistSection.classList.remove("hidden");
+  playlistCard.classList.remove("hidden");
+
+  // Enable create playlist button if user is logged in
+  if (spotifyAccessToken && currentUser) {
+    createPlaylistBtn.disabled = false;
+    createPlaylistText.textContent = "Create Playlist";
+  } else {
+    createPlaylistBtn.disabled = true;
+    createPlaylistText.textContent = "Login to Create Playlist";
+  }
+}
 
   // spotify search url fallback
   let spotifySearchUrl = combinedData?.spotifySearchUrl || "";
@@ -387,6 +417,7 @@ locationInput.addEventListener('keypress', (e) => {
 // =======================================================================================
 
 restoreAuth();
+
 
 
 
