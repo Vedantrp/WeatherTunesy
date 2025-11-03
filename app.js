@@ -109,6 +109,61 @@ function displayWeather(data) {
 
     weatherCard.classList.remove('hidden');
 }
+// show playlist suggestion / mood + genres and wire spotify/open button
+function displayPlaylistSuggestion(combinedData) {
+  // combinedData might be { mood: {...}, spotifySearchUrl: '...', ... }
+  // or it might be the older shape where mood is a string.
+  const moodData = combinedData?.mood || combinedData; // support both
+  // normalize mood object
+  const moodObj = (typeof moodData === "string")
+    ? { type: moodData, genres: [] }
+    : (moodData.type ? moodData : { type: moodData, genres: moodData?.genres || [] });
+
+  // set global currentMoodData so other logic can use it
+  currentMoodData = moodObj;
+
+  // mood text
+  moodType.textContent = moodObj.type || "Unknown";
+
+  // playlist suggestion text (show emoji + text)
+  const suggestionText = (moodObj.suggestion && typeof moodObj.suggestion === "string")
+    ? moodObj.suggestion
+    : `Perfect for ${moodObj.type} weather!`;
+  playlistSuggestion.textContent = `${getMoodEmoji(moodObj.type)} ${suggestionText}`;
+
+  // genres tags
+  genreTags.innerHTML = "";
+  if (Array.isArray(moodObj.genres) && moodObj.genres.length > 0) {
+    moodObj.genres.forEach(g => {
+      const tag = document.createElement("span");
+      tag.className = "genre-tag";
+      tag.textContent = g;
+      genreTags.appendChild(tag);
+    });
+  }
+
+  // spotify search url fallback
+  let spotifySearchUrl = combinedData?.spotifySearchUrl || "";
+  if (!spotifySearchUrl) {
+    const primary = (moodObj.genres && moodObj.genres[0]) || moodObj.type || "playlist";
+    spotifySearchUrl = `https://open.spotify.com/search/${encodeURIComponent(primary + ' playlist ' + moodObj.type)}`;
+  }
+
+  // open Spotify button
+  openSpotifyBtn.onclick = () => window.open(spotifySearchUrl, "_blank");
+
+  // enable/disable create playlist button depending on auth
+  if (spotifyAccessToken && currentUser) {
+    createPlaylistBtn.disabled = false;
+    createPlaylistText.textContent = "Create Playlist";
+  } else {
+    createPlaylistBtn.disabled = true;
+    createPlaylistText.textContent = "Login to Create";
+  }
+
+  // ensure playlist card is visible
+  playlistCard.classList.remove("hidden");
+}
 
 // =======================================================================================
 // === AUTHENTICATION ===================================================================
@@ -332,5 +387,6 @@ locationInput.addEventListener('keypress', (e) => {
 // =======================================================================================
 
 restoreAuth();
+
 
 
