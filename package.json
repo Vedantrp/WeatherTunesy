@@ -11,7 +11,7 @@
    "dependencies": {
   "node-fetch": "^3.3.2",
   "@google/generative-ai": "^0.14.0"
-}
+
 
   },
   "keywords": [
@@ -24,4 +24,4 @@
   "author": "Vedant Puranik",
   "license": "MIT"
 }
-}
+
