@@ -8,11 +8,11 @@
     "dev": "node app.js",
     "start": "node app.js"
   },
-  "dependencies": {
-   
-    "@google/generative-ai": "^0.14.0",
+   "dependencies": {
+  "node-fetch": "^3.3.2",
+  "@google/generative-ai": "^0.14.0"
+}
 
-    "node-fetch": "^3.3.2"
   },
   "keywords": [
     "spotify",
