@@ -283,11 +283,16 @@ async function handleSearch() {
   loading.classList.remove("hidden");
 
   try {
-    const res = await fetch(`${API_BASE_URL}/weather-playlist`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ location, language: currentLanguage }),
-    });
+   const res = await fetch(`${API_BASE_URL}/ai-playlist`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    mood,
+    language,
+    token: spotifyAccessToken || null, // 👈 send logged-in user’s token
+  }),
+});
+
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Failed to fetch weather data.");
@@ -405,3 +410,4 @@ locationInput.addEventListener("keypress", (e) => e.key === "Enter" && handleSea
 
 // init
 restoreAuth();
+
