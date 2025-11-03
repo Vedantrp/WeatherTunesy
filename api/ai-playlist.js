@@ -1,56 +1,94 @@
 // /api/ai-playlist.js
+import fetch from "node-fetch";
+
+const MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"; // change if needed
+const TARGET_COUNT = 35;
+
+function extractJsonArrayFromText(text) {
+  const start = text.indexOf('[');
+  const end = text.lastIndexOf(']');
+  if (start !== -1 && end !== -1 && end > start) {
+    try {
+      const substr = text.slice(start, end + 1);
+      const parsed = JSON.parse(substr);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) { /* ignore */ }
+  }
+  return null;
+}
+
+function parseLinesToSongs(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length).slice(0, TARGET_COUNT);
+  const songs = [];
+  for (let line of lines) {
+    line = line.replace(/^[\d\.\)\-\s]+/, "").trim();
+    let parts = line.split(/\s[-–—]\s/);
+    if (parts.length < 2) parts = line.split(/\sby\s/i);
+    const title = (parts[0] || "").trim();
+    const artist = (parts[1] || "").trim();
+    if (title && artist) songs.push({ title, artist });
+    if (songs.length >= TARGET_COUNT) break;
+  }
+  return songs;
+}
+
 export default async function handler(req, res) {
-  try {
-    const { mood, language } = req.body || {};
-    if (!mood || !language)
-      return res.status(400).json({ error: "Missing mood or language" });
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-    const HF_TOKEN = process.env.HUGGINGFACE_API_KEY;
-    if (!HF_TOKEN)
-      return res.status(500).json({ error: "Missing Hugging Face API key" });
+  if (req.method !== "POST") return res.status(405).json({ error: "Only POST allowed" });
 
-    // 🧠 use a small text model like mistralai/Mixtral-8x7B-Instruct-v0.1 or meta-llama/Llama-3-8b-instruct
-    const HF_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1";
-    const HF_URL = `https://router.huggingface.co/hf-inference/v1/models/${HF_MODEL}`;
+  const { mood = "relaxed", language = "english" } = req.body || {};
+  const HF_TOKEN = process.env.HUGGINGFACE_API_KEY;
+  if (!HF_TOKEN) return res.status(500).json({ error: "Missing Hugging Face API key" });
 
-    const prompt = `
-Generate a list of 35 ${language} songs that fit a ${mood} mood.
-Return only valid JSON array like:
+  const HF_URL = `https://router.huggingface.co/hf-inference/v1/models/${MODEL}`;
+
+  const prompt = `
+You are a music recommender. Generate ${TARGET_COUNT} songs in ${language} that fit the mood: ${typeof mood === 'object' ? (mood.type || JSON.stringify(mood)) : mood}.
+Return strictly a JSON array like:
 [
   {"title": "Song Title", "artist": "Artist Name"},
   ...
 ]
+If you cannot return JSON, output one song per line as "Song Title - Artist".
 `;
 
-    const response = await fetch(HF_URL, {
+  try {
+    const r = await fetch(HF_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${HF_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: { max_new_tokens: 600, temperature: 0.8 },
-      }),
+      body: JSON.stringify({ inputs: prompt, parameters: { max_new_tokens: 600, temperature: 0.8 } }),
     });
 
-    const raw = await response.text();
-    console.log("HF raw output:", raw.slice(0, 400));
+    const raw = await r.text();
+    console.log("HF raw:", raw.slice(0,2000));
 
-    const match = raw.match(/\[.*\]/s);
-    if (!match)
-      return res.status(500).json({
-        error: "AI generation failed to produce songs.",
-        details: raw.slice(0, 400),
-      });
+    let playlist = extractJsonArrayFromText(raw);
+    if (!playlist || !playlist.length) {
+      playlist = parseLinesToSongs(raw);
+    }
 
-    const playlist = JSON.parse(match[0]);
-    if (!Array.isArray(playlist) || !playlist.length)
-      throw new Error("Empty or invalid playlist");
+    // final fallback: return empty + debug
+    if (!playlist || !playlist.length) {
+      return res.status(200).json({ mood, language, playlist: [], debug: raw.slice(0,2000) });
+    }
 
-    res.status(200).json({ playlist });
+    // normalize titles & artists to strings
+    playlist = playlist.map(p => {
+      if (typeof p === "string") {
+        const parts = p.split(/\s-\s/);
+        return { title: parts[0]?.trim()||"Unknown", artist: parts[1]?.trim()||"Unknown" };
+      }
+      return { title: String(p.title || p.name || "Unknown").trim(), artist: String(p.artist || p.author || "Unknown").trim() };
+    }).filter(s => s.title && s.artist).slice(0, TARGET_COUNT);
+
+    return res.status(200).json({ mood, language, playlist });
   } catch (err) {
     console.error("AI Playlist Error:", err);
-    res.status(500).json({ error: "AI playlist generation failed", details: err.message });
+    return res.status(500).json({ error: "AI generation failed", details: err.message });
   }
 }
