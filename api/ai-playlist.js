@@ -1,200 +1,130 @@
 // /api/ai-playlist.js
 import fetch from "node-fetch";
 
-const HF_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"; // good instruct model; change if needed
-
-function generateFallbackPlaylist(language, mood, count = 35) {
-  // A small library of representative songs per language to mix and rotate from.
-  const seeds = {
-    english: [
-      { title: "Here Comes the Sun", artist: "The Beatles" },
-      { title: "Blinding Lights", artist: "The Weeknd" },
-      { title: "Counting Stars", artist: "OneRepublic" },
-      { title: "Levitating", artist: "Dua Lipa" },
-      { title: "Adventure of a Lifetime", artist: "Coldplay" },
-      { title: "Viva La Vida", artist: "Coldplay" },
-      { title: "Happy", artist: "Pharrell Williams" },
-      { title: "Shape of You", artist: "Ed Sheeran" },
-      { title: "Sunflower", artist: "Post Malone" },
-      { title: "Heat Waves", artist: "Glass Animals" },
-    ],
-    hindi: [
-      { title: "Tum Hi Ho", artist: "Arijit Singh" },
-      { title: "Kesariya", artist: "Arijit Singh" },
-      { title: "Channa Mereya", artist: "Arijit Singh" },
-      { title: "Raabta", artist: "Arijit Singh" },
-      { title: "Apna Bana Le", artist: "Arijit Singh" },
-      { title: "Tera Ban Jaunga", artist: "Akhil Sachdeva" },
-      { title: "Kun Faya Kun", artist: "A.R. Rahman" },
-      { title: "Agar Tum Saath Ho", artist: "Alka Yagnik & Arijit Singh" },
-      { title: "Shayad", artist: "Arijit Singh" },
-      { title: "Tum Se Hi", artist: "Mohit Chauhan" },
-    ],
-    spanish: [
-      { title: "Despacito", artist: "Luis Fonsi" },
-      { title: "Vivir Mi Vida", artist: "Marc Anthony" },
-      { title: "Bailando", artist: "Enrique Iglesias" },
-      { title: "Hawái", artist: "Maluma" },
-      { title: "Corazón", artist: "Maluma" },
-      { title: "La Bicicleta", artist: "Carlos Vives" },
-      { title: "Calma", artist: "Pedro Capó" },
-      { title: "Dákiti", artist: "Bad Bunny" },
-      { title: "Tusa", artist: "Karol G" },
-      { title: "Felices los 4", artist: "Maluma" },
-    ],
-    korean: [
-      { title: "Dynamite", artist: "BTS" },
-      { title: "Butter", artist: "BTS" },
-      { title: "Kill This Love", artist: "BLACKPINK" },
-      { title: "Love Scenario", artist: "iKON" },
-      { title: "Ditto", artist: "NewJeans" },
-      { title: "Pink Venom", artist: "BLACKPINK" },
-      { title: "Lovesick Girls", artist: "BLACKPINK" },
-      { title: "Shut Down", artist: "BLACKPINK" },
-      { title: "ETA", artist: "NewJeans" },
-      { title: "Peaches", artist: "BTS" },
-    ],
-    tamil: [
-      { title: "Vaathi Coming", artist: "Anirudh Ravichander" },
-      { title: "Enjoy Enjaami", artist: "Dhee" },
-      { title: "Arabic Kuthu", artist: "Anirudh Ravichander" },
-      { title: "Rowdy Baby", artist: "Dhanush" },
-      { title: "Why This Kolaveri Di", artist: "Dhanush" },
-      { title: "Aaluma Doluma", artist: "Anirudh" },
-      { title: "Pudhu Metro Rail", artist: "Anirudh" },
-      { title: "Naan Pizhaippeno", artist: "Sid Sriram" },
-      { title: "Sodakku", artist: "Anirudh" },
-      { title: "Surviva", artist: "Anirudh" },
-    ],
-    telugu: [
-      { title: "Butta Bomma", artist: "Armaan Malik" },
-      { title: "Srivalli", artist: "Sid Sriram" },
-      { title: "Ramuloo Ramulaa", artist: "Anurag Kulkarni" },
-      { title: "Oo Antava", artist: "Indravathi Chauhan" },
-      { title: "Samajavaragamana", artist: "Sid Sriram" },
-      { title: "Mind Block", artist: "Jassie Gift" },
-      { title: "Naatu Naatu", artist: "M.M. Keeravani" },
-      { title: "Butta Bomma - Remix", artist: "Various" },
-      { title: "Seeti Maar", artist: "Gopichand" },
-      { title: "Dimaak Kharaab", artist: "Devi Sri Prasad" },
-    ],
-    french: [
-      { title: "Dernière danse", artist: "Indila" },
-      { title: "Formidable", artist: "Stromae" },
-      { title: "Papaoutai", artist: "Stromae" },
-      { title: "La Vie en Rose", artist: "Édith Piaf" },
-      { title: "Je te promets", artist: "Johnny Hallyday" },
-      { title: "J'en ai marre", artist: "Alizée" },
-      { title: "Je vole", artist: "Louane" },
-      { title: "Tous les mêmes", artist: "Stromae" },
-      { title: "Dernière danse", artist: "Indila" },
-      { title: "À tout à l'heure", artist: "Benjamin Biolay" },
-    ],
-  };
-
-  const pool = seeds[language.toLowerCase()] || seeds.english;
-  const out = [];
-  // rotate and slightly vary to reach `count`
-  for (let i = 0; i < count; i++) {
-    const base = pool[i % pool.length];
-    out.push({
-      title: `${base.title}${i >= pool.length ? ` (Alt ${Math.floor(i / pool.length)})` : ""}`,
-      artist: base.artist,
-      language,
-    });
-  }
-  return out;
-}
-
 export default async function handler(req, res) {
-  // CORS headers so it works cross-origin if needed
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") return res.status(200).end();
-
-  if (req.method !== "POST") {
+  if (req.method !== "POST")
     return res.status(405).json({ error: "Only POST requests are supported" });
-  }
 
   try {
-    const { mood = "relaxed", language = "english" } = req.body || {};
-    const hfToken = process.env.HUGGINGFACE_API_KEY;
-    if (!hfToken) {
-      console.warn("No HF token found — returning fallback playlist");
-      const fallback = generateFallbackPlaylist(language, mood, 35);
-      return res.status(200).json({ mood, language, playlist: fallback });
+    const { mood = "balanced", language = "english" } = req.body;
+
+    // 🔹 Spotify Access Token from your environment (add in .env)
+    const SPOTIFY_TOKEN = process.env.SPOTIFY_ACCESS_TOKEN;
+    if (!SPOTIFY_TOKEN) {
+      return res.status(500).json({
+        error: "Missing SPOTIFY_ACCESS_TOKEN in environment",
+      });
     }
 
-    // Make prompt ask for 35 items and include language field
-    const prompt = `
-Suggest 35 ${language} songs that match a ${mood} mood.
-Return ONLY a JSON array with items that have "title", "artist" and "language" fields, e.g.:
-[
-  {"title":"Song title","artist":"Artist name","language":"${language}"},
-  ...
-]
-Do not include extra commentary.
-`;
-
-    // Use Mixtral or another instruct-style model — increase max tokens enough
-    const model = HF_MODEL;
-    const reqBody = {
-      inputs: prompt,
-      parameters: { max_new_tokens: 800, temperature: 0.9, top_k: 50 },
+    // =====================================================================================
+    // 1️⃣ Map moods → Spotify seed genres
+    const moodGenreMap = {
+      upbeat: ["pop", "dance", "happy"],
+      cozy: ["acoustic", "chill", "indie"],
+      relaxed: ["lofi", "jazz", "ambient"],
+      balanced: ["pop", "indie", "alternative"],
+      calm: ["classical", "piano", "ambient"],
+      mysterious: ["cinematic", "dark", "experimental"],
+      energetic: ["rock", "edm", "dance"],
+      intense: ["metal", "hard-rock", "trap"],
+      tropical: ["reggae", "afrobeat", "latin"],
+      warm: ["soul", "rnb", "funk"],
+      default: ["pop"],
     };
 
-    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${hfToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(reqBody),
+    const seed_genres =
+      moodGenreMap[mood.toLowerCase()] || moodGenreMap.default;
+
+    // =====================================================================================
+    // 2️⃣ Map language → Spotify market & genres
+    const langConfig = {
+      english: { market: "US", extras: ["pop", "indie", "folk"] },
+      hindi: { market: "IN", extras: ["bollywood", "indian", "romance"] },
+      tamil: { market: "IN", extras: ["tamil", "kollywood"] },
+      telugu: { market: "IN", extras: ["telugu", "tollywood"] },
+      punjabi: { market: "IN", extras: ["punjabi", "bhangra"] },
+      spanish: { market: "ES", extras: ["latin", "reggaeton"] },
+      french: { market: "FR", extras: ["chanson", "french-pop"] },
+      japanese: { market: "JP", extras: ["jpop"] },
+      korean: { market: "KR", extras: ["kpop"] },
+      portuguese: { market: "PT", extras: ["brazilian", "samba"] },
+      german: { market: "DE", extras: ["german-pop"] },
+      italian: { market: "IT", extras: ["italian", "love-songs"] },
+      chinese: { market: "HK", extras: ["mandopop", "cantopop"] },
+    };
+
+    const { market, extras } =
+      langConfig[language.toLowerCase()] || langConfig.english;
+
+    const finalGenres = [...new Set([...seed_genres, ...(extras || [])])]
+      .slice(0, 5)
+      .join(",");
+
+    // =====================================================================================
+    // 3️⃣ Smart dynamic parameters (AI-like logic)
+    const energyTarget = {
+      upbeat: 0.8,
+      energetic: 0.9,
+      relaxed: 0.4,
+      cozy: 0.5,
+      intense: 0.9,
+      calm: 0.3,
+      mysterious: 0.4,
+      tropical: 0.7,
+      warm: 0.6,
+    }[mood.toLowerCase()] || 0.6;
+
+    const valenceTarget = {
+      upbeat: 0.9,
+      energetic: 0.8,
+      relaxed: 0.5,
+      cozy: 0.4,
+      intense: 0.3,
+      calm: 0.5,
+      mysterious: 0.3,
+      tropical: 0.8,
+      warm: 0.7,
+    }[mood.toLowerCase()] || 0.6;
+
+    // =====================================================================================
+    // 4️⃣ Fetch from Spotify Recommendations API
+    const url = `https://api.spotify.com/v1/recommendations?limit=50&market=${market}&seed_genres=${finalGenres}&target_energy=${energyTarget}&target_valence=${valenceTarget}`;
+
+    const spotifyRes = await fetch(url, {
+      headers: { Authorization: `Bearer ${SPOTIFY_TOKEN}` },
     });
 
-    const text = await response.text();
+    const data = await spotifyRes.json();
 
-    // Try to extract JSON array
-    let playlist = [];
-    try {
-      const jsonMatch = text.match(/\[.*\]/s);
-      if (jsonMatch) {
-        playlist = JSON.parse(jsonMatch[0]);
-      } else {
-        // Sometimes HF wraps result differently -> attempt to parse if it's an object
-        const tryParse = JSON.parse(text);
-        if (Array.isArray(tryParse)) playlist = tryParse;
-      }
-    } catch (err) {
-      console.warn("Failed to parse HF response as JSON:", err);
-      playlist = [];
+    if (!spotifyRes.ok || !data.tracks) {
+      console.error("Spotify API error:", data);
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch songs from Spotify", details: data });
     }
 
-    // Validate and normalize playlist
-    playlist = (playlist || [])
-      .filter((s) => s && (s.title || s.name) && (s.artist || s.singer || s.by))
-      .map((s) => {
-        const title = (s.title || s.name || "").toString().trim();
-        const artist = (s.artist || s.singer || s.by || "").toString().trim();
-        const lang = s.language || language;
-        return { title, artist, language: lang };
-      });
+    // =====================================================================================
+    // 5️⃣ Transform results → formatted playlist (top 35)
+    const allTracks = (data.tracks || [])
+      .filter((t) => t && t.name && t.artists?.length)
+      .map((t) => ({
+        title: t.name,
+        artist: t.artists.map((a) => a.name).join(", "),
+        spotify_url: t.external_urls.spotify,
+        album_image: t.album?.images?.[0]?.url,
+        popularity: t.popularity,
+      }))
+      .sort(() => Math.random() - 0.5) // randomize slightly
+      .slice(0, 35); // limit to 35
 
-    // If model didn't return 35, fill via fallback generator (ensures min 35)
-    if (!Array.isArray(playlist) || playlist.length < 35) {
-      const needed = Math.max(0, 35 - (playlist.length || 0));
-      const fallback = generateFallbackPlaylist(language, mood, Math.max(35, playlist.length + needed));
-      // prefer model items first, then fallback to fill to 35
-      const combined = [...(playlist || []), ...fallback];
-      playlist = combined.slice(0, Math.max(35, combined.length));
-    }
-
-    return res.status(200).json({ mood, language, playlist });
-  } catch (err) {
-    console.error("AI playlist fatal:", err);
-    // final fallback
-    const fallback = generateFallbackPlaylist("english", "relaxed", 35);
-    return res.status(200).json({ mood: "relaxed", language: "english", playlist: fallback });
+    return res.status(200).json({
+      mood,
+      language,
+      total: allTracks.length,
+      playlist: allTracks,
+    });
+  } catch (error) {
+    console.error("AI playlist generation error:", error);
+    res.status(500).json({ error: "AI playlist generation failed" });
   }
 }
