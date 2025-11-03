@@ -4,96 +4,70 @@ import fetch from "node-fetch";
 export default async function handler(req, res) {
   try {
     const code = req.query.code;
-    if (!code) {
-      return res
-        .status(400)
-        .send(`<script>window.opener.postMessage({ error: 'Missing authorization code' }, '*'); window.close();</script>`);
-    }
-
-    // Spotify credentials
     const client_id = process.env.SPOTIFY_CLIENT_ID;
     const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirect_uri = (process.env.NEXTAUTH_URL || process.env.BASE_URL || "https://weather-tunes-kappa.vercel.app") + "/api/callback";
 
-    // Handle both local and Vercel environments dynamically
-    const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
+    if (!code) {
+      return res.status(400).send("Missing code");
+    }
+    if (!client_id || !client_secret) {
+      console.error("Missing client id/secret");
+      return res.status(500).send("Server misconfigured");
+    }
 
-    const redirect_uri = `${baseUrl}/api/callback`;
-
-    // Exchange authorization code for access + refresh tokens
     const body = new URLSearchParams({
       grant_type: "authorization_code",
       code,
       redirect_uri,
       client_id,
-      client_secret,
+      client_secret
     });
 
-    const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
+    const tokenResp = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body,
+      body: body.toString()
     });
 
-    const tokenData = await tokenResponse.json();
-
-    if (!tokenResponse.ok || tokenData.error) {
-      console.error("Spotify Token Error:", tokenData);
-      return res.status(400).send(`
-        <script>
-          window.opener.postMessage({
-            error: 'Spotify token exchange failed: ${tokenData.error_description || "Unknown error"}'
-          }, '*');
-          window.close();
-        </script>
-      `);
+    const tokenData = await tokenResp.json();
+    if (!tokenResp.ok) {
+      console.error("Token exchange failed:", tokenData);
+      return res.status(400).send("Token exchange failed: " + (tokenData.error_description || JSON.stringify(tokenData)));
     }
 
-    // Fetch user profile with access token
-    const userResponse = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    const access_token = tokenData.access_token;
+    const refresh_token = tokenData.refresh_token;
+
+    // fetch user profile
+    const userResp = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${access_token}` },
     });
+    const userData = await userResp.json();
 
-    const userData = await userResponse.json();
-
-    if (!userResponse.ok) {
-      console.error("Spotify User Fetch Error:", userData);
-      return res.status(400).send(`
-        <script>
-          window.opener.postMessage({
-            error: 'Failed to fetch user info from Spotify.'
-          }, '*');
-          window.close();
-        </script>
-      `);
-    }
-
-    // ✅ Send access/refresh tokens + user info back to frontend popup
-    res.setHeader("Content-Type", "text/html");
+    // send script to popup to postMessage to opener
     return res.send(`
-      <script>
-        window.opener.postMessage(
-          {
-            type: "SPOTIFY_AUTH_SUCCESS",
-            token: "${tokenData.access_token}",
-            refreshToken: "${tokenData.refresh_token || ""}",
-            user: ${JSON.stringify(userData)}
-          },
-          window.opener.origin || "*"
-        );
-        window.close();
-      </script>
+      <html><body>
+        <script>
+          try {
+            const payload = {
+              type: "SPOTIFY_AUTH_SUCCESS",
+              token: ${JSON.stringify(access_token)},
+              refreshToken: ${JSON.stringify(refresh_token)},
+              user: ${JSON.stringify(userData)}
+            };
+            window.opener.postMessage(payload, "*");
+            window.close();
+          } catch(e) {
+            window.opener.postMessage({ type: "SPOTIFY_AUTH_ERROR", error: e?.message || "callback error" }, "*");
+            window.close();
+          }
+        </script>
+        <p>Authentication complete. You can close this window.</p>
+      </body></html>
     `);
-  } catch (error) {
-    console.error("Callback Error:", error);
-    res.status(500).send(`
-      <script>
-        window.opener.postMessage({ error: "Spotify callback failed" }, "*");
-        window.close();
-      </script>
-    `);
+  } catch (err) {
+    console.error("Callback error:", err);
+    res.status(500).send(`<script>window.opener.postMessage({ type: "SPOTIFY_AUTH_ERROR", error: "Callback failed" }, "*");window.close();</script>`);
   }
 }
