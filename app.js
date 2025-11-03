@@ -7,7 +7,8 @@ const getApiBaseUrl = () => {
   if (typeof window !== "undefined" && window.location.hostname === "localhost") {
     return "http://localhost:3000/api";
   }
-  return "https://weather-tunes-kappa.vercel.app/api";
+  return "/api";
+
 };
 const API_BASE_URL = getApiBaseUrl();
 
@@ -471,5 +472,6 @@ createPlaylistBtn.addEventListener("click", createSpotifyPlaylist);
 // =======================================================================================
 
 restoreAuth();
+
 
 
