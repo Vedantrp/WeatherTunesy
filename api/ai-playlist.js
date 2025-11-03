@@ -14,14 +14,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 🔹 Generate playlist using Hugging Face text model
     const prompt = `
       Suggest 35 popular ${language} songs that match a ${mood} mood.
-      Return JSON only, like:
-      [
-        { "title": "Song Name", "artist": "Artist Name" },
-        ...
-      ]
+      Each item should look like: Song Name - Artist Name.
+      Do NOT add extra commentary.
     `;
 
     const response = await fetch(
@@ -37,24 +33,39 @@ export default async function handler(req, res) {
     );
 
     const text = await response.text();
+
     let playlist = [];
 
-    // Try to parse model response into JSON
-    const match = text.match(/\[.*\]/s);
-    if (match) {
+    // Try to parse valid JSON first
+    const jsonMatch = text.match(/\[.*\]/s);
+    if (jsonMatch) {
       try {
-        playlist = JSON.parse(match[0]);
-      } catch {
+        playlist = JSON.parse(jsonMatch[0]);
+      } catch (err) {
         playlist = [];
       }
     }
 
-    // Filter invalid or empty results
-    const finalSongs = (playlist || [])
-      .filter((s) => s.title && s.artist)
-      .slice(0, 35);
+    // 🧩 If JSON parsing fails, use text-based fallback
+    if (!playlist.length) {
+      const lines = text
+        .split("\n")
+        .filter((l) => l.trim().length > 3)
+        .slice(0, 35);
 
-    if (finalSongs.length === 0) {
+      playlist = lines.map((line) => {
+        const parts = line.replace(/^[\d\.\-\*\s]+/, "").split("-");
+        return {
+          title: parts[0]?.trim() || "Unknown Title",
+          artist: parts[1]?.trim() || "Unknown Artist",
+        };
+      });
+    }
+
+    // Filter empty or invalid items
+    playlist = playlist.filter((s) => s.title && s.artist).slice(0, 35);
+
+    if (!playlist.length) {
       return res.status(200).json({
         mood,
         language,
@@ -63,7 +74,7 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json({ mood, language, playlist: finalSongs });
+    res.status(200).json({ mood, language, playlist });
   } catch (err) {
     console.error("AI Playlist Error:", err);
     res.status(500).json({ error: "AI playlist generation failed" });
