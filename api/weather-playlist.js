@@ -1,69 +1,56 @@
 // /api/weather-playlist.js
 import fetch from "node-fetch";
 
+function mapWeatherToMood(condition) {
+  const c = (condition || "").toLowerCase();
+  if (c.includes("sun") || c.includes("clear")) return "upbeat";
+  if (c.includes("rain") || c.includes("drizzle")) return "cozy";
+  if (c.includes("cloud")) return "relaxed";
+  if (c.includes("snow")) return "calm";
+  if (c.includes("storm") || c.includes("thunder")) return "intense";
+  if (c.includes("fog") || c.includes("mist")) return "mysterious";
+  if (c.includes("hot")) return "energetic";
+  if (c.includes("cold")) return "warm";
+  return "balanced";
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST")
-    return res.status(405).json({ error: "Only POST requests are supported" });
-
   try {
-    const { location, language = "english" } = req.body || {};
-    if (!location) return res.status(400).json({ error: "Missing location parameter" });
+    if (req.method !== "POST") return res.status(405).json({ error: "Only POST" });
+    const { location, language } = req.body || {};
+    if (!location) return res.status(400).json({ error: "Missing location" });
 
-    const weatherKey = process.env.WEATHER_API_KEY;
-    if (!weatherKey) throw new Error("Missing WEATHER_API_KEY in environment");
+    const WEATHER_KEY = process.env.WEATHER_API_KEY;
+    if (!WEATHER_KEY) return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
 
-    // 🌦️ Fetch weather
-    const url = `https://api.weatherapi.com/v1/current.json?key=${weatherKey}&q=${encodeURIComponent(
-      location
-    )}&aqi=no`;
-    const weatherRes = await fetch(url);
-    const weatherData = await weatherRes.json();
+    const weatherUrl = `http://api.weatherapi.com/v1/current.json?key=${WEATHER_KEY}&q=${encodeURIComponent(location)}&aqi=no`;
+    const r = await fetch(weatherUrl);
+    const data = await r.json();
 
-    if (weatherData.error)
-      return res.status(400).json({ error: weatherData.error.message });
+    if (!data || data.error) {
+      console.error("WeatherAPI error:", data);
+      return res.status(500).json({ error: "WeatherAPI failed", details: data });
+    }
 
-    const condition = weatherData.current.condition.text.toLowerCase();
-    let mood = "balanced";
-    if (condition.includes("rain")) mood = "cozy";
-    else if (condition.includes("sun")) mood = "upbeat";
-    else if (condition.includes("cloud")) mood = "relaxed";
-    else if (condition.includes("storm")) mood = "intense";
-    else if (condition.includes("mist") || condition.includes("fog"))
-      mood = "mysterious";
+    const weather = {
+      condition: data.current.condition.text,
+      icon: data.current.condition.icon,
+      temperature: data.current.temp_c,
+      feelsLike: data.current.feelslike_c,
+      humidity: data.current.humidity,
+      windSpeed: data.current.wind_kph,
+      location: data.location.name,
+      country: data.location.country,
+      localtime: data.location.localtime,
+    };
 
-    // 🧠 Generate fallback AI playlist (NO Gemini call)
-    const fallbackPlaylist = [
-      { title: "Echoes of the Sky", artist: "Aurora Dreams" },
-      { title: "Night Fog", artist: "Cinematic Flow" },
-      { title: "Moonlit Vibes", artist: "Calm Arcade" },
-      { title: "Mystic Rain", artist: "Dreamcatcher" },
-      { title: "Dawn Horizon", artist: "Lofi Fields" },
-    ];
-
-    // ✅ Respond safely
-    res.status(200).json({
-      mood,
-      language,
-      playlist: fallbackPlaylist,
-      weather: {
-        location: weatherData.location.name,
-        country: weatherData.location.country,
-        temperature: weatherData.current.temp_c,
-        feelsLike: weatherData.current.feelslike_c,
-        humidity: weatherData.current.humidity,
-        windSpeed: weatherData.current.wind_kph,
-        condition: weatherData.current.condition.text,
-        icon: weatherData.current.condition.icon,
-        localtime: weatherData.location.localtime,
-      },
-    });
+    const mood = mapWeatherToMood(weather.condition);
+    return res.status(200).json({ weather, mood, language });
   } catch (err) {
-    console.error("🔥 Error in /api/weather-playlist:", err);
-    res.status(500).json({ error: err.message });
+    console.error("weather-playlist error:", err);
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 }
