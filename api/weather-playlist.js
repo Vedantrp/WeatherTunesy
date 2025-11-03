@@ -1,46 +1,31 @@
 // /api/weather-playlist.js
 import fetch from "node-fetch";
-import { getAiPlaylist } from "./ai-playlist.js";
 
 export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Only POST requests are supported" });
+
   try {
-    // --- CORS ---
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    if (req.method === "OPTIONS") return res.status(200).end();
+    const { location, language = "english" } = req.body || {};
+    if (!location) return res.status(400).json({ error: "Missing location parameter" });
 
-    if (req.method !== "POST") {
-      console.log("❌ Wrong method:", req.method);
-      return res.status(405).json({ error: "Only POST requests are supported" });
-    }
-
-    console.log("✅ Incoming weather-playlist request...");
-    const { location, language } = req.body || {};
-    console.log("➡️ Body:", req.body);
-
-    if (!location) {
-      console.log("❌ Missing location");
-      return res.status(400).json({ error: "Missing location parameter" });
-    }
-
-    // --- WEATHER ---
     const weatherKey = process.env.WEATHER_API_KEY;
-    if (!weatherKey) throw new Error("Missing WEATHER_API_KEY");
+    if (!weatherKey) throw new Error("Missing WEATHER_API_KEY in environment");
 
+    // 🌦️ Fetch weather
     const url = `https://api.weatherapi.com/v1/current.json?key=${weatherKey}&q=${encodeURIComponent(
       location
     )}&aqi=no`;
-
-    console.log("🌤️ Fetching weather:", url);
     const weatherRes = await fetch(url);
     const weatherData = await weatherRes.json();
-    console.log("✅ Weather response received");
 
-    if (weatherData.error) {
-      console.log("❌ Weather API error:", weatherData.error);
-      throw new Error(weatherData.error.message || "Weather API error");
-    }
+    if (weatherData.error)
+      return res.status(400).json({ error: weatherData.error.message });
 
     const condition = weatherData.current.condition.text.toLowerCase();
     let mood = "balanced";
@@ -51,17 +36,20 @@ export default async function handler(req, res) {
     else if (condition.includes("mist") || condition.includes("fog"))
       mood = "mysterious";
 
-    console.log(`🎭 Mapped condition "${condition}" → mood "${mood}"`);
+    // 🧠 Generate fallback AI playlist (NO Gemini call)
+    const fallbackPlaylist = [
+      { title: "Echoes of the Sky", artist: "Aurora Dreams" },
+      { title: "Night Fog", artist: "Cinematic Flow" },
+      { title: "Moonlit Vibes", artist: "Calm Arcade" },
+      { title: "Mystic Rain", artist: "Dreamcatcher" },
+      { title: "Dawn Horizon", artist: "Lofi Fields" },
+    ];
 
-    // --- AI PLAYLIST ---
-    console.log("🤖 Fetching AI playlist...");
-    const playlist = await getAiPlaylist(mood, language);
-    console.log("✅ AI playlist fetched:", playlist?.length, "songs");
-
-    const responseData = {
+    // ✅ Respond safely
+    res.status(200).json({
       mood,
       language,
-      playlist,
+      playlist: fallbackPlaylist,
       weather: {
         location: weatherData.location.name,
         country: weatherData.location.country,
@@ -73,12 +61,9 @@ export default async function handler(req, res) {
         icon: weatherData.current.condition.icon,
         localtime: weatherData.location.localtime,
       },
-    };
-
-    console.log("✅ Sending success response:", JSON.stringify(responseData, null, 2));
-    return res.status(200).json(responseData);
+    });
   } catch (err) {
-    console.error("🔥 Weather Playlist Error:", err);
-    return res.status(500).json({ error: err.message || "Server error" });
+    console.error("🔥 Error in /api/weather-playlist:", err);
+    res.status(500).json({ error: err.message });
   }
 }
