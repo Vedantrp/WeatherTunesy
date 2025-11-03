@@ -1,35 +1,29 @@
 // /api/login.js
-export default async function handler(req, res) {
-  // === 1️⃣ Add CORS headers (for cross-origin frontend) ===
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end(); // quick response to preflight
-  }
-
-  // === 2️⃣ Actual Spotify login logic ===
+export default function handler(req, res) {
   try {
     const client_id = process.env.SPOTIFY_CLIENT_ID;
-    const redirect_uri = `${process.env.NEXTAUTH_URL || "https://weather-tunes-kappa.vercel.app"}/api/callback`;
+    const redirect_uri = (process.env.NEXTAUTH_URL || process.env.BASE_URL || "https://weather-tunes-kappa.vercel.app") + "/api/callback";
+    if (!client_id) return res.status(500).json({ error: "Server misconfigured: missing SPOTIFY_CLIENT_ID" });
 
     const scope = [
-      "user-read-private",
-      "user-read-email",
       "playlist-modify-public",
-      "playlist-modify-private"
+      "playlist-modify-private",
+      "user-read-email",
+      "user-read-private"
     ].join(" ");
 
-    const authUrl = new URL("https://accounts.spotify.com/authorize");
-    authUrl.searchParams.append("response_type", "code");
-    authUrl.searchParams.append("client_id", client_id);
-    authUrl.searchParams.append("scope", scope);
-    authUrl.searchParams.append("redirect_uri", redirect_uri);
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id,
+      scope,
+      redirect_uri,
+      show_dialog: "true"
+    });
 
-    return res.status(200).json({ authUrl: authUrl.toString() });
-  } catch (error) {
-    console.error("Login API error:", error);
-    return res.status(500).json({ error: "Failed to generate Spotify login URL" });
+    const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
+    res.status(200).json({ authUrl });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Login route failed" });
   }
 }
