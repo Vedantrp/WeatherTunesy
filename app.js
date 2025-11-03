@@ -283,7 +283,8 @@ async function handleSearch() {
         // AI playlist
         playlistCard.classList.add('hidden');
         playlistSuggestion.textContent = 'Curating playlist using AI...';
-        const aiSongs = await generateAIPlaylist();
+       const aiSongs = await fetchAiPlaylist(data.mood, currentLanguage);
+
 
         if (aiSongs && aiSongs.length > 0) {
             displayPlaylistSuggestion(data);
@@ -331,4 +332,5 @@ locationInput.addEventListener('keypress', (e) => {
 // =======================================================================================
 
 restoreAuth();
+
 
