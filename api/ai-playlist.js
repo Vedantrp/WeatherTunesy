@@ -7,13 +7,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { mood, language, token } = req.body;
+    const body = await req.body;
+    const { mood, language, token } = body || {};
 
-    if (!token) {
-      return res.status(400).json({ error: "Spotify token missing. Please log in." });
+    if (!mood || !language) {
+      return res.status(400).json({ error: "Missing mood or language parameter" });
     }
 
-    // 🎧 Map moods to seed genres
+    if (!token) {
+      return res.status(401).json({ error: "Spotify token missing. Please log in." });
+    }
+
+    // 🎧 Map moods to genres
     const moodGenreMap = {
       relaxed: ["chill", "acoustic", "indie", "lofi"],
       energetic: ["dance", "edm", "pop", "rock"],
@@ -23,6 +28,7 @@ export default async function handler(req, res) {
       warm: ["rnb", "groove", "soul"],
       intense: ["metal", "punk", "alt"],
       calm: ["ambient", "chill", "instrumental"],
+      balanced: ["pop", "indie", "folk"],
     };
 
     const languageGenreMap = {
@@ -41,48 +47,68 @@ export default async function handler(req, res) {
       chinese: ["mandopop"],
     };
 
-    const seeds = [
-      ...(moodGenreMap[mood] || []),
-      ...(languageGenreMap[language] || []),
-    ]
-      .slice(0, 5)
-      .join(",");
+    // Merge both sets of genres
+    const genres = [
+      ...(moodGenreMap[mood.toLowerCase()] || []),
+      ...(languageGenreMap[language.toLowerCase()] || []),
+    ];
 
-    if (!seeds) {
+    if (genres.length === 0) {
       return res.status(400).json({ error: "Invalid mood or language." });
     }
 
-    // 🎲 Randomness for variation
-    const random = Math.floor(Math.random() * 100);
+    // Pick random 3–5 genres for variety
+    const randomGenres = genres.sort(() => 0.5 - Math.random()).slice(0, 5).join(",");
 
-    const url = `https://api.spotify.com/v1/recommendations?limit=35&seed_genres=${encodeURIComponent(
-      seeds
-    )}&min_popularity=${40 + random % 40}`;
+    // Random popularity window for freshness
+    const min_popularity = 40 + Math.floor(Math.random() * 30);
+    const seedQuery = `seed_genres=${encodeURIComponent(randomGenres)}&limit=35&min_popularity=${min_popularity}`;
 
-    const response = await fetch(url, {
+    const spotifyRes = await fetch(`https://api.spotify.com/v1/recommendations?${seedQuery}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Spotify API error:", errText);
-      return res.status(response.status).json({ error: "Spotify API request failed" });
+    if (!spotifyRes.ok) {
+      const errText = await spotifyRes.text();
+      console.error("Spotify API Error:", errText);
+      return res.status(spotifyRes.status).json({
+        error: "Spotify API request failed",
+        details: errText,
+      });
     }
 
-    const data = await response.json();
+    const data = await spotifyRes.json();
+
     const playlist = (data.tracks || []).map((track) => ({
       title: track.name,
       artist: track.artists.map((a) => a.name).join(", "),
-      preview_url: track.preview_url,
+      album: track.album.name,
       spotify_url: track.external_urls.spotify,
       album_cover: track.album.images?.[0]?.url,
+      preview_url: track.preview_url,
     }));
 
-    res.status(200).json({ mood, language, playlist });
+    if (playlist.length === 0) {
+      return res.status(200).json({
+        mood,
+        language,
+        playlist: [],
+        message: "No matching tracks found.",
+      });
+    }
+
+    res.status(200).json({
+      mood,
+      language,
+      playlist,
+    });
   } catch (error) {
     console.error("AI Playlist Error:", error);
-    res.status(500).json({ error: "AI generation failed", details: error.message });
+    res.status(500).json({
+      error: "AI playlist generation failed",
+      details: error.message,
+    });
   }
 }
