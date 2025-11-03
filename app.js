@@ -292,13 +292,29 @@ async function fetchAiPlaylist(mood, language) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mood, language }),
     });
-    const data = await res.json();
+
+    // 🧠 Safely handle non-JSON responses
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("Invalid JSON returned from AI API:", text);
+      throw new Error("AI service returned invalid data");
+    }
+
+    if (!res.ok) {
+      throw new Error(data?.error || "AI playlist generation failed");
+    }
+
     return data.playlist || [];
   } catch (e) {
     console.error("AI Playlist Error:", e);
+    showError(e.message || "AI playlist could not be created.");
     return [];
   }
 }
+
 
 // =======================================================================================
 // === WEATHER + AI PLAYLIST ============================================================
@@ -472,6 +488,7 @@ createPlaylistBtn.addEventListener("click", createSpotifyPlaylist);
 // =======================================================================================
 
 restoreAuth();
+
 
 
 
