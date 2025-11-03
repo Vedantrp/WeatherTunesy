@@ -1,5 +1,26 @@
 // app.js (FINAL) ------------------------------------------------------------
 // WeatherTunes final frontend: robust auth popup, restore, AI fetch, create playlist
+// =======================================================================================
+// === UI HELPER FUNCTIONS =============================================================
+// =======================================================================================
+function showLoading(show = true) {
+  if (!loading) return;
+  if (show) {
+    loading.classList.remove("hidden");
+  } else {
+    loading.classList.add("hidden");
+  }
+}
+
+function hideAll() {
+  [weatherCard, playlistCard, aiPlaylistSection, errorBox].forEach(el => el?.classList.add("hidden"));
+  if (createPlaylistBtn) {
+    createPlaylistBtn.disabled = true;
+    createPlaylistText.textContent = "Create Playlist";
+  }
+  const created = document.getElementById("createdPlaylist");
+  if (created) created.classList.add("hidden");
+}
 
 const getApiBaseUrl = () => {
   if (typeof window !== "undefined" && window.location.hostname === "localhost") {
@@ -309,3 +330,4 @@ document.addEventListener("DOMContentLoaded", () => {
   updateAuthUI();
   console.log("WeatherTunes app loaded");
 });
+
