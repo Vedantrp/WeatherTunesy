@@ -317,7 +317,8 @@ async function handleSearch() {
     displayWeather(currentWeatherData);
     playlistSuggestion.textContent = "Curating playlist using AI...";
 
-    const aiSongs = await fetchAiPlaylist(data.mood || currentMoodData, currentLanguage);
+    const aiSongs = await fetchAiPlaylist(data.mood || "balanced", currentLanguage);
+
 
     displayPlaylistSuggestion({ mood: data.mood || currentMoodData });
     displayAiSongsAndEnableCreation(aiSongs);
@@ -415,5 +416,6 @@ locationInput.addEventListener("keypress", (e) => e.key === "Enter" && handleSea
 
 // init
 restoreAuth();
+
 
 
