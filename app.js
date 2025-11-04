@@ -1,81 +1,90 @@
-/* WeatherTunes – Frontend (no AI)
- * - Calls your Vercel API:
- *   /api/login          -> { authUrl }
- *   /api/callback       -> handled in popup, posts token back
- *   /api/weather-playlist  POST { location, language } -> { weather, mood, language }
- *   /api/get-tracks        POST { mood, language, token } -> { tracks: [{id, uri, name, artist}] }
- *   /api/create-playlist   POST { token, userId, tracks:[uris], mood } -> { url }
+/* WeatherTunes – FINAL FRONTEND (No AI)
+ * Flow:
+ * 1) Login with Spotify (popup to /api/login → /api/callback returns postMessage)
+ * 2) Enter city + language → Get weather → derive mood (client-side)
+ * 3) Fetch real tracks from Spotify (server) based on language (and mood if backend uses it)
+ * 4) Create playlist in user account
  */
 
-const API_BASE = location.origin + "/api";
+const API = location.origin + "/api";
 
-// ---- State ----
+/* ---------- STATE ---------- */
 let accessToken = null;
-let refreshToken = null; // not used in this simple pass, can be wired later
-let user = null;
-let current = { city: "", language: "english", mood: "relaxed", tracks: [] };
+let refreshToken = null;
+let currentUser = null;
 
-// ---- DOM ----
-const loginBtn    = document.getElementById("loginBtn");
-const logoutBtn   = document.getElementById("logoutBtn");
-const userBox     = document.getElementById("userBox");
-const userName    = document.getElementById("userName");
+let current = {
+  city: "",
+  language: "english",
+  weather: null,
+  mood: "",
+  tracks: []
+};
 
-const cityInp     = document.getElementById("city");
-const langSel     = document.getElementById("language");
-const goBtn       = document.getElementById("goBtn");
+/* ---------- DOM ---------- */
+const loginBtn      = document.getElementById("loginBtn");
+const logoutBtn     = document.getElementById("logoutBtn");
+const userBox       = document.getElementById("userBox");
+const userName      = document.getElementById("userName");
 
-const loading     = document.getElementById("loading");
-const errorBox    = document.getElementById("error");
-const noticeBox   = document.getElementById("notice");
+const cityInp       = document.getElementById("city");
+const langSel       = document.getElementById("language");
+const goBtn         = document.getElementById("goBtn");
 
-const weatherBox  = document.getElementById("weather");
-const wText       = document.getElementById("wText");
-const wTemp       = document.getElementById("wTemp");
-const moodEl      = document.getElementById("mood");
-const langEl      = document.getElementById("lang");
+const loading       = document.getElementById("loading");
+const errorBox      = document.getElementById("error");
+const noticeBox     = document.getElementById("notice");
 
-const tracksCard  = document.getElementById("tracksCard");
-const tracksUl    = document.getElementById("tracks");
-const createBtn   = document.getElementById("createBtn");
-const createdBox  = document.getElementById("createdBox");
-const playlistLink= document.getElementById("playlistLink");
+const weatherBox    = document.getElementById("weather");
+const wText         = document.getElementById("wText");
+const wTemp         = document.getElementById("wTemp");
+const moodEl        = document.getElementById("mood");
+const langEl        = document.getElementById("lang");
 
-// ---- Helpers ----
+const tracksCard    = document.getElementById("tracksCard");
+const tracksUl      = document.getElementById("tracks");
+const createBtn     = document.getElementById("createBtn");
+const createdBox    = document.getElementById("createdBox");
+const playlistLink  = document.getElementById("playlistLink");
+
+/* ---------- UI HELPERS ---------- */
 const show = (el) => el.classList.remove("hidden");
 const hide = (el) => el.classList.add("hidden");
 const setText = (el, t) => { el.textContent = t; };
 
+function startLoading(msg = "Loading…") { loading.textContent = msg; show(loading); }
+function stopLoading() { hide(loading); }
+
 function showError(msg) {
-  errorBox.textContent = msg;
+  errorBox.textContent = msg || "Something went wrong";
   show(errorBox);
   setTimeout(() => hide(errorBox), 6000);
 }
 function showNotice(msg) {
-  noticeBox.textContent = msg;
+  noticeBox.textContent = msg || "";
   show(noticeBox);
   setTimeout(() => hide(noticeBox), 4000);
 }
-function startLoading(msg = "Loading…") { loading.textContent = msg; show(loading); }
-function stopLoading() { hide(loading); }
 
-function persist() {
-  localStorage.setItem("wt_auth", JSON.stringify({ accessToken, refreshToken, user }));
+/* ---------- AUTH PERSIST ---------- */
+function saveAuth() {
+  localStorage.setItem("wt_auth", JSON.stringify({
+    accessToken, refreshToken, user: currentUser
+  }));
 }
-function restore() {
+function restoreAuth() {
   try {
     const v = JSON.parse(localStorage.getItem("wt_auth") || "{}");
     accessToken = v.accessToken || null;
     refreshToken = v.refreshToken || null;
-    user = v.user || null;
+    currentUser = v.user || null;
   } catch {}
   updateAuthUI();
 }
-
 function updateAuthUI() {
-  if (accessToken && user) {
+  if (accessToken && currentUser) {
     hide(loginBtn);
-    setText(userName, user.display_name || user.id || "Spotify user");
+    setText(userName, currentUser.display_name || currentUser.id || "Spotify user");
     show(userBox);
     createBtn.disabled = current.tracks.length === 0;
   } else {
@@ -85,34 +94,30 @@ function updateAuthUI() {
   }
 }
 
-// ---- Auth ----
+/* ---------- LOGIN / LOGOUT ---------- */
 async function login() {
   try {
-    const res = await fetch(`${API_BASE}/login`);
-    const data = await res.json();
-    if (!data.authUrl) return showError("Login endpoint failed.");
-
-    const popup = window.open(data.authUrl, "Spotify Login", "width=520,height=720");
-    if (!popup) return showError("Popup blocked; allow popups for this site.");
+    const popup = window.open(`${API}/login`, "Spotify Login", "width=520,height=720");
+    if (!popup) return showError("Popup blocked. Allow popups for this site.");
 
     const onMsg = (e) => {
       if (e.data?.type === "SPOTIFY_AUTH_SUCCESS") {
         accessToken = e.data.token;
         refreshToken = e.data.refreshToken || null;
-        user = e.data.user;
-        persist();
+        currentUser  = e.data.user;
+        saveAuth();
         updateAuthUI();
         window.removeEventListener("message", onMsg);
-        popup.close();
-        showNotice("Logged in with Spotify");
+        try { popup.close(); } catch {}
+        showNotice("Logged in to Spotify");
       } else if (e.data?.error) {
         showError("Spotify auth failed: " + e.data.error);
         window.removeEventListener("message", onMsg);
-        popup.close();
+        try { popup.close(); } catch {}
       }
     };
     window.addEventListener("message", onMsg);
-  } catch (e) {
+  } catch {
     showError("Login failed.");
   }
 }
@@ -120,32 +125,44 @@ async function login() {
 function logout() {
   accessToken = null;
   refreshToken = null;
-  user = null;
+  currentUser = null;
   localStorage.removeItem("wt_auth");
   updateAuthUI();
   showNotice("Logged out");
 }
 
-// ---- Weather → Mood ----
-async function fetchWeatherAndMood(city, language) {
-  const res = await fetch(`${API_BASE}/weather-playlist`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ location: city, language })
-  });
-  if (!res.ok) throw new Error("Weather/mood failed");
-  return res.json(); // { weather, mood, language }
+/* ---------- WEATHER + MOOD ---------- */
+// Map WeatherAPI condition text → simple mood buckets
+function deriveMood(conditionText) {
+  const c = (conditionText || "").toLowerCase();
+  if (c.includes("storm") || c.includes("thunder")) return "intense";
+  if (c.includes("rain") || c.includes("drizzle"))  return "cozy";
+  if (c.includes("sun")  || c.includes("clear"))    return "upbeat";
+  if (c.includes("snow"))                           return "calm";
+  if (c.includes("fog")  || c.includes("mist"))     return "mysterious";
+  if (c.includes("cloud"))                          return "balanced";
+  return "relaxed";
 }
 
-function renderWeather(w, mood, language) {
-  setText(wText, w.text);
-  setText(wTemp, Math.round(w.temp));
+async function fetchWeather(city) {
+  const r = await fetch(`${API}/weather`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ location: city })
+  });
+  if (!r.ok) throw new Error("Weather fetch failed");
+  return r.json();
+}
+
+function renderWeatherUI(w, mood, language) {
+  setText(wText, w?.current?.condition?.text || "—");
+  setText(wTemp, Math.round(w?.current?.temp_c ?? 0));
   setText(moodEl, mood);
   setText(langEl, language);
   show(weatherBox);
 }
 
-// ---- Tracks ----
+/* ---------- TRACKS ---------- */
 function renderTracks(list) {
   tracksUl.innerHTML = "";
   if (!list || !list.length) {
@@ -158,46 +175,48 @@ function renderTracks(list) {
     tracksUl.appendChild(li);
   });
   show(tracksCard);
-  createBtn.disabled = !(accessToken && user && list.length);
+  createBtn.disabled = !(accessToken && currentUser && list.length);
 }
 
-async function fetchTracks(language, mood) {
-  const res = await fetch(`${API_BASE}/get-tracks`, {
+async function getTracks(language, mood) {
+  // Back-end currently requires token + language; mood is extra (harmless).
+  const r = await fetch(`${API}/get-tracks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language, mood, token: auth.accessToken })
+    body: JSON.stringify({ language, mood, token: accessToken })
   });
-  if (res.status === 401) throw new Error("Spotify login required");
-  if (!res.ok) throw new Error("Track fetch failed");
-  const data = await res.json();
+  if (r.status === 401) throw new Error("Login to Spotify first.");
+  if (!r.ok) throw new Error("Track fetch failed");
+  const data = await r.json();
   return data.tracks || [];
 }
 
-// ---- Create Playlist ----
+/* ---------- CREATE PLAYLIST ---------- */
 async function createPlaylist() {
   try {
-    if (!accessToken || !user) return showError("Login to Spotify first.");
+    if (!accessToken || !currentUser) return showError("Login to Spotify first.");
     if (!current.tracks.length) return showError("No tracks to add.");
 
     createBtn.disabled = true;
+    const origText = createBtn.textContent;
     createBtn.textContent = "Creating…";
 
     const uris = current.tracks.slice(0, 35).map(t => t.uri).filter(Boolean);
 
-    const res = await fetch(`${API_BASE}/create-playlist`, {
+    const r = await fetch(`${API}/create-playlist`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         token: accessToken,
-        userId: user.id,
+        userId: currentUser.id,
         tracks: uris,
         mood: current.mood
       })
     });
 
-    const data = await res.json();
-    if (!res.ok || !data.url) throw new Error("Playlist create failed");
-    playlistLink.href = data.url;
+    const data = await r.json();
+    if (!r.ok || !data.playlist) throw new Error("Playlist creation failed");
+    playlistLink.href = data.playlist;
     show(createdBox);
     createBtn.textContent = "Playlist Created ✅";
   } catch (e) {
@@ -207,37 +226,40 @@ async function createPlaylist() {
   }
 }
 
-// ---- Main flow ----
-async function go() {
+/* ---------- MAIN ACTION ---------- */
+async function handleGo() {
   try {
     hide(createdBox);
     hide(errorBox);
-    startLoading("Getting weather & mood…");
+
+    if (!accessToken || !currentUser) return showError("Please login with Spotify first.");
 
     current.city = (cityInp.value || "").trim();
     current.language = (langSel.value || "english").toLowerCase();
-    if (!current.city) { stopLoading(); return showError("Enter a city"); }
+    if (!current.city) return showError("Enter a city");
 
-    // 1) Weather + mood
-    const wm = await fetchWeatherAndMood(current.city, current.language);
-    renderWeather(
-      { text: wm.weather.text, temp: wm.weather.temp },
-      wm.mood,
-      wm.language
-    );
-    current.mood = wm.mood;
+    // 1) Weather → mood
+    startLoading("Getting weather…");
+    const weatherJson = await fetchWeather(current.city);
+    const conditionText = weatherJson?.current?.condition?.text || "";
+    current.mood = deriveMood(conditionText);
+    current.weather = weatherJson;
+    renderWeatherUI(weatherJson, current.mood, current.language);
 
     // 2) Tracks
     startLoading("Finding songs on Spotify…");
-    const pool = await fetchTracks(current.language, current.mood);
-    // simple shuffle
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    current.tracks = pool.slice(0, 35);
-    renderTracks(current.tracks);
+    const tracks = await getTracks(current.language, current.mood);
 
+    // If backend returns empty (rare), make a second pass with looser language
+    if (!tracks.length && current.language !== "english") {
+      showNotice("No exact matches — trying a broader search.");
+      const fallback = await getTracks("english", current.mood);
+      current.tracks = fallback;
+    } else {
+      current.tracks = tracks;
+    }
+
+    renderTracks(current.tracks);
     stopLoading();
   } catch (e) {
     stopLoading();
@@ -245,13 +267,12 @@ async function go() {
   }
 }
 
-// ---- Events ----
+/* ---------- EVENTS ---------- */
 loginBtn.addEventListener("click", login);
 logoutBtn.addEventListener("click", logout);
-goBtn.addEventListener("click", go);
-cityInp.addEventListener("keypress", (e) => e.key === "Enter" && go());
+goBtn.addEventListener("click", handleGo);
+cityInp.addEventListener("keypress", (e) => e.key === "Enter" && handleGo());
 createBtn.addEventListener("click", createPlaylist);
 
-// ---- Init ----
-restore();
-
+/* ---------- INIT ---------- */
+restoreAuth();
