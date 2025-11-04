@@ -1,10 +1,26 @@
-export default async function handler(req, res) {
-  const redirect = process.env.NEXTAUTH_URL + "/api/callback";
-  const scope = "playlist-modify-private playlist-modify-public user-read-email";
+export const config = {
+  runtime: "edge",
+};
 
-  const url = `https://accounts.spotify.com/authorize?response_type=code&client_id=${process.env.SPOTIFY_CLIENT_ID}&scope=${encodeURIComponent(
-    scope
-  )}&redirect_uri=${encodeURIComponent(redirect)}`;
+export default async function handler() {
+  const client_id = process.env.SPOTIFY_CLIENT_ID;
+  const redirect_uri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/callback`;
 
-  res.redirect(url);
+  const scope = [
+    "user-read-email",
+    "playlist-modify-private",
+    "playlist-modify-public",
+    "user-read-private"
+  ].join(" ");
+
+  const authUrl = 
+    `https://accounts.spotify.com/authorize?` +
+    `client_id=${client_id}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
+    `&scope=${encodeURIComponent(scope)}`;
+
+  return new Response(JSON.stringify({ authUrl }), {
+    headers: { "Content-Type": "application/json" },
+  });
 }
