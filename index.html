@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WeatherTunes</title>
-   <link rel="stylesheet" href="styles.css">
   <style>
     :root { color-scheme: dark; }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#111; color:#eee; }
@@ -24,6 +23,10 @@
     .error { background:#2a1313; border:1px solid #6d2a2a; color:#ffdada; padding:10px 12px; border-radius:10px; margin:10px 0; }
     .success { background:#13301e; border:1px solid #2e6d48; color:#cff5dd; padding:10px 12px; border-radius:10px; margin:10px 0; }
     .pill { display:inline-block; background:#202020; border:1px solid #2f2f2f; padding:4px 8px; border-radius:999px; font-size:12px; margin-right:6px; }
+    /* Mood dropdown hover/focus polish */
+    #moodSelect { transition: border-color .2s, background .2s; }
+    #moodSelect:hover { border-color:#3a3a3a; }
+    #moodSelect:focus { border-color:#1db954; background:#181818; }
   </style>
 </head>
 <body>
@@ -57,9 +60,29 @@
           <option value="italian">Italian</option>
           <option value="chinese">Chinese</option>
         </select>
+
+        <!-- ✅ Mood dropdown added -->
+        <select id="moodSelect" title="Pick a mood">
+          <option value="balanced" selected>🌤️ Balanced</option>
+          <option value="relaxed">😌 Relaxed</option>
+          <option value="cozy">☕ Cozy</option>
+          <option value="upbeat">😎 Upbeat</option>
+          <option value="romantic">❤️ Romantic</option>
+          <option value="party">🎉 Party</option>
+          <option value="workout">💪 Workout</option>
+          <option value="focus">🧠 Focus</option>
+          <option value="sleep">😴 Sleep</option>
+          <option value="energetic">⚡ Energetic</option>
+          <option value="intense">🔥 Intense</option>
+          <option value="tropical">🌴 Tropical</option>
+          <option value="mysterious">🌫️ Mysterious</option>
+        </select>
+
         <button id="goBtn">Get Weather & Songs</button>
       </div>
+
       <div id="loading" class="muted hidden">Loading…</div>
+
       <div id="weather" class="hidden">
         <div><strong>Weather:</strong> <span id="wText"></span></div>
         <div><strong>Temp:</strong> <span id="wTemp"></span> °C</div>
