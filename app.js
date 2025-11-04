@@ -142,32 +142,19 @@ function updateAuthUI() {
 // ----------------------------- AUTH ------------------------------
 async function loginSpotify() {
   try {
-    const r = await fetch(`${API_BASE}/login`);
-    // If /api/login responds with JSON {authUrl}, use that; if it redirects, open its URL directly
-    if (r.redirected) {
-      window.open(r.url, "Spotify Login", "width=520,height=720");
+    const res = await fetch("/api/login");
+    const data = await res.json();
+    
+    if (!data.authUrl) {
+      console.error("No authUrl from backend", data);
+      alert("Backend auth error");
       return;
     }
-    const data = await r.json().catch(() => ({}));
-    const authUrl = data.authUrl || `${API_BASE}/login`;
-    const popup = window.open(authUrl, "Spotify Login", "width=520,height=720");
-    if (!popup) return showError("Popup blocked. Please allow popups for this site.");
 
-    const listener = (e) => {
-      if (e.data?.type === "SPOTIFY_AUTH_SUCCESS") {
-        spotifyToken = e.data.token;
-        spotifyRefresh = e.data.refreshToken;
-        user = e.data.user;
-        persistAuth();
-        updateAuthUI();
-        window.removeEventListener("message", listener);
-        popup.close();
-      }
-    };
-    window.addEventListener("message", listener);
+    window.open(data.authUrl, "Spotify Login", "width=500,height=700");
   } catch (e) {
-    console.error(e);
-    showError("Spotify login failed.");
+    console.error("Login error:", e);
+    alert("Failed to reach login server");
   }
 }
 
@@ -407,3 +394,4 @@ createPlaylistBtn?.addEventListener("click", createPlaylist);
 
 // ----------------------------- INIT -----------------------------
 restoreAuth();
+
