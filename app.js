@@ -134,11 +134,12 @@ async function getTracksFromSpotify(mood, lang) {
 async function createPlaylist() {
   try {
     if (!spotifyToken || !user) {
-      showError("Login first");
+      alert("Please login first");
       return;
     }
+
     if (!cachedTracks.length) {
-      showError("No songs generated yet");
+      alert("No tracks generated yet");
       return;
     }
 
@@ -146,7 +147,7 @@ async function createPlaylist() {
     createPlaylistBtn.innerText = "Creating...";
 
     // 1️⃣ Create playlist
-    const res = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
+    const plRes = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${spotifyToken}`,
@@ -159,36 +160,46 @@ async function createPlaylist() {
       })
     });
 
-    const pl = await res.json();
-    if (!pl.id) throw new Error("Playlist create error");
+    const playlist = await plRes.json();
+    if (!playlist.id) throw new Error("Playlist create failed");
 
-    // 2️⃣ Add tracks
-    const uris = cachedTracks.map(s => s.uri);
-    await fetch(`https://api.spotify.com/v1/playlists/${pl.id}/tracks`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${spotifyToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ uris })
-    });
+    // 2️⃣ Prepare URIs
+    let uris = cachedTracks.map(s => s.uri).filter(Boolean);
+    if (!uris.length) throw new Error("No valid songs found");
 
-    // 3️⃣ ✅ Show link & success UI
-    playlistLink.href = pl.external_urls.spotify;
+    // 2.5 ✅ Add in batches of 20
+    for (let i = 0; i < uris.length; i += 20) {
+      const chunk = uris.slice(i, i + 20);
+      const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${spotifyToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ uris: chunk })
+      });
+
+      // token expired? refresh & retry
+      if (addRes.status === 401) {
+        await refreshToken();
+        return createPlaylist();
+      }
+    }
+
+    // ✅ Show link
+    playlistLink.href = playlist.external_urls.spotify;
     playlistLink.textContent = "✅ Open Playlist on Spotify";
     playlistLink.classList.remove("hidden");
 
     createPlaylistBtn.innerText = "Playlist Created ✅";
   } catch (err) {
     console.error(err);
-    showError("Failed to create playlist");
+    alert("Playlist error: " + err.message);
   } finally {
     createPlaylistBtn.disabled = false;
   }
 }
-function showError(msg) {
-  alert(msg);
-}
+
 
 // EVENTS
 loginBtn.onclick = loginSpotify;
@@ -196,4 +207,5 @@ searchBtn.onclick = handleSearch;
 createPlaylistBtn.onclick = createPlaylist;
 
 restoreAuth();
+
 
