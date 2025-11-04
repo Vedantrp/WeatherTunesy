@@ -1,185 +1,214 @@
-console.log("WeatherTunes app loaded ✅");
+console.log("WeatherTunes loaded ✅");
 
-// ========= CONFIG =========
-const API_BASE = "https://weather-tunes-kappa.vercel.app/api"; // change ONLY if your domain changes
+const API_BASE = ""; // same domain deployment
 
-let accessToken = localStorage.getItem("spotifyAccessToken");
-let refreshToken = localStorage.getItem("spotifyRefreshToken");
-let user = JSON.parse(localStorage.getItem("spotifyUser") || "null");
-
-// ========= DOM =========
+// ----------------------------------------------
+// DOM
+// ----------------------------------------------
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
-const userBox = document.getElementById("userBox");
+const userInfo = document.getElementById("userInfo");
 const userName = document.getElementById("userName");
 
-const cityInput = document.getElementById("city");
-const langSelect = document.getElementById("language");
-const goBtn = document.getElementById("goBtn");
-
-const weatherBox = document.getElementById("weather");
-const wText = document.getElementById("wText");
-const wTemp = document.getElementById("wTemp");
-const moodSpan = document.getElementById("mood");
-const langSpan = document.getElementById("lang");
-
-const tracksCard = document.getElementById("tracksCard");
-const tracksList = document.getElementById("tracks");
-const createBtn = document.getElementById("createBtn");
-
-const loading = document.getElementById("loading");
+const locationInput = document.getElementById("locationInput");
+const languageSelect = document.getElementById("languageSelect");
+const searchBtn = document.getElementById("searchBtn");
+const weatherCard = document.getElementById("weatherCard");
+const playlistCard = document.getElementById("playlistCard");
 const errorBox = document.getElementById("error");
-const notice = document.getElementById("notice");
 
-const createdBox = document.getElementById("createdBox");
+const createPlaylistBtn = document.getElementById("createPlaylistBtn");
 const playlistLink = document.getElementById("playlistLink");
+const createdPlaylist = document.getElementById("createdPlaylist");
+const aiSongList = document.getElementById("aiSongList");
 
-// ========= UI helpers =========
+// ----------------------------------------------
+// State
+// ----------------------------------------------
+let token = null;
+let refreshToken = null;
+let currentUser = null;
+let currentTracks = [];
+let currentMood = "relaxed";
+
+// ----------------------------------------------
+// UI Helpers
+// ----------------------------------------------
 function showError(msg) {
-  errorBox.innerText = msg;
+  errorBox.textContent = msg;
   errorBox.classList.remove("hidden");
   setTimeout(() => errorBox.classList.add("hidden"), 4000);
 }
 
-function showLoad(b) { b ? loading.classList.remove("hidden") : loading.classList.add("hidden"); }
-
-function updateUI() {
-  if (accessToken) {
-    loginBtn.classList.add("hidden");
-    userBox.classList.remove("hidden");
-    userName.innerText = user?.display_name || user?.id;
-  } else {
-    loginBtn.classList.remove("hidden");
-    userBox.classList.add("hidden");
-  }
+function showWeatherCard() {
+  weatherCard.classList.remove("hidden");
+  playlistCard.classList.remove("hidden");
 }
-updateUI();
 
-// ========= Spotify Login =========
-loginBtn.onclick = async () => {
-  const res = await fetch(`${API_BASE}/login`);
-  const data = await res.json();
-  const popup = window.open(data.authUrl, "_blank", "width=500,height=650");
+function hideAll() {
+  weatherCard.classList.add("hidden");
+  playlistCard.classList.add("hidden");
+}
 
-  window.addEventListener("message", (e) => {
-    if (e.data.type === "SPOTIFY_AUTH_SUCCESS") {
-      accessToken = e.data.token;
-      refreshToken = e.data.refreshToken;
-      user = e.data.user;
+// ----------------------------------------------
+// Auth UI
+// ----------------------------------------------
+function updateAuthUI() {
+  if (!token || !currentUser) {
+    loginBtn.classList.remove("hidden");
+    userInfo.classList.add("hidden");
+    return;
+  }
+  loginBtn.classList.add("hidden");
+  userInfo.classList.remove("hidden");
+  userName.textContent = `Hi, ${currentUser.display_name || currentUser.id}`;
+}
 
-      localStorage.setItem("spotifyAccessToken", accessToken);
+// Restore login
+(function restoreAuth() {
+  token = localStorage.getItem("spotifyAccessToken");
+  refreshToken = localStorage.getItem("spotifyRefreshToken");
+  const usr = localStorage.getItem("spotifyUser");
+  if (usr) currentUser = JSON.parse(usr);
+  updateAuthUI();
+})();
+
+// ----------------------------------------------
+// Login click
+// ----------------------------------------------
+loginBtn.onclick = () => {
+  const popup = window.open("/api/login", "Login", "width=500,height=700");
+
+  window.addEventListener("message", (event) => {
+    if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
+      token = event.data.accessToken;
+      refreshToken = event.data.refreshToken;
+      currentUser = event.data.user;
+
+      localStorage.setItem("spotifyAccessToken", token);
       localStorage.setItem("spotifyRefreshToken", refreshToken);
-      localStorage.setItem("spotifyUser", JSON.stringify(user));
+      localStorage.setItem("spotifyUser", JSON.stringify(currentUser));
 
-      popup.close();
-      updateUI();
+      updateAuthUI();
+      popup?.close();
     }
   });
 };
 
+// ----------------------------------------------
+// Logout
+// ----------------------------------------------
 logoutBtn.onclick = () => {
   localStorage.clear();
-  accessToken = null;
+  token = null;
   refreshToken = null;
-  location.reload();
+  currentUser = null;
+  updateAuthUI();
 };
 
-// ========= Weather to Mood =========
-function moodFromWeather(desc) {
-  desc = desc.toLowerCase();
-  if (desc.includes("rain") || desc.includes("drizzle")) return "cozy";
-  if (desc.includes("sun") || desc.includes("clear")) return "upbeat";
-  if (desc.includes("cloud")) return "relaxed";
-  if (desc.includes("snow")) return "calm";
-  return "balanced";
-}
+// ----------------------------------------------
+// Weather API
+// ----------------------------------------------
+async function fetchWeather(city) {
+  const key = "6e3de95261eb4f89a17172124250211"; // FREE demo key weatherapi.com
+  const url = `https://api.weatherapi.com/v1/current.json?key=${key}&q=${city}&aqi=no`;
 
-// ========= Search Tracks =========
-async function getTracks(mood, language) {
-  if (!accessToken) throw new Error("Login first");
-  const res = await fetch(`${API_BASE}/get-tracks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mood, language, token: accessToken })
-  });
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Weather not found");
   return res.json();
 }
 
-// ========= Create Spotify Playlist =========
-async function createPlaylist(tracks) {
-  createBtn.innerText = "Creating...";
-  createBtn.disabled = true;
-
-  const res = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: "WeatherTunes Mix",
-      description: "Auto-generated weather mix",
-      public: false
-    })
-  });
-
-  const playlist = await res.json();
-  if (!playlist.id) throw new Error("Playlist create failed");
-
-  const uris = tracks.map(t => t.uri);
-  await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ uris })
-  });
-
-  playlistLink.href = playlist.external_urls.spotify;
-  createdBox.classList.remove("hidden");
-  createBtn.innerText = "Done ✅";
+function getMoodByWeather(temp, condition) {
+  if (condition.includes("rain")) return "cozy";
+  if (temp < 10) return "calm";
+  if (temp > 32) return "tropical";
+  if (condition.includes("cloud")) return "relaxed";
+  return "upbeat";
 }
 
-// ========= Weather + Track flow =========
-goBtn.onclick = async () => {
-  let city = cityInput.value.trim();
-  let language = langSelect.value;
+// ----------------------------------------------
+// Track Fetch
+// ----------------------------------------------
+async function getTracks(language, mood) {
+  const res = await fetch("/api/get-tracks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ language, mood, token })
+  });
 
-  if (!city) return showError("Enter city");
+  const data = await res.json();
+  return data.tracks || [];
+}
 
-  showLoad(true);
-  createdBox.classList.add("hidden");
-  tracksCard.classList.add("hidden");
+function renderTracks(tracks) {
+  aiSongList.innerHTML = "";
+  tracks.forEach((t, idx) => {
+    const li = document.createElement("li");
+    li.textContent = `${idx + 1}. ${t.name} — ${t.artist}`;
+    li.className = "track-item";
+    aiSongList.appendChild(li);
+  });
+}
+
+// ----------------------------------------------
+// Search+Playlist Flow
+// ----------------------------------------------
+async function handleSearch() {
+  const city = locationInput.value.trim();
+  const language = languageSelect.value;
+
+  if (!city) return showError("Enter a city");
+
+  hideAll();
+  showError("Loading...");
 
   try {
-    const res = await fetch(`${API_BASE}/weather?city=${city}`);
-    const weather = await res.json();
+    const w = await fetchWeather(city);
 
-    const mood = moodFromWeather(weather.condition);
+    const temp = w.current.temp_c;
+    const cond = w.current.condition.text.toLowerCase();
+    currentMood = getMoodByWeather(temp, cond);
 
-    wText.innerText = weather.condition;
-    wTemp.innerText = weather.temp;
-    moodSpan.innerText = mood;
-    langSpan.innerText = language;
-    weatherBox.classList.remove("hidden");
+    const tracks = await getTracks(language, currentMood);
+    currentTracks = tracks;
 
-    const data = await getTracks(mood, language);
-    if (!data.tracks.length) {
-      tracksList.innerHTML = "<li>No songs found</li>";
-      tracksCard.classList.remove("hidden");
+    if (!tracks.length) {
+      showError("No songs found for this language & weather");
       return;
     }
 
-    tracksList.innerHTML = "";
-    data.tracks.forEach(t => {
-      const li = document.createElement("li");
-      li.innerText = `${t.name} — ${t.artist}`;
-      tracksList.appendChild(li);
-    });
-
-    tracksCard.classList.remove("hidden");
-    createBtn.disabled = false;
-    createBtn.innerText = "Create Playlist";
-
-    createBtn.onclick = () => createPlaylist(data.tracks);
-  } catch (err) {
-    showError(err.message);
+    renderTracks(tracks);
+    showWeatherCard();
+    errorBox.classList.add("hidden");
+  } catch (e) {
+    showError("Error loading results");
   }
+}
 
-  showLoad(false);
-};
+searchBtn.onclick = handleSearch;
+
+// ----------------------------------------------
+// Create Playlist
+// ----------------------------------------------
+async function createPlaylist() {
+  if (!token) return showError("Login first");
+  if (!currentTracks.length) return showError("Search first");
+
+  const res = await fetch("/api/create-playlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      token,
+      tracks: currentTracks.map(t => t.uri),
+      mood: currentMood
+    })
+  });
+
+  const data = await res.json();
+  if (!data.url) return showError("Playlist failed");
+
+  playlistLink.href = data.url;
+  createdPlaylist.classList.remove("hidden");
+}
+
+createPlaylistBtn.onclick = createPlaylist;
