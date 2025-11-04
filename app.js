@@ -1,230 +1,356 @@
-console.log("WeatherTunes loaded ✅");
+/* WeatherTunes – Final Frontend
+ * - Spotify-only, no AI
+ * - Strict language filtering via /api/get-tracks
+ * - 35 tracks minimum (shuffled, de-duped)
+ * - Playlist link always shown after add
+ */
 
-// API base URL
-const API = window.location.hostname.includes("localhost")
-  ? "http://localhost:3000/api"
-  : "https://weather-tunes-kappa.vercel.app/api";
+const API_BASE =
+  location.hostname.includes("localhost")
+    ? "http://localhost:3000/api"
+    : `${location.origin}/api`;
+
+const WEATHER_KEY = "b15d294bfca84397a5682344252410";
+const PLAYLIST_SIZE = 35;
 
 // STATE
 let spotifyToken = null;
 let spotifyRefresh = null;
 let user = null;
-let moodData = null;
 let cachedTracks = [];
+let currentMood = "relaxed";
+let currentLanguage = "english";
+let currentCity = "";
 
 // DOM
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
-const searchBtn = document.getElementById("searchBtn");
-const createPlaylistBtn = document.getElementById("createPlaylistBtn");
-const playlistLink = document.getElementById("playlistLink");
-const aiSongList = document.getElementById("aiSongList");
-const aiSection = document.getElementById("aiPlaylistSection");
+const userInfo = document.getElementById("userInfo");
+const userName = document.getElementById("userName");
 
+const locationInput = document.getElementById("locationInput");
+const languageSelect = document.getElementById("languageSelect");
+const searchBtn = document.getElementById("searchBtn");
+
+const loading = document.getElementById("loading");
+const errorBox = document.getElementById("error");
+
+const weatherCard = document.getElementById("weatherCard");
 const cityName = document.getElementById("cityName");
+const dateTime = document.getElementById("dateTime");
 const temperature = document.getElementById("temperature");
 const weatherDescription = document.getElementById("weatherDescription");
-const weatherCard = document.getElementById("weatherCard");
+const weatherIcon = document.getElementById("weatherIcon");
+const feelsLike = document.getElementById("feelsLike");
+const humidity = document.getElementById("humidity");
+const windSpeed = document.getElementById("windSpeed");
+
 const playlistCard = document.getElementById("playlistCard");
 const moodType = document.getElementById("moodType");
+const playlistSuggestion = document.getElementById("playlistSuggestion");
+const genreTags = document.getElementById("genreTags");
+const aiPlaylistSection = document.getElementById("aiPlaylistSection");
+const aiSongList = document.getElementById("aiSongList");
 
-// 🔥 MOOD MAPPING
-function moodForWeather(w) {
-  w = w.toLowerCase();
-  if (w.includes("rain")) return "cozy";
-  if (w.includes("sun") || w.includes("clear")) return "happy";
-  if (w.includes("cloud")) return "relaxed";
-  if (w.includes("storm")) return "energetic";
-  if (w.includes("snow")) return "calm";
-  return "chill";
+const createPlaylistBtn = document.getElementById("createPlaylistBtn");
+const createPlaylistText = document.getElementById("createPlaylistText");
+const playlistLink = document.getElementById("playlistLink");
+const createdPlaylist = document.getElementById("createdPlaylist");
+const openSpotifyBtn = document.getElementById("openSpotifyBtn");
+
+// Helpers
+const show = (el) => el && el.classList && el.classList.remove("hidden");
+const hide = (el) => el && el.classList && el.classList.add("hidden");
+function showError(msg) { if (!errorBox) return; errorBox.textContent = msg; show(errorBox); setTimeout(()=>hide(errorBox), 6000); }
+function showLoading(text="Loading…"){ if (!loading) return; loading.innerHTML = `<div class="spinner"></div><p>${text}</p>`; show(loading); }
+function hideLoading(){ hide(loading); }
+
+function formatDateTime(str){
+  const d = new Date((str||"").replace(" ", "T"));
+  return d.toLocaleString(undefined, {weekday:"short", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
 }
 
-// ✅ LOGIN
-async function loginSpotify() {
-  const r = await fetch(`${API}/login`);
-  const { authUrl } = await r.json();
-  window.open(authUrl, "login", "width=500,height=700");
+function mapMood(condition, tempC, isDay, windKph){
+  const c = (condition||"").toLowerCase();
+  if (c.includes("thunder") || c.includes("storm")) return "intense";
+  if (c.includes("rain") || c.includes("drizzle")) return "cozy";
+  if (c.includes("snow") || tempC <= 10) return "winter";
+  if (c.includes("mist") || c.includes("fog")) return "mysterious";
+  if (c.includes("sun") || c.includes("clear")) return isDay ? "upbeat" : "relaxed";
+  if (c.includes("cloud")) return "relaxed";
+  if (tempC >= 32) return "tropical";
+  if (windKph >= 30) return "energetic";
+  return "balanced";
 }
 
-window.addEventListener("message", (e) => {
-  if (e.data.type === "SPOTIFY_AUTH_SUCCESS") {
-    spotifyToken = e.data.token;
-    spotifyRefresh = e.data.refreshToken;
-    user = e.data.user;
-    localStorage.setItem("spotify", JSON.stringify({ spotifyToken, spotifyRefresh, user }));
-    updateAuth();
-  }
-});
-async function fetchTracksForMood(language, mood) {
-  const res = await fetch(`${API_BASE_URL}/get-tracks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      language,
-      mood,
-      token: spotifyAccessToken
-    })
-  });
-
- // instead of calling fetchAiPlaylist
-const tracks = await fetchTracksForMood(currentLanguage, data.mood);
-
-// pick first 35
-cachedAiSongs = tracks.slice(0, 35);
-
-}
-
-function restoreAuth() {
-  const x = localStorage.getItem("spotify");
-  if (!x) return;
-  const s = JSON.parse(x);
-  spotifyToken = s.spotifyToken;
-  spotifyRefresh = s.spotifyRefresh;
-  user = s.user;
-  updateAuth();
-}
-
-function updateAuth() {
-  if (spotifyToken && user) {
-    loginBtn.classList.add("hidden");
-    logoutBtn.classList.remove("hidden");
-  }
-}
-
-logoutBtn.onclick = () => {
-  localStorage.clear();
-  location.reload();
-};
-
-// ✅ WEATHER + SONGS
-async function handleSearch() {
-  const q = document.getElementById("locationInput").value;
-  const lang = document.getElementById("languageSelect").value;
-
-  const w = await fetch(`https://api.weatherapi.com/v1/current.json?key=b15d294bfca84397a5682344252410&q=${q}`);
-  const data = await w.json();
-
-  const weather = data.current.condition.text;
-  cityName.textContent = q;
-  temperature.textContent = data.current.temp_c + "°C";
-  weatherDescription.textContent = weather;
-  weatherCard.classList.remove("hidden");
-
-  const mood = moodForWeather(weather);
-  moodType.textContent = mood;
-  playlistCard.classList.remove("hidden");
-
-  // ✅ fetch tracks from Spotify
-  await getTracksFromSpotify(mood, lang);
-}
-
-// ✅ GET TRACKS FROM SPOTIFY
-async function getTracksFromSpotify(mood, lang) {
-  cachedTracks = [];
-  aiSongList.innerHTML = "";
-  aiSection.classList.remove("hidden");
-
-  const query = `${mood} ${lang} playlist`;
-
-  const r = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=50`, {
-    headers: { Authorization: `Bearer ${spotifyToken}` },
-  });
-
-  const json = await r.json();
-  const items = json.tracks?.items || [];
-
-  cachedTracks = items.slice(0, 35).map(t => ({
-    title: t.name,
-    artist: t.artists[0].name,
-    uri: t.uri
-  }));
-
-  for (let s of cachedTracks) {
-    const li = document.createElement("li");
-    li.innerText = `${s.title} — ${s.artist}`;
-    aiSongList.appendChild(li);
-  }
-
-  createPlaylistBtn.disabled = false;
-}
-
-// ✅ CREATE SPOTIFY PLAYLIST
-async function createPlaylist() {
+// Auth
+function persistAuth(){ localStorage.setItem("spotify", JSON.stringify({spotifyToken, spotifyRefresh, user})); }
+function restoreAuth(){
   try {
-    if (!spotifyToken || !user) {
-      alert("Please login first");
-      return;
+    const raw = localStorage.getItem("spotify");
+    if (!raw) return;
+    const v = JSON.parse(raw);
+    spotifyToken = v.spotifyToken;
+    spotifyRefresh = v.spotifyRefresh;
+    user = v.user;
+  } catch {}
+  updateAuthUI();
+}
+function updateAuthUI(){
+  if (spotifyToken && user) {
+    hide(loginBtn);
+    show(userInfo);
+    userName.textContent = `Logged in as ${user.display_name || user.id}`;
+    if (cachedTracks.length) {
+      createPlaylistBtn.disabled = false;
+      createPlaylistText.textContent = "Create Playlist";
     }
+  } else {
+    show(loginBtn);
+    hide(userInfo);
+    createPlaylistBtn.disabled = true;
+    createPlaylistText.textContent = "Login to Create";
+  }
+}
+async function loginSpotify(){
+  try {
+    const r = await fetch(`${API_BASE}/login`);
+    const { authUrl } = await r.json();
+    const popup = window.open(authUrl, "Spotify Login", "width=520,height=720");
+    if (!popup) return showError("Popup blocked. Allow popups.");
+    const listener = (e)=>{
+      if (e.data?.type === "SPOTIFY_AUTH_SUCCESS"){
+        spotifyToken = e.data.token;
+        spotifyRefresh = e.data.refreshToken;
+        user = e.data.user;
+        persistAuth();
+        updateAuthUI();
+        window.removeEventListener("message", listener);
+        popup.close();
+      }
+    };
+    window.addEventListener("message", listener);
+  } catch(e){ showError("Spotify login failed"); }
+}
+async function refreshToken(){
+  const r = await fetch(`${API_BASE}/refresh-token`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ refreshToken: spotifyRefresh })
+  });
+  const d = await r.json();
+  if (d.accessToken) {
+    spotifyToken = d.accessToken;
+    persistAuth();
+    updateAuthUI();
+  }
+}
+function logout(){ localStorage.clear(); location.reload(); }
 
-    if (!cachedTracks.length) {
-      alert("No tracks generated yet");
-      return;
+// Weather fetch + UI
+async function fetchWeather(city){
+  const r = await fetch(`https://api.weatherapi.com/v1/current.json?key=${WEATHER_KEY}&q=${encodeURIComponent(city)}&aqi=no`);
+  const d = await r.json();
+  if (d?.error) throw new Error(d.error.message || "Weather failed");
+  return d;
+}
+function displayWeather(data){
+  const { location, current } = data;
+  cityName.textContent = `${location.name}, ${location.country}`;
+  dateTime.textContent = formatDateTime(location.localtime);
+  temperature.textContent = Math.round(current.temp_c);
+  weatherDescription.textContent = current.condition.text;
+  weatherIcon.src = `https:${current.condition.icon}`;
+  weatherIcon.alt = current.condition.text;
+  feelsLike.textContent = `${Math.round(current.feelslike_c)}°C`;
+  humidity.textContent = `${current.humidity}%`;
+  windSpeed.textContent = `${current.wind_kph} km/h`;
+  show(weatherCard);
+}
+
+function displayMood(mood, language){
+  currentMood = mood;
+  currentLanguage = language;
+  moodType.textContent = mood;
+  playlistSuggestion.textContent = `WeatherTunes — ${mood} vibes in ${language}`;
+  genreTags.innerHTML = "";
+  show(playlistCard);
+}
+
+function renderTracks(list){
+  aiSongList.innerHTML = "";
+  if (!list || !list.length) {
+    hide(aiPlaylistSection);
+    createPlaylistBtn.disabled = true;
+    createPlaylistText.textContent = "No songs found";
+    return;
+  }
+  list.forEach((t, i)=>{
+    const li = document.createElement("li");
+    li.className = "ai-song-item hover:bg-gray-800 px-3 py-1 rounded-lg transition";
+    li.textContent = `${i+1}. ${t.name} — ${t.artist}`;
+    aiSongList.appendChild(li);
+  });
+  show(aiPlaylistSection);
+  if (spotifyToken && user) {
+    createPlaylistBtn.disabled = false;
+    createPlaylistText.textContent = "Create Playlist";
+  }
+}
+
+// Get tracks from server (language-strict)
+async function getTracks(language, mood){
+  const r = await fetch(`${API_BASE}/get-tracks`, {
+    method:"POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ language, mood, token: spotifyToken })
+  });
+  // If token expired, refresh once
+  if (r.status === 401) {
+    await refreshToken();
+    const r2 = await fetch(`${API_BASE}/get-tracks`, {
+      method:"POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ language, mood, token: spotifyToken })
+    });
+    const d2 = await r2.json();
+    return d2.tracks || [];
+  }
+  const d = await r.json();
+  return d.tracks || [];
+}
+
+function pick35Unique(arr){
+  const seen = new Set();
+  const out = [];
+  for (let i = 0; i < arr.length; i++) {
+    const t = arr[i];
+    if (t.id && !seen.has(t.id)) {
+      seen.add(t.id);
+      out.push(t);
     }
+    if (out.length >= PLAYLIST_SIZE) break;
+  }
+  // if still less, just fill
+  if (out.length < PLAYLIST_SIZE) {
+    for (const t of arr) {
+      if (out.length >= PLAYLIST_SIZE) break;
+      if (!out.find(x=>x.id===t.id)) out.push(t);
+    }
+  }
+  return out;
+}
+
+async function handleSearch(){
+  try {
+    hide(errorBox);
+    hide(createdPlaylist);
+    currentCity = (locationInput.value || "").trim();
+    currentLanguage = (languageSelect.value || "english").toLowerCase();
+    if (!currentCity) return showError("Enter a city");
+
+    showLoading("Fetching weather…");
+    const w = await fetchWeather(currentCity);
+    displayWeather(w);
+
+    const mood = mapMood(
+      w.current.condition.text,
+      w.current.temp_c,
+      w.current.is_day === 1,
+      w.current.wind_kph
+    );
+    displayMood(mood, currentLanguage);
+
+    showLoading("Finding songs on Spotify…");
+    const pool = await getTracks(currentLanguage, mood);
+
+    // shuffle & pick 35
+    for (let i = pool.length-1; i>0; i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    cachedTracks = pick35Unique(pool);
+    renderTracks(cachedTracks);
+  } catch(e){
+    console.error(e);
+    showError(e.message || "Something went wrong.");
+  } finally {
+    hideLoading();
+  }
+}
+
+// Playlist creation (with batching + link fix)
+async function createPlaylist(){
+  try {
+    if (!spotifyToken || !user) return showError("Login to Spotify first.");
+    if (!cachedTracks.length) return showError("No tracks to add.");
 
     createPlaylistBtn.disabled = true;
-    createPlaylistBtn.innerText = "Creating...";
+    createPlaylistText.textContent = "Creating…";
 
-    // 1️⃣ Create playlist
-    const plRes = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${spotifyToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: `WeatherTunes Mix`,
-        description: `Auto-generated weather mix`,
-        public: false
-      })
+    const name = `WeatherTunes — ${currentMood[0].toUpperCase()+currentMood.slice(1)} Mix`;
+    const desc = `Auto-generated ${currentLanguage} ${currentMood} mix for ${currentCity || "your city"}`;
+
+    // 1) Create
+    let res = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
+      method:"POST",
+      headers: { Authorization: `Bearer ${spotifyToken}`, "Content-Type":"application/json" },
+      body: JSON.stringify({ name, description: desc, public: false })
     });
 
-    const playlist = await plRes.json();
-    if (!playlist.id) throw new Error("Playlist create failed");
+    if (res.status === 401) {
+      await refreshToken();
+      res = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
+        method:"POST",
+        headers: { Authorization: `Bearer ${spotifyToken}`, "Content-Type":"application/json" },
+        body: JSON.stringify({ name, description: desc, public: false })
+      });
+    }
 
-    // 2️⃣ Prepare URIs
-    let uris = cachedTracks.map(s => s.uri).filter(Boolean);
-    if (!uris.length) throw new Error("No valid songs found");
+    const playlist = await res.json();
+    if (!playlist?.id) throw new Error("Playlist create failed.");
 
-    // 2.5 ✅ Add in batches of 20
-    for (let i = 0; i < uris.length; i += 20) {
-      const chunk = uris.slice(i, i + 20);
-      const addRes = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${spotifyToken}`,
-          "Content-Type": "application/json"
-        },
+    // 2) Add tracks in chunks of 20
+    const uris = cachedTracks.map(t=>t.uri).filter(Boolean);
+    for (let i=0; i<uris.length; i+=20) {
+      const chunk = uris.slice(i, i+20);
+      let add = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
+        method:"POST",
+        headers: { Authorization: `Bearer ${spotifyToken}`, "Content-Type":"application/json" },
         body: JSON.stringify({ uris: chunk })
       });
-
-      // token expired? refresh & retry
-      if (addRes.status === 401) {
+      if (add.status === 401) {
         await refreshToken();
-        return createPlaylist();
+        add = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
+          method:"POST",
+          headers: { Authorization: `Bearer ${spotifyToken}`, "Content-Type":"application/json" },
+          body: JSON.stringify({ uris: chunk })
+        });
       }
     }
 
-    // ✅ Show link
-    playlistLink.href = playlist.external_urls.spotify;
-    playlistLink.textContent = "✅ Open Playlist on Spotify";
-    playlistLink.classList.remove("hidden");
+    // 3) Always show link (even if images not ready yet)
+    const link = playlist?.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`;
+    playlistLink.href = link;
+    playlistLink.textContent = "Open Playlist on Spotify →";
+    show(createdPlaylist);
 
-    createPlaylistBtn.innerText = "Playlist Created ✅";
-  } catch (err) {
-    console.error(err);
-    alert("Playlist error: " + err.message);
+    createPlaylistText.textContent = "Playlist Created ✅";
+  } catch(e){
+    console.error(e);
+    showError(e.message || "Failed to create playlist.");
   } finally {
     createPlaylistBtn.disabled = false;
   }
 }
 
+// Events
+loginBtn.addEventListener("click", loginSpotify);
+logoutBtn.addEventListener("click", logout);
+searchBtn.addEventListener("click", handleSearch);
+locationInput.addEventListener("keypress", (e)=> e.key==="Enter" && handleSearch());
+createPlaylistBtn.addEventListener("click", createPlaylist);
 
-// EVENTS
-loginBtn.onclick = loginSpotify;
-searchBtn.onclick = handleSearch;
-createPlaylistBtn.onclick = createPlaylist;
-
+// Init
 restoreAuth();
-
-
-
+console.log("WeatherTunes ready.");
