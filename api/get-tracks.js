@@ -1,89 +1,131 @@
+// /api/get-tracks.js
 export default async function handler(req, res) {
-  if (req.method !== "POST")
-    return res.status(405).json({ error: "POST only" });
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   const { language = "english", mood = "relaxed", token } = req.body;
   if (!token) return res.status(401).json({ error: "Missing Spotify token" });
 
-  const langConfig = {
-    english: { market: "US", base: ["english", "pop", "indie pop"] },
-    hindi: { market: "IN", base: ["bollywood", "hindi", "arijit singh", "romantic bollywood"] },
-    punjabi: { market: "IN", base: ["punjabi", "ap dhillon", "punjabi pop"] },
-    telugu: { market: "IN", base: ["telugu", "tollywood", "telugu love"] },
-    tamil: { market: "IN", base: ["tamil", "kollywood", "tamil love"] },
-    spanish: { market: "ES", base: ["latin pop", "reggaeton", "musica latina"] },
-    korean: { market: "KR", base: ["kpop", "korean pop"] },
-    japanese: { market: "JP", base: ["jpop", "anime songs"] },
-    french: { market: "FR", base: ["french pop", "chanson"] },
-    german: { market: "DE", base: ["german pop", "deutsch rap"] },
-    italian: { market: "IT", base: ["italian pop"] },
-    chinese: { market: "HK", base: ["c-pop", "mandarin pop"] }
+  const LANG = {
+    english: { market: "US", base: ["english pop", "indie pop", "global pop"] },
+    hindi: {
+      market: "IN",
+      base: [
+        "bollywood hits",
+        "arijit singh",
+        "hindi mix",
+        "bollywood acoustic",
+        "bollywood lofi",
+        "romantic bollywood",
+        "hindi chill",
+      ],
+    },
+    punjabi: { market: "IN", base: ["punjabi hits", "ap dhillon", "punjabi vibe"] },
+    telugu: { market: "IN", base: ["telugu hits", "tollywood", "telugu love"] },
+    tamil: { market: "IN", base: ["tamil hits", "kollywood", "tamil chill"] },
+    spanish: { market: "ES", base: ["latin pop", "reggaeton hits"] },
+    korean: { market: "KR", base: ["kpop", "korean chill"] },
+    japanese: { market: "JP", base: ["jpop", "anime soundtrack"] },
   };
 
-  const moodKeywords = {
-    relaxed: ["chill", "acoustic", "calm"],
-    cozy: ["lofi", "coffeehouse", "soft"],
-    upbeat: ["happy", "party", "dance"],
-    romantic: ["romantic", "love", "valentine"],
-    party: ["party", "club", "dance"],
-    workout: ["workout", "gym"],
-    focus: ["focus", "study", "instrumental"],
-    sleep: ["sleep", "piano"],
-    mysterious: ["lofi dark", "ambient"],
-    energetic: ["edm", "boost"]
+  const MOOD = {
+    relaxed: ["lofi", "chill", "acoustic"],
+    cozy: ["lofi", "soft", "rain"],
+    romantic: ["love", "romantic", "heart", "valentine", "arijit singh"],
+    mysterious: ["lofi dark", "midnight", "ambient"],
+    party: ["party", "dance"],
+    workout: ["workout", "energy"],
+    energetic: ["boost", "edm", "dance"],
+    sleep: ["sleep", "calm", "piano"],
+    focus: ["study", "focus", "instrumental"],
   };
 
-  const conf = langConfig[language] || langConfig.english;
-  const moodList = moodKeywords[mood] || ["chill"];
+  const lang = LANG[language] || LANG.english;
+  const moods = MOOD[mood] || ["chill"];
 
   try {
     let searchTerms = [];
 
-    conf.base.forEach(b => {
-      moodList.forEach(m => searchTerms.push(`${b} ${m}`));
+    lang.base.forEach((b) => {
+      moods.forEach((m) => searchTerms.push(`${b} ${m}`));
     });
 
-    // fallback ensure we always have playlist terms
-    if (!searchTerms.length) searchTerms = conf.base;
+    // 🎯 Bollywood fallback if Hindi has low result
+    if (language === "hindi" && mood === "mysterious") {
+      searchTerms.push("bollywood lofi", "arijit singh sad", "bollywood calm");
+    }
 
-    let trackPool = [];
+    console.log("🎧 Searching Spotify for:", searchTerms);
+
+    let tracksCollected = [];
 
     for (const term of searchTerms.slice(0, 12)) {
       const q = encodeURIComponent(term);
-      const pRes = await fetch(
-        `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${conf.market}&limit=1`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      ).then(r => r.json());
+      const searchURL = `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${lang.market}&limit=1`;
 
-      const playlist = pRes?.playlists?.items?.[0];
+      const search = await fetch(searchURL, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json());
+
+      const playlist = search?.playlists?.items?.[0];
       if (!playlist) continue;
 
-      const tRes = await fetch(
-        `https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=80&market=${conf.market}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      ).then(r => r.json());
+      const tracksURL = `https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=100&market=${lang.market}`;
+      const tdata = await fetch(tracksURL, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json());
 
-      (tRes.items || []).forEach(item => {
-        const t = item.track;
-        if (!t || !t.id) return;
-        trackPool.push({
+      (tdata.items || []).forEach((it) => {
+        const t = it.track;
+        if (!t?.id) return;
+        tracksCollected.push({
           id: t.id,
           uri: t.uri,
           name: t.name,
-          artist: t.artists?.[0]?.name || "Unknown"
+          artist: t.artists?.[0]?.name || "Unknown",
         });
       });
 
-      if (trackPool.length > 150) break;
+      if (tracksCollected.length >= 200) break;
     }
 
-    // dedupe
-    const unique = Array.from(new Map(trackPool.map(t => [t.id, t])).values());
+    // ❗ minimum fallback
+    if (tracksCollected.length < 10) {
+      console.log("⚠️ Low results — using emergency Bollywood fallback");
+      const fallback = await fetch(
+        `https://api.spotify.com/v1/search?q=bollywood%20hits&type=playlist&market=IN&limit=1`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      ).then((r) => r.json());
+
+      const pls = fallback?.playlists?.items?.[0];
+      if (pls?.id) {
+        const t = await fetch(
+          `https://api.spotify.com/v1/playlists/${pls.id}/tracks?limit=100`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).then((r) => r.json());
+
+        (t.items || []).forEach((it) => {
+          const x = it.track;
+          if (!x?.id) return;
+          tracksCollected.push({
+            id: x.id,
+            uri: x.uri,
+            name: x.name,
+            artist: x.artists?.[0]?.name,
+          });
+        });
+      }
+    }
+
+    // Dedupe + shuffle
+    const unique = [...new Map(tracksCollected.map((t) => [t.id, t])).values()];
     const shuffled = unique.sort(() => Math.random() - 0.5);
 
-    return res.json({ tracks: shuffled.slice(0, 80) });
-  } catch (err) {
-    console.error("TRACK API FAIL:", err);
-    return res.status(500).json({ error: "Track fetch failed" });
+    return res.json({
+      count: shuffled.length,
+      tracks: shuffled.slice(0, 80),
+    });
+  } catch (e) {
+    console.error("🔥 Spotify fetch error", e);
+    return res.status(500).json({ error: "Spotify fetch failed" });
   }
 }
