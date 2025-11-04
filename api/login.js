@@ -1,21 +1,13 @@
-export default function handler(req, res) {
- const redirect_uri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI;
-
+export default async function handler(req, res) {
   const client_id = process.env.SPOTIFY_CLIENT_ID;
+  const redirect_uri = "https://weather-tunes-kappa.vercel.app/api/callback";
 
-  console.log("SPOTIFY LOGIN redirect ->", redirect_uri);
+  const scope =
+    "user-read-email user-read-private playlist-modify-private playlist-modify-public";
 
-  const scope = [
-    "playlist-modify-private",
-    "playlist-modify-public",
-    "user-read-email",
-    "user-read-private"
-  ].join(" ");
-
-  const authUrl =
-    `https://accounts.spotify.com/authorize?` +
-    `response_type=code` +
-    `&client_id=${client_id}` +
+  const authUrl = `https://accounts.spotify.com/authorize?` +
+    `client_id=${client_id}` +
+    `&response_type=code` +
     `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
     `&scope=${encodeURIComponent(scope)}`;
 
