@@ -1,4 +1,4 @@
-// /api/recommendations.js
+// /api/recommendations.js — FINAL STABLE VERSION
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only" });
@@ -6,38 +6,37 @@ export default async function handler(req, res) {
 
   try {
     const { language = "english", mood = "relaxed", token } = req.body;
-
     if (!token) return res.status(401).json({ error: "Missing Spotify token" });
 
     const profiles = {
       english: {
         market: "US",
-        seed_genres: ["pop", "indie-pop", "acoustic"],
-        seed_artists: ["6eUKZXaKkcviH0Ku9w2n3V","6qqNVTkY8uBg9cP3Jd7DAH","7dGJo4pcD2V6oG8kP0tJRR"], 
+        seed_genres: ["pop", "indie", "acoustic"],
+        seed_artists: ["6eUKZXaKkcviH0Ku9w2n3V","6qqNVTkY8uBg9cP3Jd7DAH","4dpARuHxo51G3z768sgnrY"],
       },
       hindi: {
         market: "IN",
-        seed_genres: ["bollywood", "indian-pop"],
-        seed_artists: ["4YRxDV8wJFPHPTeXepOstw","5f4QpKfy7ptCHwTqspnSJI","2oSONSC9zQ4UonDKnLqksx"],
+        seed_genres: ["indian", "bollywood"],
+        seed_artists: ["4YRxDV8wJFPHPTeXepOstw","5f4QpKfy7ptCHwTqspnSJI","1mYsTxnqsietFxj1OgoGbG"],
       },
       punjabi: {
         market: "IN",
         seed_genres: ["indian-pop"],
         seed_artists: ["6DARBhWbfcS8Mivm9GZwhO","7vk5e3vY1uw9plTHJAMwjN","2oBG3C7oRR4N1Ai9PZp9Kp"],
       },
-      tamil: {
-        market: "IN",
-        seed_genres: ["indian-pop"],
-        seed_artists: ["0oOet2f43PA68X5RxKobEy","2oSONSC9zQ4UonDKnLqksx"],
-      },
       telugu: {
         market: "IN",
         seed_genres: ["indian-pop"],
-        seed_artists: ["1mYsTxnqsietFxj1OgoGbG","4YRxDV8wJFPHPTeXepOstw"],
+        seed_artists: ["4YRxDV8wJFPHPTeXepOstw","1mYsTxnqsietFxj1OgoGbG"],
+      },
+      tamil: {
+        market: "IN",
+        seed_genres: ["indian-pop"],
+        seed_artists: ["2oSONSC9zQ4UonDKnLqksx","0oOet2f43PA68X5RxKobEy"],
       },
       spanish: {
         market: "ES",
-        seed_genres: ["latin","reggaeton"],
+        seed_genres: ["latin", "reggaeton"],
         seed_artists: ["7ltDVBr6mKbRvohxheJ9h1","1vyhD5VmyZ7KMfW5gqLgo5"],
       },
       korean: {
@@ -63,11 +62,11 @@ export default async function handler(req, res) {
       italian: {
         market: "IT",
         seed_genres: ["italian-pop"],
-        seed_artists: ["7xssNLuZQiwGmSjfY9ES2f","3GBPw9NK25X1Wt2OUvOwY3"],
+        seed_artists: ["3GBPw9NK25X1Wt2OUvOwY3","1Mxqyy3pSjf8kZZL4QVxS0"],
       },
       chinese: {
         market: "HK",
-        seed_genres: ["cantopop","mandopop"],
+        seed_genres: ["mandopop","cantopop"],
         seed_artists: ["5DRnlm8gxWKjjHADw8RqPA","1O8CSXsPwEqxcoBE360PPO"],
       }
     };
@@ -76,49 +75,75 @@ export default async function handler(req, res) {
       relaxed: { energy: 0.4, valence: 0.6 },
       cozy: { energy: 0.3, acousticness: 0.7 },
       upbeat: { energy: 0.8, valence: 0.8 },
-      party: { energy: 0.9, danceability: 0.9 },
+      party: { energy: 0.95, danceability: 0.9 },
       sleep: { energy: 0.2, acousticness: 0.9 },
       focus: { energy: 0.3, instrumentalness: 0.8 },
       workout: { energy: 0.95, danceability: 0.8 },
       intense: { energy: 0.95, valence: 0.3 },
       mysterious: { energy: 0.35, valence: 0.25 },
-      romantic: { energy: 0.4, valence: 0.8 },
+      romantic: { energy: 0.4, valence: 0.8 }
     };
+
+    async function getTracks(params) {
+      const url = `https://api.spotify.com/v1/recommendations?${params}`;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const j = await r.json();
+      return (j.tracks || []).map(x => ({
+        id: x.id,
+        uri: x.uri,
+        name: x.name,
+        artist: x.artists[0].name
+      }));
+    }
 
     const prof = profiles[language] || profiles.english;
     const tune = moodTune[mood] || moodTune.relaxed;
 
-    const params = new URLSearchParams({
-      market: prof.market,
-      limit: "100",
-      seed_genres: prof.seed_genres.join(","),
-      seed_artists: prof.seed_artists.join(","),
-      target_energy: tune.energy,
-      target_valence: tune.valence,
-    });
+    function buildParams(seedGenres, seedArtists) {
+      const p = new URLSearchParams({
+        market: prof.market,
+        limit: "100",
+        seed_genres: seedGenres.join(","),
+        seed_artists: seedArtists.join(","),
+        target_energy: tune.energy,
+        target_valence: tune.valence
+      });
+      if (tune.acousticness) p.set("target_acousticness", tune.acousticness);
+      if (tune.danceability) p.set("target_danceability", tune.danceability);
+      if (tune.instrumentalness) p.set("target_instrumentalness", tune.instrumentalness);
+      return p.toString();
+    }
 
-    if (tune.acousticness) params.set("target_acousticness", tune.acousticness);
-    if (tune.instrumentalness) params.set("target_instrumentalness", tune.instrumentalness);
-    if (tune.danceability) params.set("target_danceability", tune.danceability);
+    let tracks = [];
 
-    const r = await fetch(`https://api.spotify.com/v1/recommendations?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // Try 1: language + mood
+    tracks = await getTracks(buildParams(prof.seed_genres, prof.seed_artists));
+    if (tracks.length < 10) {
+      // Try 2: language only
+      tracks = await getTracks(buildParams(prof.seed_genres, []));
+    }
+    if (tracks.length < 10) {
+      // Try 3: mood only (global)
+      tracks = await getTracks(buildParams(["pop"], []));
+    }
+    if (tracks.length < 10) {
+      // Try 4: Spotify fallback — top global
+      const g = await fetch("https://api.spotify.com/v1/playlists/37i9dQZEVXbMDoHDwVN2tF/tracks", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const gj = await g.json();
+      tracks = (gj.items || []).map(i => ({
+        id: i.track.id,
+        uri: i.track.uri,
+        name: i.track.name,
+        artist: i.track.artists[0].name
+      }));
+    }
 
-    const json = await r.json();
-
-    const tracks = (json.tracks || [])
-      .map(t => ({
-        id: t.id,
-        uri: t.uri,
-        name: t.name,
-        artist: t.artists[0].name,
-      }))
-      .slice(0, 35); // return 35 ALWAYS
-
-    return res.json({ tracks });
+    const unique = [...new Map(tracks.map(t => [t.id, t])).values()];
+    return res.json({ tracks: unique.slice(0, 35) });
   } catch (err) {
-    console.error("Recommendation API error →", err);
-    res.status(500).json({ error: "recommendation failed" });
+    console.error("recommendation error", err);
+    return res.status(500).json({ error: "failed" });
   }
 }
