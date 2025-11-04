@@ -55,6 +55,24 @@ window.addEventListener("message", (e) => {
     updateAuth();
   }
 });
+async function fetchTracksForMood(language, mood) {
+  const res = await fetch(`${API_BASE_URL}/get-tracks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      language,
+      mood,
+      token: spotifyAccessToken
+    })
+  });
+
+ // instead of calling fetchAiPlaylist
+const tracks = await fetchTracksForMood(currentLanguage, data.mood);
+
+// pick first 35
+cachedAiSongs = tracks.slice(0, 35);
+
+}
 
 function restoreAuth() {
   const x = localStorage.getItem("spotify");
@@ -207,5 +225,6 @@ searchBtn.onclick = handleSearch;
 createPlaylistBtn.onclick = createPlaylist;
 
 restoreAuth();
+
 
 
