@@ -1,107 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WeatherTunes</title>
-  <style>
-    :root { color-scheme: dark; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#111; color:#eee; }
-    .wrap { max-width: 900px; margin: 24px auto; padding: 16px; }
-    h1 { margin: 0 0 10px; font-weight: 700; }
-    .row { display:flex; gap:8px; flex-wrap: wrap; margin: 12px 0; }
-    input, select, button {
-      background:#1b1b1b; border:1px solid #2a2a2a; color:#eee; padding:10px 12px; border-radius:10px; outline:none;
-    }
-    button { cursor: pointer; }
-    button[disabled] { opacity: .5; cursor: not-allowed; }
-    .card { background:#151515; border:1px solid #242424; border-radius:14px; padding:14px; margin: 14px 0; }
-    .hidden { display:none; }
-    .tracks { list-style:none; margin:0; padding:0; max-height: 360px; overflow:auto; }
-    .tracks li { padding:8px 10px; border-bottom:1px solid #262626; }
-    .muted { color:#9a9a9a; font-size: 12px; }
-    .error { background:#2a1313; border:1px solid #6d2a2a; color:#ffdada; padding:10px 12px; border-radius:10px; margin:10px 0; }
-    .success { background:#13301e; border:1px solid #2e6d48; color:#cff5dd; padding:10px 12px; border-radius:10px; margin:10px 0; }
-    .pill { display:inline-block; background:#202020; border:1px solid #2f2f2f; padding:4px 8px; border-radius:999px; font-size:12px; margin-right:6px; }
-    /* Mood dropdown hover/focus polish */
-    #moodSelect { transition: border-color .2s, background .2s; }
-    #moodSelect:hover { border-color:#3a3a3a; }
-    #moodSelect:focus { border-color:#1db954; background:#181818; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherTunes - Mood Based Music</title>
+
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0d0d0d;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 550px;
+            margin: auto;
+            background: #1b1b1b;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 18px rgba(0,0,0,0.3);
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+
+        button {
+            background: #1DB954;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:disabled {
+            background: gray;
+        }
+
+        #weatherCard, #playlistCard {
+            background: #111;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 14px;
+        }
+
+        #aiSongList li {
+            padding: 6px;
+            border-bottom: 1px solid #333;
+        }
+
+        .logout-btn {
+            background: #E53935;
+            font-size: 14px;
+            padding: 6px 10px;
+            width: auto;
+        }
+    </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <h1>🌤️ WeatherTunes</h1>
-    <div class="row">
-      <button id="loginBtn">Login with Spotify</button>
-      <div id="userBox" class="hidden">
-        <span id="userName" class="pill"></span>
-        <button id="logoutBtn">Logout</button>
-      </div>
+<div class="container">
+
+    <h2>🎧 WeatherTunes</h2>
+    <p style="opacity:0.8;">Songs based on Weather + Mood + Language</p>
+
+    <button id="loginBtn">Login with Spotify</button>
+    <button id="logoutBtn" class="logout-btn" style="display:none">Logout</button>
+
+    <input id="locationInput" placeholder="Enter City (e.g., London)" />
+
+    <select id="languageSelect">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+        <option value="spanish">Spanish</option>
+    </select>
+
+    <select id="moodSelect">
+        <option value="relaxed">Relaxed</option>
+        <option value="cozy">Cozy</option>
+        <option value="romantic">Romantic</option>
+        <option value="party">Party</option>
+        <option value="workout">Workout</option>
+        <option value="focus">Focus / Study</option>
+        <option value="sleep">Sleep / Calm</option>
+        <option value="energetic">Energetic</option>
+        <option value="mysterious">Mysterious</option>
+    </select>
+
+    <button id="searchBtn">Get Weather + Songs</button>
+
+    <div id="weatherCard" style="display:none;">
+        <img id="weatherIcon" style="height:50px;">
+        <div id="weatherText"></div>
+        <div id="weatherTemp"></div>
     </div>
 
-    <div id="error" class="error hidden"></div>
-    <div id="notice" class="success hidden"></div>
+    <div id="playlistCard" style="display:none;">
+        <h3>🎵 Songs</h3>
+        <ul id="aiSongList"></ul>
 
-    <div class="card">
-      <div class="row">
-        <input id="city" placeholder="City (e.g., Mumbai)" />
-        <select id="language">
-          <option value="english">English</option>
-          <option value="hindi">Hindi</option>
-          <option value="punjabi">Punjabi</option>
-          <option value="tamil">Tamil</option>
-          <option value="telugu">Telugu</option>
-          <option value="spanish">Spanish</option>
-          <option value="korean">Korean</option>
-          <option value="japanese">Japanese</option>
-          <option value="french">French</option>
-          <option value="german">German</option>
-          <option value="italian">Italian</option>
-          <option value="chinese">Chinese</option>
-        </select>
-
-        <!-- ✅ Mood dropdown added -->
-        <select id="moodSelect" title="Pick a mood">
-          <option value="balanced" selected>🌤️ Balanced</option>
-          <option value="relaxed">😌 Relaxed</option>
-          <option value="cozy">☕ Cozy</option>
-          <option value="upbeat">😎 Upbeat</option>
-          <option value="romantic">❤️ Romantic</option>
-          <option value="party">🎉 Party</option>
-          <option value="workout">💪 Workout</option>
-          <option value="focus">🧠 Focus</option>
-          <option value="sleep">😴 Sleep</option>
-          <option value="energetic">⚡ Energetic</option>
-          <option value="intense">🔥 Intense</option>
-          <option value="tropical">🌴 Tropical</option>
-          <option value="mysterious">🌫️ Mysterious</option>
-        </select>
-
-        <button id="goBtn">Get Weather & Songs</button>
-      </div>
-
-      <div id="loading" class="muted hidden">Loading…</div>
-
-      <div id="weather" class="hidden">
-        <div><strong>Weather:</strong> <span id="wText"></span></div>
-        <div><strong>Temp:</strong> <span id="wTemp"></span> °C</div>
-        <div><strong>Mood:</strong> <span id="mood" class="pill"></span><span id="lang" class="pill"></span></div>
-      </div>
+        <button id="createPlaylistBtn" disabled>Create Playlist</button>
+        <a id="playlistLink" target="_blank" style="display:none; color:#1DB954; margin-top:10px; display:block;">
+            Open Playlist →
+        </a>
     </div>
 
-    <div id="tracksCard" class="card hidden">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div><strong>Recommended Tracks</strong> <span class="muted">(aiming 35)</span></div>
-        <button id="createBtn" disabled>Create Spotify Playlist</button>
-      </div>
-      <ul id="tracks" class="tracks"></ul>
-      <div id="createdBox" class="success hidden">
-        Playlist created: <a id="playlistLink" href="#" target="_blank" rel="noopener">Open in Spotify →</a>
-      </div>
-    </div>
-  </div>
+    <div id="error" style="color:#ff6b6b; margin-top:10px;"></div>
 
-  <script src="app.js"></script>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
