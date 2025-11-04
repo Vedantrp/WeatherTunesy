@@ -1,25 +1,32 @@
-export const config = { runtime: "edge" };
+export default async function handler(req, res) {
+  try {
+    const { location, language } = req.body;
 
-export default async function handler(req) {
-  if (req.method !== "POST")
-    return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
+    const key = process.env.WEATHER_API_KEY;
+    const url = `https://api.weatherapi.com/v1/current.json?key=${key}&q=${location}`;
 
-  const { location } = await req.json();
-  const key = process.env.WEATHERAPI_KEY;
+    const w = await fetch(url);
+    const data = await w.json();
 
-  const r = await fetch(
-    `https://api.weatherapi.com/v1/current.json?key=${key}&q=${encodeURIComponent(location)}`
-  );
-  const d = await r.json();
+    const cond = data.current.condition.text.toLowerCase();
 
-  const temp = d.current.temp_c;
-  const cond = d.current.condition.text.toLowerCase();
+    let mood = "relaxed";
+    if (cond.includes("rain")) mood = "cozy";
+    if (cond.includes("sun") || cond.includes("clear")) mood = "upbeat";
+    if (cond.includes("storm")) mood = "intense";
+    if (cond.includes("cloud")) mood = "balanced";
+    if (cond.includes("fog") || cond.includes("mist")) mood = "mysterious";
 
-  let mood = "relaxed";
-  if (cond.includes("rain") || cond.includes("storm")) mood = "cozy";
-  if (cond.includes("snow")) mood = "calm";
-  if (cond.includes("clear") && temp > 24) mood = "upbeat";
-  if (cond.includes("fog") || cond.includes("mist")) mood = "mysterious";
-
-  return new Response(JSON.stringify({ weather: d, mood }), { status: 200 });
+    res.json({
+      weather: {
+        temp: data.current.temp_c,
+        text: data.current.condition.text,
+        icon: data.current.condition.icon,
+      },
+      mood,
+      language,
+    });
+  } catch (e) {
+    res.status(500).json({ error: "Weather failed" });
+  }
 }
