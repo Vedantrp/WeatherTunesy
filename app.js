@@ -132,23 +132,62 @@ async function getTracksFromSpotify(mood, lang) {
 
 // ✅ CREATE SPOTIFY PLAYLIST
 async function createPlaylist() {
-  const r = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${spotifyToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ name: "WeatherTunes Mix", description: "Auto-generated weather mix", public: false })
-  });
+  try {
+    if (!spotifyToken || !user) {
+      showError("Login first");
+      return;
+    }
+    if (!cachedTracks.length) {
+      showError("No songs generated yet");
+      return;
+    }
 
-  const pl = await r.json();
+    createPlaylistBtn.disabled = true;
+    createPlaylistBtn.innerText = "Creating...";
 
-  await fetch(`https://api.spotify.com/v1/playlists/${pl.id}/tracks`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${spotifyToken}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ uris: cachedTracks.map(t => t.uri) })
-  });
+    // 1️⃣ Create playlist
+    const res = await fetch(`https://api.spotify.com/v1/users/${user.id}/playlists`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${spotifyToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: `WeatherTunes Mix`,
+        description: `Auto-generated weather mix`,
+        public: false
+      })
+    });
 
-  playlistLink.href = pl.external_urls.spotify;
-  playlistLink.textContent = "Open in Spotify →";
-  playlistLink.classList.remove("hidden");
+    const pl = await res.json();
+    if (!pl.id) throw new Error("Playlist create error");
+
+    // 2️⃣ Add tracks
+    const uris = cachedTracks.map(s => s.uri);
+    await fetch(`https://api.spotify.com/v1/playlists/${pl.id}/tracks`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${spotifyToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ uris })
+    });
+
+    // 3️⃣ ✅ Show link & success UI
+    playlistLink.href = pl.external_urls.spotify;
+    playlistLink.textContent = "✅ Open Playlist on Spotify";
+    playlistLink.classList.remove("hidden");
+
+    createPlaylistBtn.innerText = "Playlist Created ✅";
+  } catch (err) {
+    console.error(err);
+    showError("Failed to create playlist");
+  } finally {
+    createPlaylistBtn.disabled = false;
+  }
+}
+function showError(msg) {
+  alert(msg);
 }
 
 // EVENTS
@@ -157,3 +196,4 @@ searchBtn.onclick = handleSearch;
 createPlaylistBtn.onclick = createPlaylist;
 
 restoreAuth();
+
