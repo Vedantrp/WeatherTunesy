@@ -1,37 +1,45 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
-  try {
-    const code = req.query.code;
+  const code = req.query.code;
+  const client_id = process.env.SPOTIFY_CLIENT_ID;
+  const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+  const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
-    const params = new URLSearchParams();
-    params.append("grant_type", "authorization_code");
-    params.append("code", code);
-    params.append("redirect_uri", process.env.SPOTIFY_REDIRECT_URI);
-    params.append("client_id", process.env.SPOTIFY_CLIENT_ID);
-    params.append("client_secret", process.env.SPOTIFY_CLIENT_SECRET);
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri,
+    client_id,
+    client_secret,
+  });
 
-    const r = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      body: params
-    }).then(r=>r.json());
+  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
 
-    const user = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${r.access_token}` }
-    }).then(r=>r.json());
+  const tokenData = await tokenRes.json();
 
-    return res.send(`
-      <script>
-        window.opener.postMessage({
-          type:'SPOTIFY_AUTH_SUCCESS',
-          token:'${r.access_token}',
-          refreshToken:'${r.refresh_token}',
-          user:${JSON.stringify(user)}
-        }, "*");
-        window.close();
-      </script>
-    `);
-  } catch (e) {
-    return res.send(`<script>alert("Login failed");window.close();</script>`);
-  }
+  const userRes = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` }
+  });
+
+  const userData = await userRes.json();
+
+  return res.send(`
+    <script>
+      window.opener.postMessage(
+        {
+          type:"SPOTIFY_AUTH_SUCCESS",
+          accessToken:"${tokenData.access_token}",
+          refreshToken:"${tokenData.refresh_token}",
+          user:${JSON.stringify(userData)}
+        },
+        "*"
+      );
+      window.close();
+    </script>
+  `);
 }
