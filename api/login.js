@@ -1,24 +1,10 @@
-export default function handler(req, res) {
-  try {
-    const client_id = process.env.SPOTIFY_CLIENT_ID;
-    const redirect_uri = `${process.env.NEXT_PUBLIC_BASE_URL}/api/callback`;
+export default async function handler(req, res) {
+  const redirect = process.env.NEXTAUTH_URL + "/api/callback";
+  const scope = "playlist-modify-private playlist-modify-public user-read-email";
 
-    const scope = [
-      "playlist-modify-private",
-      "playlist-modify-public",
-      "user-read-private",
-      "user-read-email"
-    ].join(" ");
+  const url = `https://accounts.spotify.com/authorize?response_type=code&client_id=${process.env.SPOTIFY_CLIENT_ID}&scope=${encodeURIComponent(
+    scope
+  )}&redirect_uri=${encodeURIComponent(redirect)}`;
 
-    const authUrl =
-      `https://accounts.spotify.com/authorize?` +
-      `client_id=${client_id}` +
-      `&response_type=code` +
-      `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
-      `&scope=${encodeURIComponent(scope)}`;
-
-    return res.status(200).json({ authUrl });
-  } catch (e) {
-    return res.status(500).json({ error: "Auth URL failed" });
-  }
+  res.redirect(url);
 }
