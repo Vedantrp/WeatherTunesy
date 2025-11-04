@@ -141,22 +141,11 @@ function updateAuthUI() {
 
 // ----------------------------- AUTH ------------------------------
 async function loginSpotify() {
-  try {
-    const res = await fetch("/api/login");
-    const data = await res.json();
-    
-    if (!data.authUrl) {
-      console.error("No authUrl from backend", data);
-      alert("Backend auth error");
-      return;
-    }
-
-    window.open(data.authUrl, "Spotify Login", "width=500,height=700");
-  } catch (e) {
-    console.error("Login error:", e);
-    alert("Failed to reach login server");
-  }
+  const res = await fetch("/api/login");
+  const data = await res.json();
+  window.open(data.authUrl, "Spotify Login", "width=500,height=700");
 }
+
 
 async function refreshToken() {
   const r = await fetch(`${API_BASE}/refresh-token`, {
@@ -394,4 +383,5 @@ createPlaylistBtn?.addEventListener("click", createPlaylist);
 
 // ----------------------------- INIT -----------------------------
 restoreAuth();
+
 
