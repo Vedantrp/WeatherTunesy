@@ -165,7 +165,7 @@ async function fetchTracks(language, mood) {
   const res = await fetch(`${API_BASE}/get-tracks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language, mood, token: accessToken })
+    body: JSON.stringify({ language, mood, token: auth.accessToken })
   });
   if (res.status === 401) throw new Error("Spotify login required");
   if (!res.ok) throw new Error("Track fetch failed");
@@ -254,3 +254,4 @@ createBtn.addEventListener("click", createPlaylist);
 
 // ---- Init ----
 restore();
+
