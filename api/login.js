@@ -1,13 +1,25 @@
-// /api/login.js
-export default function handler(req, res) {
-  const redirectUri = encodeURIComponent(process.env.SPOTIFY_REDIRECT_URI);
+export default async function handler(req, res) {
+  try {
+    const client_id = process.env.SPOTIFY_CLIENT_ID;
+    const redirect_uri = "https://weather-tunes-kappa.vercel.app/api/callback";
 
-  const authUrl =
-    "https://accounts.spotify.com/authorize" +
-    `?client_id=${process.env.SPOTIFY_CLIENT_ID}` +
-    `&response_type=code` +
-    `&redirect_uri=${redirectUri}` +
-    `&scope=playlist-modify-private playlist-modify-public user-read-email`;
+    const scope = [
+      "playlist-modify-private",
+      "playlist-modify-public",
+      "user-read-email",
+      "user-read-private"
+    ].join(" ");
 
-  return res.status(200).json({ authUrl });
+    const authUrl = `https://accounts.spotify.com/authorize?` +
+      `response_type=code` +
+      `&client_id=${client_id}` +
+      `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
+      `&scope=${encodeURIComponent(scope)}`;
+
+    res.status(200).json({ authUrl });
+
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Spotify login failed" });
+  }
 }
