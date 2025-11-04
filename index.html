@@ -1,83 +1,278 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WeatherTunes</title>
-  <style>
-    :root { color-scheme: dark; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#111; color:#eee; }
-    .wrap { max-width: 900px; margin: 24px auto; padding: 16px; }
-    h1 { margin: 0 0 10px; font-weight: 700; }
-    .row { display:flex; gap:8px; flex-wrap: wrap; margin: 12px 0; }
-    input, select, button {
-      background:#1b1b1b; border:1px solid #2a2a2a; color:#eee; padding:10px 12px; border-radius:10px; outline:none;
+/* WeatherTunes – FINAL FRONTEND (No AI)
+ * Flow:
+ * 1) Login with Spotify (popup to /api/login → /api/callback returns postMessage)
+ * 2) Enter city + language → Get weather → derive mood (client-side)
+ * 3) Fetch real tracks from Spotify (server) based on language (and mood if backend uses it)
+ * 4) Create playlist in user account
+ */
+
+const API = location.origin + "/api";
+
+/* ---------- STATE ---------- */
+let accessToken = null;
+let refreshToken = null;
+let currentUser = null;
+
+let current = {
+  city: "",
+  language: "english",
+  weather: null,
+  mood: "",
+  tracks: []
+};
+
+/* ---------- DOM ---------- */
+const loginBtn      = document.getElementById("loginBtn");
+const logoutBtn     = document.getElementById("logoutBtn");
+const userBox       = document.getElementById("userBox");
+const userName      = document.getElementById("userName");
+
+const cityInp       = document.getElementById("city");
+const langSel       = document.getElementById("language");
+const goBtn         = document.getElementById("goBtn");
+
+const loading       = document.getElementById("loading");
+const errorBox      = document.getElementById("error");
+const noticeBox     = document.getElementById("notice");
+
+const weatherBox    = document.getElementById("weather");
+const wText         = document.getElementById("wText");
+const wTemp         = document.getElementById("wTemp");
+const moodEl        = document.getElementById("mood");
+const langEl        = document.getElementById("lang");
+
+const tracksCard    = document.getElementById("tracksCard");
+const tracksUl      = document.getElementById("tracks");
+const createBtn     = document.getElementById("createBtn");
+const createdBox    = document.getElementById("createdBox");
+const playlistLink  = document.getElementById("playlistLink");
+
+/* ---------- UI HELPERS ---------- */
+const show = (el) => el.classList.remove("hidden");
+const hide = (el) => el.classList.add("hidden");
+const setText = (el, t) => { el.textContent = t; };
+
+function startLoading(msg = "Loading…") { loading.textContent = msg; show(loading); }
+function stopLoading() { hide(loading); }
+
+function showError(msg) {
+  errorBox.textContent = msg || "Something went wrong";
+  show(errorBox);
+  setTimeout(() => hide(errorBox), 6000);
+}
+function showNotice(msg) {
+  noticeBox.textContent = msg || "";
+  show(noticeBox);
+  setTimeout(() => hide(noticeBox), 4000);
+}
+
+/* ---------- AUTH PERSIST ---------- */
+function saveAuth() {
+  localStorage.setItem("wt_auth", JSON.stringify({
+    accessToken, refreshToken, user: currentUser
+  }));
+}
+function restoreAuth() {
+  try {
+    const v = JSON.parse(localStorage.getItem("wt_auth") || "{}");
+    accessToken = v.accessToken || null;
+    refreshToken = v.refreshToken || null;
+    currentUser = v.user || null;
+  } catch {}
+  updateAuthUI();
+}
+function updateAuthUI() {
+  if (accessToken && currentUser) {
+    hide(loginBtn);
+    setText(userName, currentUser.display_name || currentUser.id || "Spotify user");
+    show(userBox);
+    createBtn.disabled = current.tracks.length === 0;
+  } else {
+    show(loginBtn);
+    hide(userBox);
+    createBtn.disabled = true;
+  }
+}
+
+/* ---------- LOGIN / LOGOUT ---------- */
+async function login() {
+  try {
+    const popup = window.open(`${API}/login`, "Spotify Login", "width=520,height=720");
+    if (!popup) return showError("Popup blocked. Allow popups for this site.");
+
+    const onMsg = (e) => {
+      if (e.data?.type === "SPOTIFY_AUTH_SUCCESS") {
+        accessToken = e.data.token;
+        refreshToken = e.data.refreshToken || null;
+        currentUser  = e.data.user;
+        saveAuth();
+        updateAuthUI();
+        window.removeEventListener("message", onMsg);
+        try { popup.close(); } catch {}
+        showNotice("Logged in to Spotify");
+      } else if (e.data?.error) {
+        showError("Spotify auth failed: " + e.data.error);
+        window.removeEventListener("message", onMsg);
+        try { popup.close(); } catch {}
+      }
+    };
+    window.addEventListener("message", onMsg);
+  } catch {
+    showError("Login failed.");
+  }
+}
+
+function logout() {
+  accessToken = null;
+  refreshToken = null;
+  currentUser = null;
+  localStorage.removeItem("wt_auth");
+  updateAuthUI();
+  showNotice("Logged out");
+}
+
+/* ---------- WEATHER + MOOD ---------- */
+// Map WeatherAPI condition text → simple mood buckets
+function deriveMood(conditionText) {
+  const c = (conditionText || "").toLowerCase();
+  if (c.includes("storm") || c.includes("thunder")) return "intense";
+  if (c.includes("rain") || c.includes("drizzle"))  return "cozy";
+  if (c.includes("sun")  || c.includes("clear"))    return "upbeat";
+  if (c.includes("snow"))                           return "calm";
+  if (c.includes("fog")  || c.includes("mist"))     return "mysterious";
+  if (c.includes("cloud"))                          return "balanced";
+  return "relaxed";
+}
+
+async function fetchWeather(city) {
+  const r = await fetch(`${API}/weather`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ location: city })
+  });
+  if (!r.ok) throw new Error("Weather fetch failed");
+  return r.json();
+}
+
+function renderWeatherUI(w, mood, language) {
+  setText(wText, w?.current?.condition?.text || "—");
+  setText(wTemp, Math.round(w?.current?.temp_c ?? 0));
+  setText(moodEl, mood);
+  setText(langEl, language);
+  show(weatherBox);
+}
+
+/* ---------- TRACKS ---------- */
+function renderTracks(list) {
+  tracksUl.innerHTML = "";
+  if (!list || !list.length) {
+    hide(tracksCard);
+    return;
+  }
+  list.slice(0, 35).forEach((t, i) => {
+    const li = document.createElement("li");
+    li.textContent = `${i + 1}. ${t.name} — ${t.artist}`;
+    tracksUl.appendChild(li);
+  });
+  show(tracksCard);
+  createBtn.disabled = !(accessToken && currentUser && list.length);
+}
+
+async function getTracks(language, mood) {
+  // Back-end currently requires token + language; mood is extra (harmless).
+  const r = await fetch(`${API}/get-tracks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ language, mood, token: accessToken })
+  });
+  if (r.status === 401) throw new Error("Login to Spotify first.");
+  if (!r.ok) throw new Error("Track fetch failed");
+  const data = await r.json();
+  return data.tracks || [];
+}
+
+/* ---------- CREATE PLAYLIST ---------- */
+async function createPlaylist() {
+  try {
+    if (!accessToken || !currentUser) return showError("Login to Spotify first.");
+    if (!current.tracks.length) return showError("No tracks to add.");
+
+    createBtn.disabled = true;
+    const origText = createBtn.textContent;
+    createBtn.textContent = "Creating…";
+
+    const uris = current.tracks.slice(0, 35).map(t => t.uri).filter(Boolean);
+
+    const r = await fetch(`${API}/create-playlist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: accessToken,
+        userId: currentUser.id,
+        tracks: uris,
+        mood: current.mood
+      })
+    });
+
+    const data = await r.json();
+    if (!r.ok || !data.playlist) throw new Error("Playlist creation failed");
+    playlistLink.href = data.playlist;
+    show(createdBox);
+    createBtn.textContent = "Playlist Created ✅";
+  } catch (e) {
+    showError(e.message || "Could not create playlist");
+  } finally {
+    createBtn.disabled = false;
+  }
+}
+
+/* ---------- MAIN ACTION ---------- */
+async function handleGo() {
+  try {
+    hide(createdBox);
+    hide(errorBox);
+
+    if (!accessToken || !currentUser) return showError("Please login with Spotify first.");
+
+    current.city = (cityInp.value || "").trim();
+    current.language = (langSel.value || "english").toLowerCase();
+    if (!current.city) return showError("Enter a city");
+
+    // 1) Weather → mood
+    startLoading("Getting weather…");
+    const weatherJson = await fetchWeather(current.city);
+    const conditionText = weatherJson?.current?.condition?.text || "";
+    current.mood = deriveMood(conditionText);
+    current.weather = weatherJson;
+    renderWeatherUI(weatherJson, current.mood, current.language);
+
+    // 2) Tracks
+    startLoading("Finding songs on Spotify…");
+    const tracks = await getTracks(current.language, current.mood);
+
+    // If backend returns empty (rare), make a second pass with looser language
+    if (!tracks.length && current.language !== "english") {
+      showNotice("No exact matches — trying a broader search.");
+      const fallback = await getTracks("english", current.mood);
+      current.tracks = fallback;
+    } else {
+      current.tracks = tracks;
     }
-    button { cursor: pointer; }
-    button[disabled] { opacity: .5; cursor: not-allowed; }
-    .card { background:#151515; border:1px solid #242424; border-radius:14px; padding:14px; margin: 14px 0; }
-    .hidden { display:none; }
-    .tracks { list-style:none; margin:0; padding:0; max-height: 360px; overflow:auto; }
-    .tracks li { padding:8px 10px; border-bottom:1px solid #262626; }
-    .muted { color:#9a9a9a; font-size: 12px; }
-    .error { background:#2a1313; border:1px solid #6d2a2a; color:#ffdada; padding:10px 12px; border-radius:10px; margin:10px 0; }
-    .success { background:#13301e; border:1px solid #2e6d48; color:#cff5dd; padding:10px 12px; border-radius:10px; margin:10px 0; }
-    .pill { display:inline-block; background:#202020; border:1px solid #2f2f2f; padding:4px 8px; border-radius:999px; font-size:12px; margin-right:6px; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>🌤️ WeatherTunes</h1>
-    <div class="row">
-      <button id="loginBtn">Login with Spotify</button>
-      <div id="userBox" class="hidden">
-        <span id="userName" class="pill"></span>
-        <button id="logoutBtn">Logout</button>
-      </div>
-    </div>
 
-    <div id="error" class="error hidden"></div>
-    <div id="notice" class="success hidden"></div>
+    renderTracks(current.tracks);
+    stopLoading();
+  } catch (e) {
+    stopLoading();
+    showError(e.message || "Something went wrong");
+  }
+}
 
-    <div class="card">
-      <div class="row">
-        <input id="city" placeholder="City (e.g., Mumbai)" />
-        <select id="language">
-          <option value="english">English</option>
-          <option value="hindi">Hindi</option>
-          <option value="punjabi">Punjabi</option>
-          <option value="tamil">Tamil</option>
-          <option value="telugu">Telugu</option>
-          <option value="spanish">Spanish</option>
-          <option value="korean">Korean</option>
-          <option value="japanese">Japanese</option>
-          <option value="french">French</option>
-          <option value="german">German</option>
-          <option value="italian">Italian</option>
-          <option value="chinese">Chinese</option>
-        </select>
-        <button id="goBtn">Get Weather & Songs</button>
-      </div>
-      <div id="loading" class="muted hidden">Loading…</div>
-      <div id="weather" class="hidden">
-        <div><strong>Weather:</strong> <span id="wText"></span></div>
-        <div><strong>Temp:</strong> <span id="wTemp"></span> °C</div>
-        <div><strong>Mood:</strong> <span id="mood" class="pill"></span><span id="lang" class="pill"></span></div>
-      </div>
-    </div>
+/* ---------- EVENTS ---------- */
+loginBtn.addEventListener("click", login);
+logoutBtn.addEventListener("click", logout);
+goBtn.addEventListener("click", handleGo);
+cityInp.addEventListener("keypress", (e) => e.key === "Enter" && handleGo());
+createBtn.addEventListener("click", createPlaylist);
 
-    <div id="tracksCard" class="card hidden">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div><strong>Recommended Tracks</strong> <span class="muted">(aiming 35)</span></div>
-        <button id="createBtn" disabled>Create Spotify Playlist</button>
-      </div>
-      <ul id="tracks" class="tracks"></ul>
-      <div id="createdBox" class="success hidden">
-        Playlist created: <a id="playlistLink" href="#" target="_blank" rel="noopener">Open in Spotify →</a>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+/* ---------- INIT ---------- */
+restoreAuth();
