@@ -148,7 +148,18 @@ export default async function handler(req, res) {
       if (item) playlists.push(item);
     }
 
-    if (!playlists.length) return res.status(200).json({ tracks: [] });
+    // If no mood playlists found → fallback to main language playlists
+if (!playlists.length) {
+  for (const base of prof.playlistTerms) {
+    const q = encodeURIComponent(base);
+    const url = `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`;
+    const data = await fetchJson(url, token);
+    const item = data?.playlists?.items?.[0];
+    if (item) playlists.push(item);
+    if (playlists.length >= 3) break;
+  }
+}
+
 
     // Fetch tracks from those playlists
     let all = [];
