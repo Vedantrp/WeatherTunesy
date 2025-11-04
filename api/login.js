@@ -1,5 +1,6 @@
 export default function handler(req, res) {
-  const redirect_uri = "https://weather-tunes-kappa.vercel.app/api/callback";
+ const redirect_uri = process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI;
+
   const client_id = process.env.SPOTIFY_CLIENT_ID;
 
   console.log("SPOTIFY LOGIN redirect ->", redirect_uri);
