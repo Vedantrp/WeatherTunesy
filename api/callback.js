@@ -1,37 +1,42 @@
-import fetch from "node-fetch";
+export const config = { runtime: "edge" };
 
-export default async function handler(req, res) {
-  const { code } = req.query;
+export default async function handler(req) {
+  const url = new URL(req.url);
+  const code = url.searchParams.get("code");
 
-  const redirect = process.env.NEXTAUTH_URL + "/api/callback";
+  const client_id = process.env.SPOTIFY_CLIENT_ID;
+  const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+  const redirect_uri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/callback`;
 
-  const params = new URLSearchParams({
+  const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: redirect,
-    client_id: process.env.SPOTIFY_CLIENT_ID,
-    client_secret: process.env.SPOTIFY_CLIENT_SECRET,
+    redirect_uri,
+    client_id,
+    client_secret,
   });
 
-  const r = await fetch("https://accounts.spotify.com/api/token", {
+  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params,
+    body,
   });
 
-  const t = await r.json();
-  const ur = await fetch("https://api.spotify.com/v1/me", {
-    headers: { Authorization: `Bearer ${t.access_token}` },
+  const tokenData = await tokenRes.json();
+
+  const me = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
   }).then(r => r.json());
 
-  return res.send(`
+  return new Response(`
     <script>
-      window.opener.postMessage(
-        { type: "SPOTIFY_AUTH_SUCCESS", token: "${t.access_token}", refreshToken: "${t.refresh_token}", user: ${JSON.stringify(
-          ur
-        )} },
-        "*"
-      ); window.close();
+      window.opener.postMessage({
+        type: "SPOTIFY_AUTH_SUCCESS",
+        token: "${tokenData.access_token}",
+        refreshToken: "${tokenData.refresh_token}",
+        user: ${JSON.stringify(me)}
+      }, "*");
+      window.close();
     </script>
-  `);
+  `, { headers: { "Content-Type": "text/html" } });
 }
