@@ -5,52 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WeatherTunes Generator</title>
     <style>
-        /* Basic CSS for UI readiness */
-        body { font-family: sans-serif; text-align: center; padding: 50px; }
-        #controls { margin-top: 20px; border: 1px solid #ccc; padding: 20px; max-width: 400px; margin: 20px auto; }
-        #playlistLink { margin-top: 30px; display: none; } /* Hidden until playlist is created */
-        #loginButton { background-color: #1DB954; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f7f7f7; color: #333; }
+        #controls { margin-top: 20px; border: 1px solid #ddd; padding: 25px; max-width: 450px; margin: 20px auto; background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #playlistLink { margin-top: 30px; padding: 15px; border: 2px solid #1DB954; background-color: #e6ffed; display: none; border-radius: 8px; max-width: 450px; margin: 30px auto; } 
+        #loginButton, #getPlaylistButton { 
+            padding: 12px 25px; border: none; cursor: pointer; border-radius: 25px; font-weight: bold; transition: background-color 0.3s ease; 
+            margin: 8px;
+        }
+        #loginButton { 
+            background-color: #1DB954; color: white; 
+            box-shadow: 0 4px 10px rgba(29, 185, 84, 0.4);
+        }
+        #loginButton:hover { background-color: #1ed760; }
+
+        #getPlaylistButton { 
+            background-color: #0070f3; color: white; 
+            box-shadow: 0 4px 10px rgba(0, 112, 243, 0.4);
+        }
+        #getPlaylistButton:hover { background-color: #0060e0; }
+
+        select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin: 5px; }
+        .input-group { margin: 15px 0; display: block; }
     </style>
 </head>
 <body>
     <h1>☀️ WeatherTunes Generator 🎶</h1>
-    <p id="statusMessage">Please log in with Spotify to begin.</p>
+    <p id="statusMessage">Initializing...</p>
     
     <button id="loginButton">Login with Spotify</button>
 
     <div id="controls" style="display:none;">
-        <h3>1. Select Weather & Language</h3>
-        <label for="weatherSelect">Current Weather/Mood:</label>
-        <select id="weatherSelect">
-            <option value="sunny">Sunny / Happy</option>
-            <option value="rainy">Rainy / Chill</option>
-            <option value="stormy">Stormy / Intense</option>
-            <option value="snow">Snow / Cozy</option>
-        </select>
+        <h3>1. Set Music Preferences</h3>
         
-        <br><br>
-
-        <label for="languageSelect">Music Language:</label>
-        <select id="languageSelect">
-            <option value="English">English</option>
-            <option value="Hindi">Hindi</option>
-            <option value="Punjabi">Punjabi</option>
-            <option value="Japanese">Japanese</option>
-            <option value="Korean">Korean</option>
-            <option value="Spanish">Spanish</option>
-            <option value="French">French</option>
+        <div class="input-group">
+            <label for="weatherSelect">Mood (Fallback if Geo fails):</label><br>
+            <select id="weatherSelect">
+                <option value="sunny">Sunny / Happy</option>
+                <option value="rainy">Rainy / Chill</option>
+                <option value="stormy">Stormy / Intense</option>
+                <option value="snow">Snow / Cozy</option>
             </select>
+        </div>
         
-        <br><br>
+        <div class="input-group">
+            <label for="languageSelect">Music Language:</label><br>
+            <select id="languageSelect">
+                <option value="English">English</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Punjabi">Punjabi</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Korean">Korean</option>
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <!-- Add other languages here -->
+            </select>
+        </div>
         
         <button id="getPlaylistButton">Get Playlist</button>
     </div>
 
     <div id="playlistLink">
-        <p>✅ **Playlist Created!**</p>
+        <p>✅ **Success!**</p>
         <a id="playlistLinkAnchor" href="#" target="_blank">Open Playlist in Spotify</a>
     </div>
 
+    <!-- CRITICAL: Script tag placement below all elements -->
     <script src="app.js"></script>
 </body>
 </html>
