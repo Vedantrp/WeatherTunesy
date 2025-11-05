@@ -1,56 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WeatherTunes</title>
-<link rel="stylesheet" href="styles.css"/>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🌤️ WeatherTunes</h1>
-    <p class="sub">Music that matches your weather & language</p>
 
-    <button id="loginBtn">Login with Spotify</button>
-    <div id="userInfo" class="hidden">
-      <span id="userName"></span>
-      <button id="logoutBtn" class="danger">Logout</button>
-    </div>
+<!-- Auth -->
+<button id="loginBtn">Login with Spotify</button>
+<div id="userInfo" class="hidden">
+  <span id="userName"></span>
+  <button id="logoutBtn">Logout</button>
+</div>
 
-    <div class="card">
-      <input id="locationInput" placeholder="Enter city (e.g., Mumbai)"/>
-      <select id="languageSelect">
-        <option value="english">English</option>
-        <option value="hindi">Hindi / Bollywood</option>
-        <option value="punjabi">Punjabi</option>
-        <option value="telugu">Telugu</option>
-        <option value="tamil">Tamil</option>
-        <option value="spanish">Spanish</option>
-        <option value="korean">Korean (K-Pop)</option>
-        <option value="japanese">Japanese (J-Pop)</option>
-        <option value="french">French</option>
-        <option value="german">German</option>
-        <option value="italian">Italian</option>
-        <option value="chinese">Chinese (C/Mando/Canto)</option>
-      </select>
-      <button id="searchBtn">Get Weather & Songs</button>
-    </div>
+<!-- Input -->
+<input id="locationInput" placeholder="Enter city (e.g. Mumbai)">
+<select id="languageSelect">
+  <option value="english">English</option>
+  <option value="hindi">Hindi / Bollywood</option>
+  <option value="punjabi">Punjabi</option>
+</select>
+<button id="searchBtn">Get Music</button>
 
-    <div id="error" class="hidden"></div>
+<!-- Weather -->
+<div id="weatherCard" class="hidden">
+  <h3>Weather</h3>
+  <div>Condition: <span id="wText"></span></div>
+  <div>Temp: <span id="wTemp"></span>°C</div>
+</div>
 
-    <div id="weatherCard" class="card hidden">
-      <b>Weather:</b> <span id="wText"></span> — <b><span id="wTemp"></span>°C</b>
-    </div>
+<!-- Playlist -->
+<div id="playlistCard" class="hidden">
+  <h3>Your Mood Playlist</h3>
+  <ul id="aiSongList"></ul>
+  <button id="createPlaylistBtn" disabled>Create Spotify Playlist</button>
+</div>
 
-    <div id="playlistCard" class="card hidden">
-      <ul id="aiSongList"></ul>
-      <button id="createPlaylistBtn" class="primary">Create Spotify Playlist</button>
-      <div id="createdPlaylist" class="hidden" style="margin-top:10px;">
-        ✅ Playlist created! <a id="playlistLink" href="#" target="_blank">Open playlist →</a>
-      </div>
-    </div>
-  </div>
+<!-- Playlist Result -->
+<div id="createdPlaylist" class="hidden">
+  ✅ Playlist Created — <a id="playlistLink" target="_blank">Open</a>
+</div>
 
-  <script src="app.js"></script>
+<!-- Error -->
+<div id="error" class="hidden" style="color:red;"></div>
+
+<script src="app.js"></script>
 </body>
 </html>
