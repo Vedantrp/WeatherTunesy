@@ -1,53 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>WeatherTunes</title>
-<link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherTunes Generator</title>
+    <style>
+        /* Basic CSS for UI readiness */
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        #controls { margin-top: 20px; border: 1px solid #ccc; padding: 20px; max-width: 400px; margin: 20px auto; }
+        #playlistLink { margin-top: 30px; display: none; } /* Hidden until playlist is created */
+        #loginButton { background-color: #1DB954; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+    </style>
 </head>
-
 <body>
-<div class="container">
+    <h1>☀️ WeatherTunes Generator 🎶</h1>
+    <p id="statusMessage">Please log in with Spotify to begin.</p>
+    
+    <button id="loginButton">Login with Spotify</button>
 
-<h2>🌤️ WeatherTunes</h2>
+    <div id="controls" style="display:none;">
+        <h3>1. Select Weather & Language</h3>
+        <label for="weatherSelect">Current Weather/Mood:</label>
+        <select id="weatherSelect">
+            <option value="sunny">Sunny / Happy</option>
+            <option value="rainy">Rainy / Chill</option>
+            <option value="stormy">Stormy / Intense</option>
+            <option value="snow">Snow / Cozy</option>
+        </select>
+        
+        <br><br>
 
-<div id="authBar">
-  <button id="loginBtn">Login with Spotify</button>
+        <label for="languageSelect">Music Language:</label>
+        <select id="languageSelect">
+            <option value="English">English</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Punjabi">Punjabi</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Korean">Korean</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            </select>
+        
+        <br><br>
+        
+        <button id="getPlaylistButton">Get Playlist</button>
+    </div>
 
-  <div id="userInfo" class="hidden">
-      Logged in as <span id="userName"></span>
-      <button id="logoutBtn">Logout</button>
-  </div>
-</div>
+    <div id="playlistLink">
+        <p>✅ **Playlist Created!**</p>
+        <a id="playlistLinkAnchor" href="#" target="_blank">Open Playlist in Spotify</a>
+    </div>
 
-<br/>
-
-<input id="locationInput" placeholder="Enter city (e.g London)" />
-<select id="languageSelect">
-  <option value="english">English</option>
-  <option value="hindi">Hindi</option>
-  <option value="punjabi">Punjabi</option>
-  <option value="spanish">Spanish</option>
-  <option value="korean">K-Pop</option>
-</select>
-<button id="searchBtn">Get Playlist</button>
-
-<p id="error" class="hidden"></p>
-
-<div id="weatherBox" class="hidden">
-  <h3 id="city"></h3>
-  <p id="temp"></p>
-  <p id="condition"></p>
-</div>
-
-<div id="playlistCard" class="hidden">
-  <h3>Suggested Songs 🎵</h3>
-  <ul id="songList"></ul>
-  <button id="createPlaylistBtn">Create Spotify Playlist</button>
-  <p><a id="playlistLink" href="#" target="_blank"></a></p>
-</div>
-
-</div>
-
-<script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
