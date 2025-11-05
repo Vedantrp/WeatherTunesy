@@ -19,7 +19,9 @@ export default (req, res) => {
     try {
         // Define variables INSIDE the function handler
         const client_id = process.env.SPOTIFY_CLIENT_ID;
-        const redirect_uri = process.env.REDIRECT_URI; 
+       const redirect_uri = process.env.REDIRECT_URI;
+// ...
+// ...'&redirect_uri=' + encodeURIComponent(redirect_uri) + ... 
         
         // Configuration Check (Prevents 500 crashes if ENV vars are missing)
         if (!client_id || !redirect_uri) {
