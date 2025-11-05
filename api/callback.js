@@ -1,59 +1,23 @@
-const fetch = require('node-fetch');
-const { URLSearchParams } = require('url');
+import fetch from "node-fetch";
 
-const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
+export default async function handler(req, res) {
+  const code = req.query.code;
+  const redirect = `${process.env.SITE_URL}/api/callback`;
 
-module.exports = async (req, res) => {
-    try {
-        const code = req.query.code || null;
-        const client_id = process.env.SPOTIFY_CLIENT_ID;
-        const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-        const redirect_uri = process.env.REDIRECT_URI;
-        const frontendUrl = process.env.FRONTEND_URL || '/'; 
+  const params = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: redirect,
+    client_id: process.env.SPOTIFY_CLIENT_ID,
+    client_secret: process.env.SPOTIFY_CLIENT_SECRET
+  });
 
-        if (code === null || !client_id || !client_secret || !redirect_uri) {
-            const error = req.query.error || 'token_exchange_failed';
-            // Spotify token exchange requires the refresh token
-            return res.redirect(`${frontendUrl}?error=${encodeURIComponent(error)}`);
-        }
+  const r = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params
+  });
+  const j = await r.json();
 
-        // Basic Auth header encoding (Buffer is often globally available in Vercel Node env)
-        const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
-        
-        const bodyParams = new URLSearchParams();
-        bodyParams.append('code', code);
-        bodyParams.append('redirect_uri', redirect_uri);
-        bodyParams.append('grant_type', 'authorization_code');
-
-        const tokenResponse = await fetch(TOKEN_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Authorization': authHeader,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: bodyParams.toString()
-        });
-
-        const data = await tokenResponse.json();
-
-        if (tokenResponse.ok) {
-            // Success: Redirect to frontend with tokens in the URL hash
-            const redirectParams = new URLSearchParams({
-                access_token: data.access_token,
-                refresh_token: data.refresh_token,
-                expires_in: data.expires_in
-            });
-
-            return res.redirect(`${frontendUrl}#${redirectParams.toString()}`);
-
-        } else {
-            console.error('Spotify Token Exchange Error:', data);
-            const error = data.error_description || data.error || 'token_exchange_failed';
-            return res.redirect(`${frontendUrl}?error=${encodeURIComponent(error)}`);
-        }
-
-    } catch (error) {
-        console.error('Callback crash:', error);
-        return res.status(500).send(`Callback Server Crash: ${error.message}.`);
-    }
-};
+  res.json({ accessToken: j.access_token });
+}
