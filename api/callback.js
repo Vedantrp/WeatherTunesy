@@ -1,11 +1,9 @@
-// api/callback.js
-// /api/callback.js
-import fetch from 'node-fetch'; // CRITICAL: Required for making the POST request to Spotify
-import { URLSearchParams } from 'url'; // Required for building the request body
+const fetch = require('node-fetch');
+const { URLSearchParams } = require('url');
 
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 
-export default async (req, res) => {
+module.exports = async (req, res) => {
     try {
         const code = req.query.code || null;
         const client_id = process.env.SPOTIFY_CLIENT_ID;
@@ -15,16 +13,12 @@ export default async (req, res) => {
 
         if (code === null || !client_id || !client_secret || !redirect_uri) {
             const error = req.query.error || 'token_exchange_failed';
+            // Spotify token exchange requires the refresh token
             return res.redirect(`${frontendUrl}?error=${encodeURIComponent(error)}`);
         }
 
-        // CRITICAL: Basic Auth header encoding
-      // api/callback.js (Inside the export default async handler)
-
-// ... variable loading (client_id, client_secret, etc.) must be defined here ...
-
-// CRITICAL FIX: Ensure Buffer is used correctly for Basic Auth
-const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
+        // Basic Auth header encoding (Buffer is often globally available in Vercel Node env)
+        const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
         
         const bodyParams = new URLSearchParams();
         bodyParams.append('code', code);
@@ -59,7 +53,7 @@ const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toStr
         }
 
     } catch (error) {
-        console.error('Callback network error:', error);
-        return res.status(500).send(`Callback Crash: ${error.message}.`);
+        console.error('Callback crash:', error);
+        return res.status(500).send(`Callback Server Crash: ${error.message}.`);
     }
 };
