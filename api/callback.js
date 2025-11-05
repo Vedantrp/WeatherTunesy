@@ -1,51 +1,33 @@
 import fetch from "node-fetch";
 
-export default async function handler(req, res) {
-  try {
-    const code = req.query.code;
-    const client_id = process.env.SPOTIFY_CLIENT_ID;
-    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
+export default async function handler(req,res){
+  const code = req.query.code;
+  const redirect = `${process.env.VERCEL_URL}/api/callback`;
 
-    const body = new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri,
-      client_id,
-      client_secret,
-    });
+  const params = new URLSearchParams({
+    grant_type:"authorization_code",
+    code,
+    redirect_uri:redirect,
+    client_id:process.env.SPOTIFY_CLIENT_ID,
+    client_secret:process.env.SPOTIFY_CLIENT_SECRET
+  });
 
-    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body
-    });
+  const r = await fetch("https://accounts.spotify.com/api/token",{
+    method:"POST", headers:{ "Content-Type":"application/x-www-form-urlencoded"},
+    body:params
+  });
+  const j = await r.json();
 
-    const tokenData = await tokenRes.json();
-    if (!tokenRes.ok) {
-      return res.send(`<script>window.opener.postMessage({type:'SPOTIFY_AUTH_ERROR', error:${JSON.stringify(tokenData)}}, '*');window.close();</script>`);
-    }
+  const me = await fetch("https://api.spotify.com/v1/me",{
+    headers:{ Authorization:`Bearer ${j.access_token}` }
+  }).then(r=>r.json());
 
-    const meRes = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
-    });
-    const user = await meRes.json();
-
-    return res.send(`
-      <script>
-        window.opener && window.opener.postMessage(
-          {
-            type: "SPOTIFY_AUTH_SUCCESS",
-            accessToken: "${tokenData.access_token}",
-            refreshToken: "${tokenData.refresh_token || ""}",
-            user: ${JSON.stringify(user)}
-          },
-          "*"
-        );
-        window.close();
-      </script>
-    `);
-  } catch (e) {
-    return res.send(`<script>window.opener && window.opener.postMessage({type:'SPOTIFY_AUTH_ERROR', error:'callback_failed'}, '*');window.close();</script>`);
-  }
+  res.send(`
+  <script>
+  window.opener.postMessage({
+    token: "${j.access_token}",
+    user: ${JSON.stringify(me)}
+  }, "*");
+  window.close();
+  </script>`);
 }
