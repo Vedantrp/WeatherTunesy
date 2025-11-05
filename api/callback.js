@@ -1,27 +1,59 @@
-// api/callback.js (Ensure variables are defined at the top of the handler)
-// ... imports and TOKEN_ENDPOINT remain ...
+// api/callback.js
+import fetch from 'node-fetch';
+import { URLSearchParams } from 'url'; 
+
+const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 
 export default async (req, res) => {
-    // 1. Get code and state from Spotify's redirect query parameters
-    const code = req.query.code || null;
-    const state = req.query.state || null;
+    try {
+        const code = req.query.code || null;
+        const client_id = process.env.SPOTIFY_CLIENT_ID;
+        const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+        const redirect_uri = process.env.REDIRECT_URI;
+        const frontendUrl = process.env.FRONTEND_URL || '/'; 
 
-    // 2. Load and define all variables FIRST. 
-    // This definition MUST happen inside the handler.
-    const client_id = process.env.SPOTIFY_CLIENT_ID; // This must be line 1 or 2 of variable declarations
-    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirect_uri = process.env.REDIRECT_URI;
-    const frontendUrl = process.env.FRONTEND_URL || '/'; 
+        if (code === null || !client_id || !client_secret || !redirect_uri) {
+            const error = req.query.error || 'token_exchange_failed';
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent(error)}`);
+        }
 
-    // 3. Perform necessary checks/logic before use
-    if (!client_id || !client_secret || !redirect_uri) {
-        return res.status(500).send('Configuration Error: Spotify Client/Secret or Redirect URI missing.');
+        // CRITICAL: Basic Auth header encoding
+        const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
+        
+        const bodyParams = new URLSearchParams();
+        bodyParams.append('code', code);
+        bodyParams.append('redirect_uri', redirect_uri);
+        bodyParams.append('grant_type', 'authorization_code');
+
+        const tokenResponse = await fetch(TOKEN_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Authorization': authHeader,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: bodyParams.toString()
+        });
+
+        const data = await tokenResponse.json();
+
+        if (tokenResponse.ok) {
+            // Success: Redirect to frontend with tokens in the URL hash
+            const redirectParams = new URLSearchParams({
+                access_token: data.access_token,
+                refresh_token: data.refresh_token,
+                expires_in: data.expires_in
+            });
+
+            return res.redirect(`${frontendUrl}#${redirectParams.toString()}`);
+
+        } else {
+            console.error('Spotify Token Exchange Error:', data);
+            const error = data.error_description || data.error || 'token_exchange_failed';
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent(error)}`);
+        }
+
+    } catch (error) {
+        console.error('Callback network error:', error);
+        return res.status(500).send(`Callback Crash: ${error.message}.`);
     }
-    
-    // ... the rest of the token exchange logic follows ...
-    
-    // Basic Auth preparation (uses client_id and client_secret defined above)
-    const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
-    
-    // ...
 };
