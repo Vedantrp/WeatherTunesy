@@ -1,32 +1,32 @@
-// public/app.js
-
 const CLIENT_STORAGE_KEY = 'spotify_access_token';
-const controlsDiv = document.getElementById('controls');
-const loginButton = document.getElementById('loginButton');
-const getPlaylistButton = document.getElementById('getPlaylistButton');
-const statusMessage = document.getElementById('statusMessage');
-const playlistLinkDiv = document.getElementById('playlistLink');
-const playlistLinkAnchor = document.getElementById('playlistLinkAnchor');
+
+// Variable declarations (will be assigned in DOMContentLoaded)
+let controlsDiv;
+let loginButton;
+let getPlaylistButton;
+let statusMessage;
+let playlistLinkDiv;
+let playlistLinkAnchor;
 
 
-// --- TOKEN HANDLER ---
+// --- CORE HANDLERS ---
+
+const getAccessToken = () => localStorage.getItem(CLIENT_STORAGE_KEY);
 
 /**
- * Checks the URL hash for tokens (redirect from /api/callback)
- * and stores the access token in localStorage.
+ * Checks the URL hash for tokens (redirect from /api/callback) and stores them.
+ * Uses history.replaceState to prevent repeated token parsing on refresh.
  */
 const parseTokensFromHash = () => {
     const hash = window.location.hash.substring(1);
     if (!hash) return null;
 
-    // Use URLSearchParams for safe, modern parsing (avoids CSP issues)
     const params = new URLSearchParams(hash);
     const accessToken = params.get('access_token');
     
     if (accessToken) {
         localStorage.setItem(CLIENT_STORAGE_KEY, accessToken);
-        // Clean the URL hash after storing the token
-        // Use history.replaceState to prevent re-parsing tokens on refresh
+        // Clean the URL hash after storing the token (prevents CSP issues and re-login loop)
         history.replaceState(null, '', window.location.pathname); 
         return accessToken;
     }
@@ -34,10 +34,10 @@ const parseTokensFromHash = () => {
 };
 
 /**
- * Initializes the app state (logged in or logged out).
+ * Initializes the app state based on whether a token is present.
  */
 const initializeApp = () => {
-    let accessToken = parseTokensFromHash() || localStorage.getItem(CLIENT_STORAGE_KEY);
+    let accessToken = parseTokensFromHash() || getAccessToken();
     
     if (accessToken) {
         loginButton.style.display = 'none';
@@ -51,8 +51,6 @@ const initializeApp = () => {
 };
 
 
-// --- API/WEATHER LOGIC ---
-
 /**
  * Fetches user location and calls Vercel API to determine music mood from weather.
  * @returns {Promise<string>} The derived mood (e.g., 'sunny', 'rainy').
@@ -60,12 +58,16 @@ const initializeApp = () => {
 const determineWeatherMood = async () => {
     statusMessage.textContent = 'Getting your current location and weather...';
     
+    // Default/Fallback mood is what the user has manually selected
+    let fallbackMood = document.getElementById('weatherSelect').value; 
+    
     try {
-        // 1. Get location via Geolocation API
+        // 1. Get location
         const position = await new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                return reject(new Error('Geolocation is not supported by your browser.'));
+                return reject(new Error('Geolocation not supported.'));
             }
+            // Use getCurrentPosition with a timeout for reliability
             navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
         });
         
@@ -81,31 +83,28 @@ const determineWeatherMood = async () => {
             return weatherData.mood;
         }
         
-        // Fallback to manual selection if API call fails but location works
+        // If weather API fails, use manual fallback
         console.warn("Weather API lookup failed, falling back to manual mood.");
-        return document.getElementById('weatherSelect').value;
+        return fallbackMood;
 
     } catch (e) {
-        // Fallback to manual selection if geolocation or network fails
-        console.warn("Geolocation or Weather network failed, falling back to manual mood:", e.message);
-        statusMessage.textContent = `Could not auto-detect weather. Using manually selected mood.`;
-        return document.getElementById('weatherSelect').value;
+        // If Geolocation/network fails, use manual fallback
+        console.warn("Geolocation or network failed, falling back to manual mood:", e.message);
+        statusMessage.textContent = `Could not auto-detect weather. Using manually selected mood (${fallbackMood}).`;
+        return fallbackMood;
     }
 };
 
 
 // --- EVENT LISTENERS ---
 
-// 1. Login Button Click
-loginButton.addEventListener('click', () => {
-    // CRITICAL: Navigate the browser directly to the API endpoint to initiate the redirect chain
+const handleLoginClick = () => {
+    // CRITICAL FIX: Direct browser navigation to the Vercel endpoint
     window.location = '/api/login'; 
-});
+};
 
-
-// 2. Get Playlist Button Click
-getPlaylistButton.addEventListener('click', async () => {
-    const accessToken = localStorage.getItem(CLIENT_STORAGE_KEY);
+const handlePlaylistClick = async () => {
+    const accessToken = getAccessToken();
     if (!accessToken) {
         alert("Session expired. Please log in again.");
         initializeApp();
@@ -141,10 +140,10 @@ getPlaylistButton.addEventListener('click', async () => {
 
         } else {
             // Handle API errors (e.g., zero tracks, expired token)
-            statusMessage.textContent = `❌ Error: ${data.error || 'Failed to generate playlist. Check Vercel logs.'}`;
-            // If token is clearly bad, force re-login
+            statusMessage.textContent = `❌ Error: ${data.error || 'Failed to generate playlist. Try relogging.'}`;
             if (data.error && data.error.includes('token')) {
                  localStorage.removeItem(CLIENT_STORAGE_KEY);
+                 initializeApp();
             }
         }
     } catch (error) {
@@ -153,8 +152,32 @@ getPlaylistButton.addEventListener('click', async () => {
     } finally {
         getPlaylistButton.disabled = false;
     }
+};
+
+
+// --- Initialization Wrapper ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Assign global variables (CRITICAL for resolving ReferenceErrors)
+    controlsDiv = document.getElementById('controls');
+    loginButton = document.getElementById('loginButton');
+    getPlaylistButton = document.getElementById('getPlaylistButton');
+    statusMessage = document.getElementById('statusMessage');
+    playlistLinkDiv = document.getElementById('playlistLink');
+    playlistLinkAnchor = document.getElementById('playlistLinkAnchor');
+    
+    // 2. Attach listeners only if elements are found
+    if (loginButton && getPlaylistButton) {
+        // Attach event handlers using the defined functions
+        loginButton.addEventListener('click', handleLoginClick);
+        getPlaylistButton.addEventListener('click', handlePlaylistClick);
+
+        // 3. Start the application logic
+        initializeApp();
+    } else {
+        console.error("Initialization Failed: Required HTML elements (loginButton or getPlaylistButton) not found.");
+        if (statusMessage) {
+            statusMessage.textContent = "Initialization Error. Check console.";
+        }
+    }
 });
-
-
-// Start the application when the script loads
-initializeApp();
