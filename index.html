@@ -1,169 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>WeatherTunes</title>
-
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0d0d0d;
-  color: white;
-}
-
-.container {
-  max-width: 600px;
-  margin: auto;
-  padding: 18px;
-}
-
-h1 {
-  text-align: center;
-  margin-bottom: 6px;
-  font-size: 28px;
-}
-
-button {
-  background: #1db954;
-  border: none;
-  padding: 12px;
-  width: 100%;
-  border-radius: 7px;
-  color: #fff;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 8px;
-  transition: 0.2s;
-}
-button:hover { opacity: 0.8; }
-
-input, select {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  margin-bottom: 10px;
-  font-size: 15px;
-}
-
-.hidden { display: none; }
-
-.card {
-  background: #181818;
-  padding: 12px;
-  margin-top: 12px;
-  border-radius: 8px;
-}
-
-#tracks li {
-  padding: 6px 0;
-  border-bottom: 1px solid #333;
-  font-size: 14px;
-}
-
-#error, #notice {
-  background: #e50914;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 5px;
-  font-size: 14px;
-  text-align: center;
-}
-
-#notice { background: #444; }
-
-#loading {
-  text-align: center;
-  margin-top: 12px;
-  font-size: 14px;
-}
-
-#userBox {
-  margin-bottom: 12px;
-  font-size: 15px;
-}
-
-.logout-btn {
-  background: #c62828;
-  margin-top: 6px;
-}
-
-small {
-  font-size: 12px;
-  color: #aaa;
-}
-</style>
+<link rel="stylesheet" href="styles.css"/>
 </head>
-
 <body>
-<div class="container">
+  <div class="container">
+    <h1>🌤️ WeatherTunes</h1>
+    <p class="sub">Music that matches your weather & language</p>
 
-  <h1>🌤️ WeatherTunes</h1>
-  <p style="text-align:center;font-size:13px;color:#bbb;">
-    Music that matches your weather & language 🎶
-  </p>
+    <button id="loginBtn">Login with Spotify</button>
+    <div id="userInfo" class="hidden">
+      <span id="userName"></span>
+      <button id="logoutBtn" class="danger">Logout</button>
+    </div>
 
-  <!-- AUTH -->
-  <button id="loginBtn">Login with Spotify</button>
+    <div class="card">
+      <input id="locationInput" placeholder="Enter city (e.g., Mumbai)"/>
+      <select id="languageSelect">
+        <option value="english">English</option>
+        <option value="hindi">Hindi / Bollywood</option>
+        <option value="punjabi">Punjabi</option>
+        <option value="telugu">Telugu</option>
+        <option value="tamil">Tamil</option>
+        <option value="spanish">Spanish</option>
+        <option value="korean">Korean (K-Pop)</option>
+        <option value="japanese">Japanese (J-Pop)</option>
+        <option value="french">French</option>
+        <option value="german">German</option>
+        <option value="italian">Italian</option>
+        <option value="chinese">Chinese (C/Mando/Canto)</option>
+      </select>
+      <button id="searchBtn">Get Weather & Songs</button>
+    </div>
 
-  <div id="userBox" class="hidden">
-    ✅ Logged in as <b id="userName"></b><br>
-    <button id="logoutBtn" class="logout-btn">Logout</button>
+    <div id="error" class="hidden"></div>
+
+    <div id="weatherCard" class="card hidden">
+      <b>Weather:</b> <span id="wText"></span> — <b><span id="wTemp"></span>°C</b>
+    </div>
+
+    <div id="playlistCard" class="card hidden">
+      <ul id="aiSongList"></ul>
+      <button id="createPlaylistBtn" class="primary">Create Spotify Playlist</button>
+      <div id="createdPlaylist" class="hidden" style="margin-top:10px;">
+        ✅ Playlist created! <a id="playlistLink" href="#" target="_blank">Open playlist →</a>
+      </div>
+    </div>
   </div>
 
-  <!-- SEARCH -->
-  <input id="city" placeholder="Enter city (e.g., Mumbai)" />
-
-  <select id="language">
-    <option value="english">🇬🇧 English</option>
-    <option value="hindi">🇮🇳 Hindi</option>
-    <option value="punjabi">🇮🇳 Punjabi</option>
-    <option value="tamil">🇮🇳 Tamil</option>
-    <option value="telugu">🇮🇳 Telugu</option>
-    <option value="spanish">🇪🇸 Spanish</option>
-    <option value="korean">🇰🇷 Korean (K-Pop)</option>
-    <option value="japanese">🇯🇵 Japanese (J-Pop)</option>
-    <option value="french">🇫🇷 French</option>
-    <option value="german">🇩🇪 German</option>
-    <option value="italian">🇮🇹 Italian</option>
-  </select>
-
-  <button id="goBtn">Get Weather & Songs</button>
-
-  <div id="loading" class="hidden">Loading…</div>
-  <div id="error" class="hidden"></div>
-  <div id="notice" class="hidden"></div>
-
-  <!-- WEATHER -->
-  <div id="weather" class="card hidden">
-    <b>Weather:</b> <span id="wText"></span> —
-    <b><span id="wTemp"></span>°C</b><br>
-    <b>Mood:</b> <span id="mood"></span><br>
-    <b>Language:</b> <span id="lang"></span>
-  </div>
-
-  <!-- TRACKS -->
-  <div id="tracksCard" class="card hidden">
-    <b>Recommended Songs:</b>
-    <ul id="tracks"></ul>
-    <button id="createBtn" disabled>Create Spotify Playlist</button>
-  </div>
-
-  <!-- CREATED -->
-  <div id="createdBox" class="card hidden">
-    ✅ Playlist Created!<br><br>
-    <a id="playlistLink" href="#" target="_blank" style="color:#1db954;font-size:15px;">
-      Open Playlist →
-    </a>
-  </div>
-
-  <br>
-  <small>Powered by Spotify + WeatherAPI</small>
-
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
