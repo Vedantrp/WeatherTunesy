@@ -2,55 +2,51 @@
 <html>
 <head>
 <title>WeatherTunes</title>
-<div class="auth-bar">
-  <button id="loginBtn" class="auth-btn">Login with Spotify</button>
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+<div class="container">
+
+<h2>🌤️ WeatherTunes</h2>
+
+<div id="authBar">
+  <button id="loginBtn">Login with Spotify</button>
 
   <div id="userInfo" class="hidden">
-      <span id="userName"></span>
-      <button id="logoutBtn" class="auth-btn">Logout</button>
+      Logged in as <span id="userName"></span>
+      <button id="logoutBtn">Logout</button>
   </div>
 </div>
 
-</head>
-<body>
+<br/>
 
-<!-- Auth -->
-<button id="loginBtn">Login with Spotify</button>
-<div id="userInfo" class="hidden">
-  <span id="userName"></span>
-  <button id="logoutBtn">Logout</button>
-</div>
-
-<!-- Input -->
-<input id="locationInput" placeholder="Enter city (e.g. Mumbai)">
+<input id="locationInput" placeholder="Enter city (e.g London)" />
 <select id="languageSelect">
   <option value="english">English</option>
-  <option value="hindi">Hindi / Bollywood</option>
+  <option value="hindi">Hindi</option>
   <option value="punjabi">Punjabi</option>
+  <option value="spanish">Spanish</option>
+  <option value="korean">K-Pop</option>
 </select>
-<button id="searchBtn">Get Music</button>
+<button id="searchBtn">Get Playlist</button>
 
-<!-- Weather -->
-<div id="weatherCard" class="hidden">
-  <h3>Weather</h3>
-  <div>Condition: <span id="wText"></span></div>
-  <div>Temp: <span id="wTemp"></span>°C</div>
+<p id="error" class="hidden"></p>
+
+<div id="weatherBox" class="hidden">
+  <h3 id="city"></h3>
+  <p id="temp"></p>
+  <p id="condition"></p>
 </div>
 
-<!-- Playlist -->
 <div id="playlistCard" class="hidden">
-  <h3>Your Mood Playlist</h3>
-  <ul id="aiSongList"></ul>
-  <button id="createPlaylistBtn" disabled>Create Spotify Playlist</button>
+  <h3>Suggested Songs 🎵</h3>
+  <ul id="songList"></ul>
+  <button id="createPlaylistBtn">Create Spotify Playlist</button>
+  <p><a id="playlistLink" href="#" target="_blank"></a></p>
 </div>
 
-<!-- Playlist Result -->
-<div id="createdPlaylist" class="hidden">
-  ✅ Playlist Created — <a id="playlistLink" target="_blank">Open</a>
 </div>
-
-<!-- Error -->
-<div id="error" class="hidden" style="color:red;"></div>
 
 <script src="app.js"></script>
 </body>
