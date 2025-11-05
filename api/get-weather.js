@@ -1,10 +1,9 @@
-// api/get-weather.js
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'; // Standard ESM import
+import { URLSearchParams } from 'url';
 
 const OPENWEATHER_ENDPOINT = 'http://googleusercontent.com/api.openweathermap.org/11';
 
 const weatherToMood = (weatherMain) => {
-    // ... (Your mood mapping logic remains the same)
     const main = weatherMain.toLowerCase();
     
     if (main.includes('clear') || main.includes('sun')) return 'sunny';
@@ -18,7 +17,6 @@ const weatherToMood = (weatherMain) => {
 
 
 export default async (req, res) => {
-    // ... (Content remains the same, but fetch is now imported)
     if (req.method !== 'GET') {
         return res.status(405).send('Method Not Allowed');
     }
@@ -32,6 +30,7 @@ export default async (req, res) => {
     }
 
     try {
+        // fetch is now imported directly via ESM syntax
         const weatherUrl = `${OPENWEATHER_ENDPOINT}?lat=${lat}&lon=${lon}&appid=${apiKey}`;
         
         const weatherResponse = await fetch(weatherUrl);
