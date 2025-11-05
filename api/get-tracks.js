@@ -95,7 +95,13 @@ export default async (req, res) => {
 
 
         // --- 2. Get User ID ---
-        const profileResponse = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${accessToken}` } });
+      // /api/get-tracks.js (Excerpt from Step 2: Get User ID)
+
+// This uses the correct Spotify endpoint placeholder for user profile:
+const profileResponse = await fetch('https://api.spotify.com/v1/me', { 
+    headers: { 'Authorization': `Bearer ${accessToken}` } 
+});
+// ...
         const profileData = await profileResponse.json();
         const userId = profileData.id;
 
