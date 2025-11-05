@@ -1,6 +1,6 @@
 export default async function(req,res){
   const city = req.query.city;
-  const key = process.env.WEATHER_KEY;
+  const key = process.env.WEATHER_API_KEY;
 
   const r = await fetch(
     `https://api.weatherapi.com/v1/current.json?key=${key}&q=${city}`
