@@ -1,75 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WeatherTunes Generator</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f7f7f7; color: #333; }
-        #controls { margin-top: 20px; border: 1px solid #ddd; padding: 25px; max-width: 450px; margin: 20px auto; background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #playlistLink { margin-top: 30px; padding: 15px; border: 2px solid #1DB954; background-color: #e6ffed; display: none; border-radius: 8px; max-width: 450px; margin: 30px auto; } 
-        #loginButton, #getPlaylistButton { 
-            padding: 12px 25px; border: none; cursor: pointer; border-radius: 25px; font-weight: bold; transition: background-color 0.3s ease; 
-            margin: 8px;
-        }
-        #loginButton { 
-            background-color: #1DB954; color: white; 
-            box-shadow: 0 4px 10px rgba(29, 185, 84, 0.4);
-        }
-        #loginButton:hover { background-color: #1ed760; }
-
-        #getPlaylistButton { 
-            background-color: #0070f3; color: white; 
-            box-shadow: 0 4px 10px rgba(0, 112, 243, 0.4);
-        }
-        #getPlaylistButton:hover { background-color: #0060e0; }
-
-        select { padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin: 5px; }
-        .input-group { margin: 15px 0; display: block; }
-    </style>
+<title>WeatherTunes Basic</title>
+<style>
+body { font-family: Arial; background:#111; color:white; text-align:center; padding:40px; }
+button,input { padding:10px; margin:10px; border-radius:8px; }
+</style>
 </head>
 <body>
-    <h1>☀️ WeatherTunes Generator 🎶</h1>
-    <p id="statusMessage">Initializing...</p>
-    
-    <button id="loginButton">Login with Spotify</button>
+<h2>WeatherTunes 🎵 (Basic)</h2>
 
-    <div id="controls" style="display:none;">
-        <h3>1. Set Music Preferences</h3>
-        
-        <div class="input-group">
-            <label for="weatherSelect">Mood (Fallback if Geo fails):</label><br>
-            <select id="weatherSelect">
-                <option value="sunny">Sunny / Happy</option>
-                <option value="rainy">Rainy / Chill</option>
-                <option value="stormy">Stormy / Intense</option>
-                <option value="snow">Snow / Cozy</option>
-            </select>
-        </div>
-        
-        <div class="input-group">
-            <label for="languageSelect">Music Language:</label><br>
-            <select id="languageSelect">
-                <option value="English">English</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Punjabi">Punjabi</option>
-                <option value="Japanese">Japanese</option>
-                <option value="Korean">Korean</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-                <!-- Add other languages here -->
-            </select>
-        </div>
-        
-        <button id="getPlaylistButton">Get Playlist</button>
-    </div>
+<button id="loginBtn">Login with Spotify</button>
+<p id="user"></p>
 
-    <div id="playlistLink">
-        <p>✅ **Success!**</p>
-        <a id="playlistLinkAnchor" href="#" target="_blank">Open Playlist in Spotify</a>
-    </div>
+<input id="cityInput" placeholder="Enter City" />
+<button id="goBtn">Get Playlist</button>
 
-    <!-- CRITICAL: Script tag placement below all elements -->
-    <script src="app.js"></script>
+<div id="status"></div>
+<a id="playlistLink" href="#" target="_blank"></a>
+
+<script src="app.js"></script>
 </body>
 </html>
