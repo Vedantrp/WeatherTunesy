@@ -19,7 +19,12 @@ export default async (req, res) => {
         }
 
         // CRITICAL: Basic Auth header encoding
-        const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
+      // api/callback.js (Inside the export default async handler)
+
+// ... variable loading (client_id, client_secret, etc.) must be defined here ...
+
+// CRITICAL FIX: Ensure Buffer is used correctly for Basic Auth
+const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
         
         const bodyParams = new URLSearchParams();
         bodyParams.append('code', code);
