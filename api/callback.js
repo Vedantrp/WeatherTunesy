@@ -1,60 +1,60 @@
-import fetch from "node-fetch";
+// api/callback.js (FIXED: Exchanges code via Basic Auth and redirects with tokens in hash)
+import fetch from 'node-fetch';
+import { URLSearchParams } from 'url';
 
-export default async function handler(req, res) {
-  try {
-    const code = req.query.code;
-    if (!code) {
-      return res.status(400).send("Missing code");
+const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
+
+export default async (req, res) => {
+    const code = req.query.code || null;
+    
+    const client_id = process.env.SPOTIFY_CLIENT_ID;
+    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirect_uri = process.env.REDIRECT_URI;
+    const frontendUrl = process.env.FRONTEND_URL || '/'; 
+
+    if (code === null) {
+        const error = req.query.error || 'unknown_error';
+        return res.redirect(`${frontendUrl}?error=${error}`);
     }
 
-    const redirect_uri = "https://weather-tunes-xi.vercel.app/api/callback";
+    // Basic Auth preparation
+    const authHeader = 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64');
+    
+    // Request body preparation
+    const bodyParams = new URLSearchParams();
+    bodyParams.append('code', code);
+    bodyParams.append('redirect_uri', redirect_uri);
+    bodyParams.append('grant_type', 'authorization_code');
 
-    // ✅ Base64 client auth
-    const authHeader = Buffer.from(
-      process.env.SPOTIFY_CLIENT_ID + ":" + process.env.SPOTIFY_CLIENT_SECRET
-    ).toString("base64");
+    try {
+        const tokenResponse = await fetch(TOKEN_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Authorization': authHeader,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: bodyParams.toString()
+        });
 
-    const body = new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri
-    });
+        const data = await tokenResponse.json();
 
-    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": `Basic ${authHeader}`
-      },
-      body
-    });
+        if (tokenResponse.ok) {
+            // Redirect to frontend with tokens in the URL hash
+            const redirectParams = new URLSearchParams({
+                access_token: data.access_token,
+                refresh_token: data.refresh_token,
+                expires_in: data.expires_in
+            });
 
-    const tokenData = await tokenRes.json();
+            return res.redirect(`${frontendUrl}#${redirectParams.toString()}`);
 
-    if (!tokenData.access_token) {
-      console.error("Spotify token error:", tokenData);
-      return res.status(400).send("Spotify Auth Failed");
+        } else {
+            console.error('Spotify Token Exchange Error:', data);
+            const error = data.error_description || data.error || 'token_exchange_failed';
+            return res.redirect(`${frontendUrl}?error=${encodeURIComponent(error)}`);
+        }
+
+    } catch (error) {
+        return res.redirect(`${frontendUrl}?error=network_error`);
     }
-
-    // ✅ Fetch user profile
-    const userRes = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
-    });
-    const user = await userRes.json();
-
-    return res.send(`
-      <script>
-        window.opener.postMessage({
-          type: 'SPOTIFY_AUTH_SUCCESS',
-          accessToken: '${tokenData.access_token}',
-          refreshToken: '${tokenData.refresh_token}',
-          user: ${JSON.stringify(user)}
-        }, '*');
-        window.close();
-      </script>
-    `);
-  } catch (err) {
-    console.error("Callback error:", err);
-    res.status(500).send("Callback failed");
-  }
-}
+};
