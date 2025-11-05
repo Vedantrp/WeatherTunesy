@@ -1,111 +1,138 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+// api/get-tracks.js (FIXED: Robust search, minimum track count, playlist creation, URL return)
+import fetch from 'node-fetch';
 
-  try {
-    const { language = "english", mood = "relaxed", token } = req.body || {};
-    if (!token) return res.status(401).json({ error: "Missing Spotify token" });
+// Helper function for mapping mood/language to Spotify parameters
+const getSearchParams = (mood, language) => {
+    let q = '';
+    let market = 'US';
+    let seed_genres = '';
 
-    const lang = {
-      english: { market: "US", bases: ["english pop", "pop hits", "indie pop"] },
-      hindi:   { market: "IN", bases: ["bollywood", "hindi hits", "arijit singh", "bollywood acoustic", "bollywood lofi"] },
-      punjabi: { market: "IN", bases: ["punjabi hits", "punjabi pop", "ap dhillon"] },
-      telugu:  { market: "IN", bases: ["telugu hits", "tollywood", "telugu love"] },
-      tamil:   { market: "IN", bases: ["tamil hits", "kollywood", "tamil chill"] },
-      spanish: { market: "ES", bases: ["latin pop", "reggaeton", "musica latina"] },
-      korean:  { market: "KR", bases: ["k-pop", "kpop chill"] },
-      japanese:{ market: "JP", bases: ["jpop", "anime songs"] },
-      french:  { market: "FR", bases: ["french pop", "chanson"] },
-      german:  { market: "DE", bases: ["german pop", "deutsch rap"] },
-      italian: { market: "IT", bases: ["italian pop"] },
-      chinese: { market: "HK", bases: ["mandarin pop", "c-pop"] },
-    }[language] || { market: "US", bases: ["pop hits"] };
+    // Language Mapping and Market
+    switch (language.toLowerCase()) {
+        case 'hindi': q = 'Bollywood top'; market = 'IN'; break;
+        case 'punjabi': q = 'Punjabi Pop'; market = 'IN'; break;
+        case 'japanese': q = 'J-Pop'; market = 'JP'; break;
+        case 'korean': q = 'K-Pop'; market = 'KR'; break;
+        case 'spanish': q = 'Latin Pop'; market = 'ES'; break;
+        // Add more languages here...
+        default: q = 'Global hits'; market = 'US'; break; // English, French, German, Italian, Chinese fallback
+    }
 
-    const moodTerms = {
-      relaxed: ["chill", "acoustic", "calm"],
-      cozy: ["lofi", "soft"],
-      upbeat: ["happy", "dance"],
-      romantic: ["romantic", "love", "valentine"],
-      party: ["party", "club"],
-      workout: ["workout", "gym"],
-      focus: ["focus", "study", "instrumental"],
-      sleep: ["sleep", "ambient"],
-      calm: ["piano", "soft"],
-      intense: ["bass", "edm", "electro"],
-      mysterious: ["midnight", "lofi dark", "ambient"]
-    }[mood] || ["chill"];
+    // Mood Mapping and Genre/Attribute Adjustment
+    switch (mood.toLowerCase()) {
+        case 'sunny':
+        case 'clear':
+            q += ' happy upbeat';
+            seed_genres = 'pop,dance';
+            break;
+        case 'rainy':
+        case 'gloomy':
+            q += ' chill relaxing';
+            seed_genres = 'jazz,lo-fi,indie';
+            break;
+        case 'stormy':
+        case 'snow':
+            q += ' dramatic intense';
+            seed_genres = 'rock,metal,soundtracks';
+            break;
+    }
 
-    const searchTerms = [];
-    for (const b of lang.bases) for (const m of moodTerms) searchTerms.push(`${b} ${m}`);
-    if (searchTerms.length === 0) searchTerms.push(lang.bases[0]);
+    return { q, market, seed_genres };
+};
 
-    let pool = [];
 
-    for (const term of searchTerms.slice(0, 10)) {
-      const searchURL = `https://api.spotify.com/v1/search?q=${encodeURIComponent(term)}&type=playlist&market=${lang.market}&limit=2`;
-      const s = await fetch(searchURL, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json());
+export default async (req, res) => {
+    if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+    }
 
-      const pls = s?.playlists?.items || [];
-      for (const pl of pls) {
-        const tURL = `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=100&market=${lang.market}`;
-        const t = await fetch(tURL, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r => r.json());
+    try {
+        const { accessToken, mood, language } = req.body;
+        if (!accessToken || !mood || !language) {
+            return res.status(400).json({ error: 'Missing required parameters.' });
+        }
 
-        (t.items || []).forEach(it => {
-          const tr = it?.track;
-          if (tr?.id && tr?.uri) {
-            pool.push({
-              id: tr.id,
-              uri: tr.uri,
-              name: tr.name,
-              artist: tr.artists?.[0]?.name || "Unknown"
-            });
-          }
+        const { q, market, seed_genres } = getSearchParams(mood, language);
+        const min_tracks_target = 35;
+
+
+        // --- 1. Fetch Tracks using Search + Recommendations ---
+        let tracks = [];
+
+        // Try Search first (up to 50 results)
+        const searchUrl = `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=50&market=${market}`;
+        const searchResponse = await fetch(searchUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+        const searchData = await searchResponse.json();
+        
+        if (searchData.tracks && searchData.tracks.items) {
+             tracks = searchData.tracks.items;
+        }
+
+        // If not enough tracks, use Recommendations API to fill the gap
+        if (tracks.length < min_tracks_target && seed_genres) {
+            const recommendationsUrl = `https://developer.spotify.com/documentation/web-api/tutorials/code-flow?seed_genres=${seed_genres}&limit=${min_tracks_target - tracks.length}&market=${market}`;
+            const recResponse = await fetch(recommendationsUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+            const recData = await recResponse.json();
+            
+            if (recData.tracks) {
+                tracks = tracks.concat(recData.tracks);
+            }
+        }
+        
+        // Remove duplicates and limit to 50
+        const uniqueTracks = Array.from(new Map(tracks.map(item => [item.id, item])).values()).slice(0, 50);
+
+        if (uniqueTracks.length < 10) { 
+             return res.status(200).json({ error: 'Could not find sufficient tracks for this query.', tracks: [] });
+        }
+        
+        const formattedTracks = uniqueTracks.map(track => ({
+            id: track.id,
+            uri: track.uri,
+            name: track.name,
+            artist: track.artists.map(a => a.name).join(', ')
+        }));
+
+
+        // --- 2. Get User ID ---
+        const profileResponse = await fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${accessToken}` } });
+        const profileData = await profileResponse.json();
+        const userId = profileData.id;
+
+
+        // --- 3. Create Playlist ---
+        const playlistName = `🎵 ${mood} Mix: ${language} Hits`;
+        const description = `A custom playlist generated for your ${mood} weather in ${language}.`;
+
+        const createPlaylistResponse = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: playlistName, description: description, public: false })
         });
-      }
-      if (pool.length >= 160) break;
-    }
 
-    // Fallback if none
-    if (!pool.length) {
-      const fb = await fetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(lang.bases[0])}&type=playlist&market=${lang.market}&limit=1`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      ).then(r => r.json());
-
-      const pl = fb?.playlists?.items?.[0];
-      if (pl?.id) {
-        const t = await fetch(
-          `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=100&market=${lang.market}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        ).then(r => r.json());
-
-        (t.items || []).forEach(it => {
-          const tr = it?.track;
-          if (tr?.id && tr?.uri) {
-            pool.push({
-              id: tr.id,
-              uri: tr.uri,
-              name: tr.name,
-              artist: tr.artists?.[0]?.name || "Unknown"
-            });
-          }
+        const playlistData = await createPlaylistResponse.json();
+        const playlistId = playlistData.id;
+        const playlistUrl = playlistData.external_urls.spotify;
+        const trackUris = formattedTracks.map(t => t.uri);
+        
+        
+        // --- 4. Add Tracks to Playlist ---
+        await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uris: trackUris })
         });
-      }
-    }
+        
+        
+        // --- 5. Final Response ---
+        return res.status(200).json({
+            message: 'Playlist created successfully!',
+            playlistUrl: playlistUrl, 
+            tracks: formattedTracks
+        });
 
-    // Dedup + shuffle + slice 35
-    const uniq = [...new Map(pool.map(x => [x.id, x])).values()];
-    for (let i = uniq.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [uniq[i], uniq[j]] = [uniq[j], uniq[i]];
+    } catch (error) {
+        console.error('API Error:', error);
+        return res.status(500).json({ error: 'Internal Server Error during playlist creation.' });
     }
-
-    return res.status(200).json({ tracks: uniq.slice(0, 35) });
-  } catch (err) {
-    console.error("get-tracks error:", err);
-    return res.status(500).json({ error: "Track fetch failed" });
-  }
-}
+};
