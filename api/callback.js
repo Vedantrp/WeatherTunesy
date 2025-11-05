@@ -1,6 +1,7 @@
 // api/callback.js
-import fetch from 'node-fetch';
-import { URLSearchParams } from 'url'; 
+// /api/callback.js
+import fetch from 'node-fetch'; // CRITICAL: Required for making the POST request to Spotify
+import { URLSearchParams } from 'url'; // Required for building the request body
 
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 
