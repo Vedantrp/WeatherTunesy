@@ -1,7 +1,8 @@
 export default function handler(req, res) {
   const client_id = process.env.SPOTIFY_CLIENT_ID;
-  const redirect_uri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/callback`;
-  
+  const base = process.env.NEXT_PUBLIC_SITE_URL;   // ✅ must end WITHOUT slash
+  const redirect_uri = `${base}/api/callback`;     // ✅ always one slash
+
   const scope = [
     "user-read-email",
     "playlist-modify-private",
