@@ -1,53 +1,10 @@
-const fetch = require('node-fetch');
+export default function handler(req, res) {
+  const redirect = encodeURIComponent(`${process.env.SITE_URL}/api/callback`);
+  const scope = "playlist-modify-public playlist-modify-private user-read-email";
 
-const OPENWEATHER_ENDPOINT = 'http://googleusercontent.com/api.openweathermap.org/11';
+  const authUrl =
+    `https://accounts.spotify.com/authorize?client_id=${process.env.SPOTIFY_CLIENT_ID}` +
+    `&response_type=code&redirect_uri=${redirect}&scope=${scope}`;
 
-const weatherToMood = (weatherMain) => {
-    const main = weatherMain.toLowerCase();
-    
-    if (main.includes('clear') || main.includes('sun')) return 'sunny';
-    if (main.includes('rain') || main.includes('drizzle')) return 'rainy';
-    if (main.includes('thunderstorm') || main.includes('squall')) return 'stormy';
-    if (main.includes('snow')) return 'snow';
-    if (main.includes('cloud') || main.includes('mist') || main.includes('haze')) return 'gloomy';
-    
-    return 'sunny';
-};
-
-
-module.exports = async (req, res) => {
-    if (req.method !== 'GET') {
-        return res.status(405).send('Method Not Allowed');
-    }
-
-    const lat = req.query.lat;
-    const lon = req.query.lon;
-    const apiKey = process.env.WEATHER_API_KEY;
-
-    if (!lat || !lon || !apiKey) {
-        return res.status(400).json({ error: 'Missing coordinates or API key configuration.' });
-    }
-
-    try {
-        const weatherUrl = `${OPENWEATHER_ENDPOINT}?lat=${lat}&lon=${lon}&appid=${apiKey}`;
-        
-        const weatherResponse = await fetch(weatherUrl);
-        const weatherData = await weatherResponse.json();
-        
-        if (weatherResponse.ok && weatherData.weather && weatherData.weather.length > 0) {
-            const weatherCondition = weatherData.weather[0].main;
-            const mood = weatherToMood(weatherCondition);
-            
-            return res.status(200).json({ 
-                mood: mood,
-                condition: weatherCondition 
-            });
-        }
-        
-        return res.status(500).json({ error: 'Failed to fetch weather data.' });
-
-    } catch (error) {
-        console.error('Weather API Error:', error);
-        return res.status(500).json({ error: 'Internal server error while fetching weather.' });
-    }
-};
+  res.json({ authUrl });
+}
