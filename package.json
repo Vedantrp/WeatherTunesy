@@ -5,11 +5,7 @@
     "start": "vercel dev"
   },
   "dependencies": {
-    "node-fetch": "2.6.1", 
-    "url": "0.11.0",
-    "http-errors": "1.8.0",
-    "express": "4.18.2" 
-    "type":"module"
-    // You must have these dependencies if they are used in your code.
-  }
+    "node-fetch": "^3.0.0"  <-- MISSING COMMA HERE
+    "url": "^0.11.0"
+}
 }
