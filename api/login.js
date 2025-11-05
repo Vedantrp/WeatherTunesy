@@ -1,19 +1,19 @@
 export default function handler(req, res) {
-  const client = process.env.SPOTIFY_CLIENT_ID;
+  const client_id = process.env.SPOTIFY_CLIENT_ID;
+  const redirect_uri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/callback`;
   
-  // ✅ Build correct redirect
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.VERCEL_URL ||
-    "http://localhost:3000";
+  const scope = [
+    "user-read-email",
+    "playlist-modify-private",
+    "playlist-modify-public"
+  ].join(" ");
 
-  const redirect_uri = `${base.startsWith("http") ? base : `https://${base}`}/api/callback`;
+  const authUrl =
+    `https://accounts.spotify.com/authorize` +
+    `?client_id=${client_id}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(redirect_uri)}` +
+    `&scope=${encodeURIComponent(scope)}`;
 
-  const scope = "user-read-email playlist-modify-private playlist-modify-public";
-
-  const url = `https://accounts.spotify.com/authorize?client_id=${client}&response_type=code&redirect_uri=${encodeURIComponent(
-    redirect_uri
-  )}&scope=${encodeURIComponent(scope)}`;
-
-  res.redirect(url);
+  return res.status(200).json({ authUrl });
 }
