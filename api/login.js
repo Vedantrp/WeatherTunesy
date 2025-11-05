@@ -1,45 +1,53 @@
-// api/login.js
+const fetch = require('node-fetch');
 
-// Must be defined here to prevent "ReferenceError: generateRandomString is not defined"
-const generateRandomString = (length) => {
-    let text = '';
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const OPENWEATHER_ENDPOINT = 'http://googleusercontent.com/api.openweathermap.org/11';
 
-    for (let i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+const weatherToMood = (weatherMain) => {
+    const main = weatherMain.toLowerCase();
+    
+    if (main.includes('clear') || main.includes('sun')) return 'sunny';
+    if (main.includes('rain') || main.includes('drizzle')) return 'rainy';
+    if (main.includes('thunderstorm') || main.includes('squall')) return 'stormy';
+    if (main.includes('snow')) return 'snow';
+    if (main.includes('cloud') || main.includes('mist') || main.includes('haze')) return 'gloomy';
+    
+    return 'sunny';
 };
 
-// CRITICAL FIX: Use the correct Authorization endpoint
-const SPOTIFY_AUTH_BASE_URL = 'https://accounts.spotify.com/authorize'; 
 
-export default (req, res) => {
+module.exports = async (req, res) => {
+    if (req.method !== 'GET') {
+        return res.status(405).send('Method Not Allowed');
+    }
+
+    const lat = req.query.lat;
+    const lon = req.query.lon;
+    const apiKey = process.env.WEATHER_API_KEY;
+
+    if (!lat || !lon || !apiKey) {
+        return res.status(400).json({ error: 'Missing coordinates or API key configuration.' });
+    }
+
     try {
-        const client_id = process.env.SPOTIFY_CLIENT_ID;
-        const redirect_uri = process.env.REDIRECT_URI;
+        const weatherUrl = `${OPENWEATHER_ENDPOINT}?lat=${lat}&lon=${lon}&appid=${apiKey}`;
         
-        if (!client_id || !redirect_uri) {
-            console.error("CONFIGURATION ERROR: Missing credentials.");
-            return res.status(500).send('Configuration Error: Spotify Client ID or Redirect URI are missing.');
+        const weatherResponse = await fetch(weatherUrl);
+        const weatherData = await weatherResponse.json();
+        
+        if (weatherResponse.ok && weatherData.weather && weatherData.weather.length > 0) {
+            const weatherCondition = weatherData.weather[0].main;
+            const mood = weatherToMood(weatherCondition);
+            
+            return res.status(200).json({ 
+                mood: mood,
+                condition: weatherCondition 
+            });
         }
         
-        const state = generateRandomString(16);
-        const scope = 'user-read-private user-read-email playlist-modify-public playlist-modify-private';
-        
-        // Build the final authorization URL
-        const authUrl = SPOTIFY_AUTH_BASE_URL + 
-            '?response_type=code' + 
-            '&client_id=' + client_id +
-            '&scope=' + encodeURIComponent(scope) +
-            '&redirect_uri=' + encodeURIComponent(redirect_uri) +
-            '&state=' + state;
-
-        res.redirect(authUrl); 
+        return res.status(500).json({ error: 'Failed to fetch weather data.' });
 
     } catch (error) {
-        console.error('CRASH IN /api/login.js:', error);
-        // This catch block prevents the generic Vercel 500 HTML
-        return res.status(500).send(`Critical Server Crash: ${error.message}.`);
+        console.error('Weather API Error:', error);
+        return res.status(500).json({ error: 'Internal server error while fetching weather.' });
     }
 };
