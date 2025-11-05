@@ -5,7 +5,7 @@
     "start": "vercel dev"
   },
   "dependencies": {
-    "node-fetch": "^3.0.0"  <-- MISSING COMMA HERE
+    "node-fetch": "^3.0.0" 
     "url": "^0.11.0"
 }
 }
