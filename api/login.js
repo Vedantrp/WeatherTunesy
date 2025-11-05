@@ -9,8 +9,13 @@ export default (req, res) => {
     const scope = 'user-read-private user-read-email playlist-modify-public playlist-modify-private';
     
     // 2. Construct the full Spotify auth URL
-    const authUrl = 'http://googleusercontent.com/spotify.com/5' +
-        'client_id=' + client_id +
+    // CORRECT SPOTIFY BASE URL
+const SPOTIFY_AUTH_URL = 'http://googleusercontent.com/spotify.com/6'; 
+
+const authUrl = SPOTIFY_AUTH_URL + 
+    '?response_type=code' + // Spotify requires this
+    '&client_id=' + client_id + 
+    // ... rest of the parameters
         (scope ? '&scope=' + encodeURIComponent(scope) : '') +
         '&redirect_uri=' + encodeURIComponent(redirect_uri) +
         '&state=' + state;
