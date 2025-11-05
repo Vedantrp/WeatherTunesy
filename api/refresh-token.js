@@ -1,22 +1,28 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.body || {};
+    if (!refreshToken) return res.status(400).json({ error: "Missing refreshToken" });
 
-    const params = new URLSearchParams();
-    params.append("grant_type", "refresh_token");
-    params.append("refresh_token", refreshToken);
-    params.append("client_id", process.env.SPOTIFY_CLIENT_ID);
-    params.append("client_secret", process.env.SPOTIFY_CLIENT_SECRET);
+    const body = new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: process.env.SPOTIFY_CLIENT_ID,
+      client_secret: process.env.SPOTIFY_CLIENT_SECRET
+    });
 
-    const token = await fetch("https://accounts.spotify.com/api/token", {
+    const r = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
-      body: params
-    }).then(r=>r.json());
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
 
-    return res.json({ accessToken: token.access_token });
-  } catch {
-    res.status(500).json({ error: "refresh failed" });
+    const json = await r.json();
+    if (!r.ok) return res.status(400).json(json);
+    return res.status(200).json({ accessToken: json.access_token });
+  } catch (err) {
+    return res.status(500).json({ error: "Token refresh failed" });
   }
 }
