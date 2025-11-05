@@ -8,7 +8,8 @@ export default async function handler(req, res) {
     process.env.VERCEL_URL ||
     "http://localhost:3000";
 
-  const redirect_uri = `${base.startsWith("http") ? base : `https://${base}`}/api/callback`;
+const redirect_uri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/callback`;
+
 
   const params = new URLSearchParams({
     grant_type: "authorization_code",
