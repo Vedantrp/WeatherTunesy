@@ -1,27 +1,41 @@
-// api/callback.js
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   const code = req.query.code;
-  
-  // CRITICAL FIX: Use FRONTEND_URL to match your .env file
   const redirect = `${process.env.FRONTEND_URL}/api/callback`;
 
-  const params = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: redirect,
-    client_id: process.env.SPOTIFY_CLIENT_ID,
-    client_secret: process.env.SPOTIFY_CLIENT_SECRET
-  });
-
-  const r = await fetch("https://accounts.spotify.com/api/token", {
+  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params
+    body: new URLSearchParams({
+      code,
+      grant_type: "authorization_code",
+      redirect_uri: redirect,
+      client_id: process.env.SPOTIFY_CLIENT_ID,
+      client_secret: process.env.SPOTIFY_CLIENT_SECRET
+    })
   });
-  
-  const j = await r.json();
 
-  res.json({ accessToken: j.access_token });
+  const token = await tokenRes.json();
+
+  if (!token.access_token) {
+    return res.status(400).send(`Auth failed: ${token.error_description}`);
+  }
+
+  const userRes = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${token.access_token}` }
+  });
+  const user = await userRes.json();
+
+  return res.send(`
+    <script>
+      window.opener.postMessage({
+        type: "SPOTIFY_AUTH",
+        token: "${token.access_token}",
+        refresh: "${token.refresh_token}",
+        user: ${JSON.stringify(user)}
+      }, "*");
+      window.close();
+    </script>
+  `);
 }
