@@ -1,7 +1,7 @@
 export default function handler(req, res) {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const redirectUri = process.env.SPOTIFY_REDIRECT_URI ;
-
+console.log(process.env.SPOTIFY_REDIRECT_URL)
   console.log("REDIRECT in server:", redirectUri);
 
   if (!clientId || !redirectUri) {
