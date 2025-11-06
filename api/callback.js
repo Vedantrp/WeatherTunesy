@@ -1,41 +1,63 @@
-import fetch from "node-fetch";
-
+// /api/callback.js
 export default async function handler(req, res) {
-  const code = req.query.code;
-  const redirect = `${process.env.SPOTIFY_REDIRECT_URI}`;
+  try {
+    const code = req.query.code;
+    const client_id = process.env.SPOTIFY_CLIENT_ID;
+    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
-  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code,
-      grant_type: "authorization_code",
-      redirect_uri: redirect,
-      client_id: process.env.SPOTIFY_CLIENT_ID,
-      client_secret: process.env.SPOTIFY_CLIENT_SECRET
-    })
-  });
+    if (!code) {
+      return res.status(400).send("❌ Missing code from Spotify");
+    }
 
-  const token = await tokenRes.json();
+    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri,
+        client_id,
+        client_secret
+      })
+    });
 
-  if (!token.access_token) {
-    return res.status(400).send(`Auth failed: ${token.error_description}`);
+    const tokenData = await tokenRes.json();
+    console.log("🎧 Spotify Token Response:", tokenData);
+
+    if (tokenData.error) {
+      return res.send(`
+        <script>
+          window.opener.postMessage({ error: "${tokenData.error}" }, "*");
+          window.close();
+        </script>
+      `);
+    }
+
+    const userRes = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: "Bearer " + tokenData.access_token }
+    });
+
+    const user = await userRes.json();
+
+    return res.send(`
+      <script>
+        window.opener.postMessage({
+          token: "${tokenData.access_token}",
+          refresh: "${tokenData.refresh_token}",
+          user: ${JSON.stringify(user)}
+        }, "*");
+        window.close();
+      </script>
+    `);
+
+  } catch (err) {
+    console.error("❌ Callback Error:", err);
+    return res.send(`
+      <script>
+        window.opener.postMessage({ error: "callback_crashed" }, "*");
+        window.close();
+      </script>
+    `);
   }
-
-  const userRes = await fetch("https://api.spotify.com/v1/me", {
-    headers: { Authorization: `Bearer ${token.access_token}` }
-  });
-  const user = await userRes.json();
-
-  return res.send(`
-    <script>
-      window.opener.postMessage({
-        type: "SPOTIFY_AUTH",
-        token: "${token.access_token}",
-        refresh: "${token.refresh_token}",
-        user: ${JSON.stringify(user)}
-      }, "*");
-      window.close();
-    </script>
-  `);
 }
