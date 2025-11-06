@@ -57,7 +57,7 @@ export default async function handler(req, res) {
           document.body.innerHTML = "<h2>❌ Login failed.</h2>";
         }
       </script>
-    `);
+    `); 
   }
 }
  
