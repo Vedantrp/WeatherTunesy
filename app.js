@@ -1,71 +1,132 @@
-console.log("WeatherTunes Loaded ✅");
+// app.js
 
-const loginBtn = document.getElementById("loginBtn");
-const goBtn = document.getElementById("goBtn");
-const userBox = document.getElementById("user");
-const playlistLink = document.getElementById("playlistLink");
-const statusBox = document.getElementById("status");
+// Wait for the DOM to be fully loaded before running any script
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("WeatherTunes Loaded ✅");
 
-let token = localStorage.getItem("spotify_token");
+  const loginBtn = document.getElementById("loginBtn");
+  const goBtn = document.getElementById("goBtn");
+  const userBox = document.getElementById("user");
+  const playlistLink = document.getElementById("playlistLink");
+  const statusBox = document.getElementById("status");
 
-if (token) userBox.innerText = "Logged in ✅";
+  let token = localStorage.getItem("spotify_token");
 
-loginBtn.onclick = async () => {
-  const res = await fetch("/api/login");
-  const data = await res.json();
-  window.location.href = data.authUrl;
-};
+  if (token) {
+    userBox.innerText = "Logged in ✅";
+  }
 
-async function getWeatherMood(city) {
-  const key = "YOUR_OPENWEATHER_API_KEY";
-  const r = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${key}`);
-  const j = await r.json();
-  const weather = j.weather[0].main.toLowerCase();
+  // --- Login Button ---
+  loginBtn.onclick = async () => {
+    try {
+      const res = await fetch("/api/login");
+      const data = await res.json();
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        alert("Login endpoint failed to return a URL.");
+      }
+    } catch (e) {
+      alert("Login request failed. Check console.");
+      console.error(e);
+    }
+  };
 
-  if (weather.includes("rain")) return "chill";
-  if (weather.includes("clear")) return "happy";
-  if (weather.includes("cloud")) return "lofi";
-  return "mood";
-}
+  // --- CRITICAL FIX: Secure Weather Function ---
+  // This function now calls YOUR Vercel backend, not OpenWeather directly.
+  async function getWeatherMood(city) {
+    // We don't have lat/lon, so we must pass the city to the backend.
+    // NOTE: Your /api/get-weather.js currently only accepts lat/lon.
+    // We will use a different OpenWeather endpoint that accepts a city query (q).
+    
+    // For this to work, you MUST update /api/get-weather.js to handle a 'city' query.
+    // I will provide that file next. For now, this is the frontend call.
+    
+    // We will assume /api/get-weather.js is updated to accept ?city=...
+    const r = await fetch(`/api/get-weather?city=${encodeURIComponent(city)}`);
+    const j = await r.json();
 
-goBtn.onclick = async () => {
-  if (!token) return alert("Login first");
+    if (!r.ok) {
+      throw new Error(j.error || "Weather API failed");
+    }
 
-  const city = document.getElementById("cityInput").value;
-  if (!city) return alert("Enter city");
+    const weather = j.condition.toLowerCase();
 
-  statusBox.textContent = "Getting weather...";
-  const mood = await getWeatherMood(city);
+    if (weather.includes("rain")) return "chill";
+    if (weather.includes("clear")) return "happy";
+    if (weather.includes("cloud")) return "lofi";
+    return "mood";
+  }
 
-  statusBox.textContent = "Fetching songs...";
+  // --- Go Button ---
+  goBtn.onclick = async () => {
+    if (!token) {
+      // Re-check token in case it expired
+      token = localStorage.getItem("spotify_token");
+      if (!token) return alert("Login first");
+    }
 
-  const res = await fetch("/api/get-songs", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, mood })
-  });
-  const data = await res.json();
+    const city = document.getElementById("cityInput").value;
+    if (!city) return alert("Enter city");
 
-  statusBox.textContent = "Creating playlist...";
+    try {
+      statusBox.textContent = "Getting weather...";
+      const mood = await getWeatherMood(city);
 
-  const res2 = await fetch("/api/create-playlist", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, tracks: data.tracks })
-  });
+      statusBox.textContent = "Fetching songs...";
+      const res = await fetch("/api/get-songs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, mood }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to get songs");
 
-  const out = await res2.json();
-  playlistLink.href = out.url;
-  playlistLink.textContent = "Open Playlist 🎧";
-  statusBox.textContent = "Done ✅";
-};
+      statusBox.textContent = "Creating playlist...";
+      const res2 = await fetch("/api/create-playlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, tracks: data.tracks }),
+      });
 
-// Handle Spotify callback
-if (window.location.search.includes("code=")) {
-  fetch("/api/callback" + window.location.search)
-    .then(res => res.json())
-    .then(data => {
-      localStorage.setItem("spotify_token", data.accessToken);
-      window.location.href = "/";
-    });
-}
+      const out = await res2.json();
+      if (!res2.ok) throw new Error(out.error || "Failed to create playlist");
+
+      playlistLink.href = out.url;
+      playlistLink.textContent = "Open Playlist 🎧";
+      statusBox.textContent = "Done ✅";
+
+    } catch (error) {
+      console.error(error);
+      statusBox.textContent = `Error: ${error.message}`;
+    }
+  };
+
+  // --- Handle Spotify Callback ---
+  // This runs when Spotify redirects back to your page with a code
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+
+  if (code) {
+    statusBox.textContent = "Logging in...";
+    // Call the /api/callback endpoint to exchange the code for a token
+    fetch("/api/callback" + window.location.search) // sends ?code=...
+      .then((res) => {
+        if (!res.ok) throw new Error("Callback request failed");
+        return res.json();
+      })
+      .then((data) => {
+        if (data.accessToken) {
+          localStorage.setItem("spotify_token", data.accessToken);
+          // Redirect to the home page to clean the URL
+          window.location.href = "/";
+        } else {
+          throw new Error("Access token not received");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        statusBox.textContent = `Login failed: ${err.message}`;
+      });
+  }
+});
