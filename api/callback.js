@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   const code = req.query.code;
-  const redirect = `${process.env.FRONTEND_URL}/api/callback`;
+  const redirect = `${process.env.SPOTIFY_REDIRECT_URI}/api/callback`;
 
   const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
