@@ -1,6 +1,5 @@
-// ===============================
-// GLOBAL STATE
-// ===============================
+console.log("App.js version 2025.11.06 loaded");
+
 let spotifyToken = localStorage.getItem("spotifyToken") || null;
 let spotifyUser = JSON.parse(localStorage.getItem("spotifyUser") || "null");
 
@@ -137,3 +136,4 @@ searchBtn.onclick = async () => {
 
 // ===============================
 updateUI();
+
