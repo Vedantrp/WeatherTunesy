@@ -1,4 +1,6 @@
 // /api/login.js
+console.log("REDIRECT:", process.env.SPOTIFY_REDIRECT_URI);
+
 export default function handler(req, res) {
   try {
     if (req.method !== "GET") {
