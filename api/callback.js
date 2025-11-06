@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   const code = req.query.code;
-  const redirect = `${process.env.SITE_URL}/api/callback`;
+  const redirect = `${process.env.FRONTEND_URL}/api/callback`;
 
   const params = new URLSearchParams({
     grant_type: "authorization_code",
