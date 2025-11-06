@@ -1,63 +1,41 @@
-// /api/callback.js
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
-  try {
-    const code = req.query.code;
-    const client_id = process.env.SPOTIFY_CLIENT_ID;
-    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
+  const code = req.query.code;
+  const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REDIRECT_URI } = process.env;
 
-    if (!code) {
-      return res.status(400).send("❌ Missing code from Spotify");
-    }
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: SPOTIFY_REDIRECT_URI,
+    client_id: SPOTIFY_CLIENT_ID,
+    client_secret: SPOTIFY_CLIENT_SECRET,
+  });
 
-    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri,
-        client_id,
-        client_secret
-      })
-    });
+  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body
+  });
 
-    const tokenData = await tokenRes.json();
-    console.log("🎧 Spotify Token Response:", tokenData);
+  const tokenData = await tokenRes.json();
+  const accessToken = tokenData.access_token;
+  const refreshToken = tokenData.refresh_token;
 
-    if (tokenData.error) {
-      return res.send(`
-        <script>
-          window.opener.postMessage({ error: "${tokenData.error}" }, "*");
-          window.close();
-        </script>
-      `);
-    }
+  const userRes = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  const userData = await userRes.json();
 
-    const userRes = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: "Bearer " + tokenData.access_token }
-    });
-
-    const user = await userRes.json();
-
-    return res.send(`
-      <script>
-        window.opener.postMessage({
-          token: "${tokenData.access_token}",
-          refresh: "${tokenData.refresh_token}",
-          user: ${JSON.stringify(user)}
-        }, "*");
-        window.close();
-      </script>
-    `);
-
-  } catch (err) {
-    console.error("❌ Callback Error:", err);
-    return res.send(`
-      <script>
-        window.opener.postMessage({ error: "callback_crashed" }, "*");
-        window.close();
-      </script>
-    `);
-  }
+  return res.send(`
+    <script>
+      window.opener.postMessage({
+        type: "SPOTIFY_AUTH",
+        accessToken: "${accessToken}",
+        refreshToken: "${refreshToken}",
+        user: ${JSON.stringify(userData)}
+      }, "*");
+      window.close();
+    </script>
+  `);
 }
