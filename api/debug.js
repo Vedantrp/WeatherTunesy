@@ -5,3 +5,4 @@ export default function handler(req, res) {
     REDIRECT: process.env.SPOTIFY_REDIRECT_URI ?? "❌ NULL"
   });
 }
+ 
