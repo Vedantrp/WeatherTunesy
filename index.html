@@ -6,26 +6,26 @@
 </head>
 <body>
 
-<h2>WeatherTunes</h2>
-
 <button id="loginBtn">Login with Spotify</button>
-<div id="userDisplay"></div>
+<button id="logoutBtn" style="display:none;">Logout</button>
+<p id="userName"></p>
 
-<br>
+<hr>
 
-<input id="cityInput" placeholder="Enter city..." />
-<button id="getWeatherBtn">Get Weather</button>
+<input id="location" placeholder="Enter City..." />
+<select id="language">
+  <option value="english">English</option>
+  <option value="hindi">Hindi</option>
+  <option value="punjabi">Punjabi</option>
+</select>
+<button id="searchBtn">Get Weather + Playlist</button>
 
-<div id="weatherResult"></div>
+<h3>Weather</h3>
+<div id="weather"></div>
 
-<br>
-<button id="getSongsBtn" disabled>Get Songs</button>
+<h3>Songs</h3>
+<div id="playlist"></div>
 
-<ul id="songList"></ul>
-
-<br>
-<button id="createPlaylistBtn" disabled>Create Playlist</button>
-<div id="playlistLink"></div>
 
 <script src="app.js"></script>
 </body>
