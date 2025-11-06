@@ -1,7 +1,7 @@
-import fetch from 'node-fetch'; // Standard ESM import
-import { URLSearchParams } from 'url';
+// api/get-weather.js
+import fetch from 'node-fetch';
 
-const OPENWEATHER_ENDPOINT = 'http://googleusercontent.com/api.openweathermap.org/11';
+const OPENWEATHER_ENDPOINT = 'https://api.openweathermap.org/data/2.5/weather';
 
 const weatherToMood = (weatherMain) => {
     const main = weatherMain.toLowerCase();
@@ -12,31 +12,38 @@ const weatherToMood = (weatherMain) => {
     if (main.includes('snow')) return 'snow';
     if (main.includes('cloud') || main.includes('mist') || main.includes('haze')) return 'gloomy';
     
-    return 'sunny';
+    return 'sunny'; // Default fallback
 };
-
 
 export default async (req, res) => {
     if (req.method !== 'GET') {
         return res.status(405).send('Method Not Allowed');
     }
 
-    const lat = req.query.lat;
-    const lon = req.query.lon;
+    // CRITICAL FIX: Read the 'city' from the query
+    const city = req.query.city;
     const apiKey = process.env.WEATHER_API_KEY;
 
-    if (!lat || !lon || !apiKey) {
-        return res.status(400).json({ error: 'Missing coordinates or API key configuration.' });
+    if (!city) {
+        return res.status(400).json({ error: 'Missing query parameter: city' });
+    }
+    
+    if (!apiKey) {
+        return res.status(500).json({ error: 'Server configuration error: WEATHER_API_KEY is missing.' });
     }
 
     try {
-        // fetch is now imported directly via ESM syntax
-        const weatherUrl = `${OPENWEATHER_ENDPOINT}?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+        // CRITICAL FIX: Use the 'q=' parameter for city name
+        const weatherUrl = `${OPENWEATHER_ENDPOINT}?q=${city}&appid=${apiKey}`;
         
         const weatherResponse = await fetch(weatherUrl);
         const weatherData = await weatherResponse.json();
         
-        if (weatherResponse.ok && weatherData.weather && weatherData.weather.length > 0) {
+        if (!weatherResponse.ok) {
+             return res.status(weatherData.cod || 500).json({ error: weatherData.message || 'Failed to fetch weather data.' });
+        }
+
+        if (weatherData.weather && weatherData.weather.length > 0) {
             const weatherCondition = weatherData.weather[0].main;
             const mood = weatherToMood(weatherCondition);
             
@@ -46,7 +53,7 @@ export default async (req, res) => {
             });
         }
         
-        return res.status(500).json({ error: 'Failed to fetch weather data.' });
+        return res.status(500).json({ error: 'Weather data format unexpected.' });
 
     } catch (error) {
         console.error('Weather API Error:', error);
