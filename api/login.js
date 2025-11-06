@@ -1,27 +1,21 @@
-// /api/login.js
 export default function handler(req, res) {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
+  const { SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI } = process.env;
 
-  if (!clientId || !redirectUri) {
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_REDIRECT_URI) {
     return res.status(500).json({
       error: "ENV MISSING",
-      clientId: !!clientId,
-      redirectUri: !!redirectUri
+      clientId: !!SPOTIFY_CLIENT_ID,
+      redirectUri: !!SPOTIFY_REDIRECT_URI
     });
   }
 
-  const scopes = [
-    "playlist-modify-private",
-    "playlist-modify-public",
-    "user-read-email"
-  ].join("%20");
+  const scope = "playlist-modify-public playlist-modify-private user-read-email";
 
-  const authUrl = `https://accounts.spotify.com/authorize` +
-    `?client_id=${clientId}` +
+  const authUrl =
+    `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}` +
     `&response_type=code` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&scope=${scopes}`;
+    `&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}` +
+    `&scope=${scope}`;
 
   res.status(200).json({ authUrl });
 }
