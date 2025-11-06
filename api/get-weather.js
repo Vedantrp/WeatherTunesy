@@ -1,23 +1,40 @@
 export default async function handler(req, res) {
   try {
-    const city = req.query.city;
-    if (!city) return res.status(400).json({ error: "City required" });
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Only POST allowed" });
+    }
 
-    const api = process.env.WEATHER_API_KEY;
-    const r = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${api}&units=metric`
-    );
+    const { city } = req.body;
+    if (!city) {
+      return res.status(400).json({ error: "City is required" });
+    }
 
-    const data = await r.json();
-    if (!data.main) return res.status(404).json({ error: "City not found" });
+    const apiKey = process.env.WEATHER_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
+    }
 
-    res.status(200).json({
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+      city
+    )}&appid=${apiKey}&units=metric`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.main) {
+      return res.status(404).json({ error: "City not found" });
+    }
+
+    const weather = {
       temp: data.main.temp,
       feels_like: data.main.feels_like,
-      condition: data.weather[0].main,
+      condition: data.weather[0].main, // e.g. Rain, Haze, Clear
       icon: data.weather[0].icon
-    });
-  } catch (e) {
-    res.status(500).json({ error: "Weather API failed" });
+    };
+
+    res.status(200).json(weather);
+  } catch (err) {
+    console.error("Weather API Error →", err);
+    res.status(500).json({ error: "Weather fetch failed" });
   }
 }
