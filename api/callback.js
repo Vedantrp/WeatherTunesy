@@ -1,7 +1,10 @@
+// api/callback.js
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   const code = req.query.code;
+  
+  // CRITICAL FIX: Use FRONTEND_URL to match your .env file
   const redirect = `${process.env.FRONTEND_URL}/api/callback`;
 
   const params = new URLSearchParams({
@@ -17,6 +20,7 @@ export default async function handler(req, res) {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params
   });
+  
   const j = await r.json();
 
   res.json({ accessToken: j.access_token });
