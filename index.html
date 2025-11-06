@@ -1,19 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>WeatherTunes Basic</title>
+<title>WeatherTunes</title>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h2>WeatherTunes BASIC ✅</h2>
 
-  <button id="loginBtn">Login with Spotify</button>
-  <br><br>
+<h2>WeatherTunes</h2>
 
-  <button id="getBtn">Get Playlist</button>
-  <br><br>
+<button id="loginBtn">Login with Spotify</button>
+<div id="userDisplay"></div>
 
-  <div id="result"></div>
+<br>
 
-  <script src="app.js"></script>
+<input id="cityInput" placeholder="Enter city..." />
+<button id="getWeatherBtn">Get Weather</button>
+
+<div id="weatherResult"></div>
+
+<br>
+<button id="getSongsBtn" disabled>Get Songs</button>
+
+<ul id="songList"></ul>
+
+<br>
+<button id="createPlaylistBtn" disabled>Create Playlist</button>
+<div id="playlistLink"></div>
+
+<script src="app.js"></script>
 </body>
 </html>
