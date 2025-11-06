@@ -1,5 +1,5 @@
 export default function handler(req, res) {
-  const redirect = encodeURIComponent(`${process.env.FRONTEND_URL}/api/callback`);
+  const redirect = encodeURIComponent(`${process.env.SPOTIFY_REDIRECT_URI}/api/callback`);
   const scope = "playlist-modify-private playlist-modify-public user-read-email";
 
   const url =
