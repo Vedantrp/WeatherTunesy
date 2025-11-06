@@ -9,7 +9,9 @@ let user = null;
 
 async function login() {
   const r = await fetch("/api/login");
-  const { authUrl } = await r.json();
+  const data = await r.json();
+  const authUrl = data.authUrl;
+
   const popup = window.open(authUrl, "_blank", "width=500,height=600");
 
   window.addEventListener("message", (e) => {
@@ -17,7 +19,7 @@ async function login() {
       token = e.data.token;
       user = e.data.user;
       popup.close();
-      result.textContent = `✅ Logged in as ${user.display_name}`;
+      result.innerHTML = `✅ Logged in as: <b>${user.display_name}</b>`;
     }
   });
 }
@@ -25,9 +27,10 @@ async function login() {
 async function getPlaylist() {
   if (!token) return alert("Login first!");
 
-  result.textContent = "Loading...";
+  result.innerHTML = "⏳ Fetching songs...";
 
   const weather = await fetch(`/api/get-weather?city=mumbai`).then(r=>r.json());
+
   const songs = await fetch(`/api/get-songs`, {
     method: "POST",
     headers: {"Content-Type":"application/json"},
@@ -35,9 +38,9 @@ async function getPlaylist() {
   }).then(r=>r.json());
 
   result.innerHTML = `
-    ☁ Weather: ${weather.condition}<br>
+    🌤 Weather: <b>${weather.condition}</b><br><br>
     🎧 Playlist:<br>
-    ${songs.tracks.map(t => `${t.name} - ${t.artist}`).join("<br>")}
+    ${songs.tracks.map(t=>`${t.name} – ${t.artist}`).join("<br>")}
   `;
 }
 
