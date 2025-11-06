@@ -1,6 +1,8 @@
 export default function handler(req, res) {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI;
+
+  console.log("REDIRECT in server:", redirectUri);
 
   if (!clientId || !redirectUri) {
     return res.status(500).json({
@@ -10,11 +12,8 @@ export default function handler(req, res) {
     });
   }
 
-  const scope = [
-    "playlist-modify-private",
-    "playlist-modify-public",
-    "user-read-email"
-  ].join("%20");
+  const scope =
+    "playlist-modify-private playlist-modify-public user-read-email";
 
   const authUrl =
     `https://accounts.spotify.com/authorize?client_id=${clientId}` +
@@ -22,5 +21,5 @@ export default function handler(req, res) {
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&scope=${scope}`;
 
-  res.json({ authUrl });
+  return res.status(200).json({ authUrl });
 }
