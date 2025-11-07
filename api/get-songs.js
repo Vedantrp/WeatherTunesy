@@ -1,59 +1,39 @@
-const langProfiles = {
-  english: { market: "US", base: "english chill" },
-  hindi: { market: "IN", base: "bollywood chill" },
-  punjabi: { market: "IN", base: "punjabi chill" },
-  tamil: { market: "IN", base: "tamil chill" },
-  telugu: { market: "IN", base: "telugu chill" },
-  kannada: { market: "IN", base: "kannada songs" },
-  malayalam: { market: "IN", base: "malayalam chill" },
-  bengali: { market: "IN", base: "bengali songs" },
-  marathi: { market: "IN", base: "marathi songs" },
-  korean: { market: "KR", base: "kpop chill" },
-  japanese: { market: "JP", base: "jpop chill" },
-  spanish: { market: "ES", base: "latin chill" },
+const profiles = {
+  english: { market:"US", seeds:["chill pop","indie","feel good pop"] },
+  hindi: { market:"IN", seeds:["bollywood","arijit singh","hindi acoustic"] },
+  punjabi:{market:"IN",seeds:["punjabi pop","ap dhillon"]},
+  tamil:{market:"IN",seeds:["tamil hits","anirudh"]},
+  telugu:{market:"IN",seeds:["telugu indie","sid sriram"]},
+  korean:{market:"KR",seeds:["kpop chill"]},
+  japanese:{market:"JP",seeds:["jpop chill"]},
+  spanish:{market:"ES",seeds:["latin chill"]}
 };
 
-const moods = {
-  chill: "lofi chill",
-  sad: "sad emotional",
-  happy: "happy upbeat",
-  energetic: "workout edm",
-  party: "party hits"
-};
+export default async function handler(req,res){
+  try{
+    const { token,language,mood } = req.body;
+    const p = profiles[language]||profiles.english;
+    const q = encodeURIComponent(`${p.seeds[0]} ${mood}`);
 
-export default async function handler(req, res) {
-  try {
-    const { token, language="english", mood="chill" } = req.body;
-    if (!token) return res.status(401).json({ error: "Missing token" });
+    const s = await fetch(
+      `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${p.market}&limit=1`,
+      { headers:{Authorization:`Bearer ${token}`} }
+    ).then(r=>r.json());
 
-    const lang = langProfiles[language] || langProfiles.english;
-    const q = `${lang.base} ${moods[mood]}`;
+    const pl = s.playlists.items[0];
+    const t = await fetch(
+      `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=50`,
+      { headers:{Authorization:`Bearer ${token}`} }
+    ).then(r=>r.json());
 
-    const search = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=playlist&market=${lang.market}&limit=1`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    ).then(r => r.json());
+    const out = (t.items||[]).map(i=>({
+      name:i.track.name,
+      artist:i.track.artists[0].name,
+      uri:i.track.uri
+    }));
 
-    const playlist = search.playlists.items?.[0];
-    if (!playlist) return res.json({ tracks: [] });
-
-    const raw = await fetch(
-      `https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=40`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    ).then(r => r.json());
-
-    const tracks = (raw.items || [])
-      .filter(x => x.track)
-      .map(x => ({
-        name: x.track.name,
-        artist: x.track.artists[0].name,
-        uri: x.track.uri,
-        image: x.track.album.images?.[1]?.url || x.track.album.images?.[0]?.url
-      }));
-
-    res.json({ tracks: tracks.slice(0, 25) });
-  } catch (err) {
-    console.error("Song error:", err);
-    res.status(500).json({ error: "Song fetch failed" });
+    res.json({tracks:out});
+  }catch(e){
+    res.status(500).json({error:"Failed songs"});
   }
 }
