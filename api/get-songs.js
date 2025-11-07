@@ -11,7 +11,7 @@ const profiles = {
   korean:{market:"KR", seeds:["k-pop chill"]},
   japanese:{market:"JP", seeds:["j-pop chill"]},
   spanish:{market:"ES", seeds:["latin chill"]}
-};
+}; 
 
 export default async function handler(req,res){
   const { token, language, mood } = req.body;
