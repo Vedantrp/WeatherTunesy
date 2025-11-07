@@ -1,138 +1,92 @@
-let spotifyToken = localStorage.getItem("spotifyToken") || null;
-let spotifyUser = JSON.parse(localStorage.getItem("spotifyUser") || "null");
-let refreshTokenLS = localStorage.getItem("spotifyRefreshToken") || null;
+let token = localStorage.getItem("token") || null;
+let user = JSON.parse(localStorage.getItem("user") || "null");
+let refresh = localStorage.getItem("refresh") || null;
 
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const userName = document.getElementById("userName");
-const locationInput = document.getElementById("location");
-const languageSelect = document.getElementById("language");
-const searchBtn = document.getElementById("searchBtn");
-const playlistDiv = document.getElementById("playlist");
-const weatherBox = document.getElementById("weather");
-
-function updateUI(){
-  if(spotifyToken && spotifyUser){
-    loginBtn.style.display="none";
-    logoutBtn.style.display="block";
-    userName.innerText=`Logged in as ${spotifyUser.display_name}`;
-  } else {
-    loginBtn.style.display="block";
-    logoutBtn.style.display="none";
-    userName.innerText="";
-  }
+function updateUI() {
+  document.getElementById("loginBtn").style.display = token ? "none" : "block";
+  document.getElementById("logoutBtn").style.display = token ? "block" : "none";
+  document.getElementById("userName").innerText = user ? user.display_name : "";
 }
 
-loginBtn.onclick = async () => {
+document.getElementById("loginBtn").onclick = async () => {
   const r = await fetch("/api/login");
   const { authUrl } = await r.json();
+  const pop = window.open(authUrl, "_blank", "width=600,height=600");
 
-  const popup = window.open(authUrl, "spotify", "width=600,height=700");
+  window.addEventListener("message", e => {
+    if (e.data.type === "SPOTIFY_AUTH_SUCCESS") {
+      token = e.data.token;
+      user = e.data.user;
+      refresh = e.data.refreshToken;
 
-  window.addEventListener("message",(e)=>{
-    if(e.data.type==="SPOTIFY_AUTH_SUCCESS"){
-      spotifyToken = e.data.token;
-      spotifyUser = e.data.user;
-      refreshTokenLS = e.data.refreshToken;
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("refresh", refresh);
 
-      localStorage.setItem("spotifyToken",spotifyToken);
-      localStorage.setItem("spotifyUser",JSON.stringify(spotifyUser));
-      localStorage.setItem("spotifyRefreshToken",refreshTokenLS);
-
-      popup.close();
+      pop.close();
       updateUI();
     }
   });
 };
 
-logoutBtn.onclick = () => {
+document.getElementById("logoutBtn").onclick = () => {
   localStorage.clear();
-  spotifyToken = null;
-  spotifyUser = null;
-  refreshTokenLS = null;
+  token = null;
+  user = null;
+  refresh = null;
   updateUI();
 };
 
-async function refreshSpotifyToken(){
-  if(!refreshTokenLS) return null;
-  
-  const r = await fetch("/api/refresh-token",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ refreshToken: refreshTokenLS })
+async function refreshToken() {
+  const r = await fetch("/api/refresh-token", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ refreshToken: refresh })
   });
 
-  const data = await r.json();
-  if(data.accessToken){
-    spotifyToken = data.accessToken;
-    localStorage.setItem("spotifyToken",spotifyToken);
-    return spotifyToken;
-  }
-  return null;
+  const d = await r.json();
+  token = d.accessToken;
+  localStorage.setItem("token", token);
 }
 
-async function getWeather(city){
-  const r = await fetch("/api/get-weather",{
+async function getWeather(city) {
+  return fetch("/api/get-weather", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ city })
-  });
-  return r.json();
+    body:JSON.stringify({city})
+  }).then(r => r.json());
 }
 
-async function getSongs(language, mood){
-  let r = await fetch("/api/get-songs",{
+async function getSongs(lang) {
+  let r = await fetch("/api/get-songs", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ token:spotifyToken, language, mood })
+    body:JSON.stringify({ token, language:lang })
   });
 
-  // If token expired, refresh & retry only ONCE
-  if(r.status === 401){
-    const newT = await refreshSpotifyToken();
-    if(newT){
-      r = await fetch("/api/get-songs",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ token:newT, language, mood })
-      });
-    }
+  if (r.status === 401) {
+    await refreshToken();
+    r = await fetch("/api/get-songs", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ token, language:lang })
+    });
   }
 
   return r.json();
 }
 
-searchBtn.onclick = async () => {
-  if (!spotifyToken) return alert("Login first!");
-
-  const city = locationInput.value.trim();
-  if(!city) return alert("Enter city");
-
-  playlistDiv.innerHTML="Fetching...";
-  weatherBox.innerHTML="Fetching...";
+document.getElementById("searchBtn").onclick = async () => {
+  const city = document.getElementById("location").value;
+  const lang = document.getElementById("language").value;
 
   const weather = await getWeather(city);
-  weatherBox.innerHTML = `
-    🌍 ${city}<br>
-    🌡 ${weather.temp}°C (Feels ${weather.feels_like}°C)<br>
-    ☁ ${weather.condition}
-  `;
+  document.getElementById("weather").innerHTML =
+    `${weather.temp}°C, ${weather.condition}`;
 
-  let mood = "chill";
-  if(weather.temp > 30) mood = "energetic";
-  if(weather.condition.includes("Rain")) mood = "lofi";
-  if(weather.condition.includes("Haze")) mood = "sad";
-
-  const songs = await getSongs(languageSelect.value,mood);
-
-  if(!songs.tracks?.length){
-    playlistDiv.innerHTML="No songs, try another mood/language.";
-    return;
-  }
-
-  playlistDiv.innerHTML = songs.tracks.map(
-    t => `<div>${t.name} — <b>${t.artist}</b></div>`
-  ).join("");
+  const songs = await getSongs(lang);
+  document.getElementById("playlist").innerHTML =
+    songs.tracks.map(t => `${t.name} — <b>${t.artist}</b>`).join("<br>");
 };
 
 updateUI();
