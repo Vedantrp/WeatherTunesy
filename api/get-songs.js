@@ -1,61 +1,33 @@
-// /api/get-songs.js
-export default async function handler(req, res) {
-  try {
-    if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+export default async function handler(req,res){
+  const { token, language, mood } = req.body;
 
-    const { token, language, mood } = req.body;
+  const queries = {
+    english:"english hits chill",
+    hindi:"bollywood chill",
+    punjabi:"punjabi hits"
+  };
 
-    if (!token) return res.status(401).json({ error: "Missing token" });
+  const q = queries[language] || "global chill";
 
-    const langMap = {
-      english: "pop",
-      hindi: "bollywood",
-      punjabi: "punjabi",
-      tamil: "tamil",
-      telugu: "telugu",
-      spanish: "spanish",
-      korean: "k-pop",
-      japanese: "j-pop",
-      french: "french pop"
-    };
+  const search = await fetch(
+    `https://api.spotify.com/v1/search?q=${q}&type=playlist&limit=1`,
+    { headers:{Authorization:`Bearer ${token}`} }
+  ).then(r=>r.json());
 
-    const moodMap = {
-      gloomy: "sad",
-      rainy: "lofi",
-      sunny: "happy",
-      hot: "chill",
-      cold: "acoustic",
-      default: "mood"
-    };
+  const playlist = search.playlists.items[0];
 
-    const query = `${langMap[language] || "global"} ${moodMap[mood] || "mood"}`;
-    const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=playlist&limit=1`;
+  const tracks = await fetch(
+    `https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=40`,
+    { headers:{Authorization:`Bearer ${token}`} }
+  ).then(r=>r.json());
 
-    const playlist = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
-    }).then(r => r.json());
+  const out = tracks.items.slice(0,20)
+    .map(i=> ({
+      id:i.track.id,
+      uri:i.track.uri,
+      name:i.track.name,
+      artist:i.track.artists[0].name
+    }));
 
-    const id = playlist?.playlists?.items?.[0]?.id;
-    if (!id) return res.json({ tracks: [] });
-
-    const tracksRes = await fetch(
-      `https://api.spotify.com/v1/playlists/${id}/tracks?limit=50`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    ).then(r => r.json());
-
-    const songs = (tracksRes.items || [])
-      .map(t => ({
-        name: t.track?.name,
-        artist: t.track?.artists?.[0]?.name,
-        uri: t.track?.uri
-      }))
-      .filter(x => x.name && x.artist)
-      .slice(0, 20);
-
-    res.json({ tracks: songs });
-
-  } catch (e) {
-    console.error("Song error", e);
-    res.status(500).json({ error: "Song fetch failed" });
-  }
+  res.json({tracks:out});
 }
