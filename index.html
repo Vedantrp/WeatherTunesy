@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>WeatherTunes</title>
+<title>WeatherTunes v3</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
 <div class="container">
 
-<h2>🌤️ WeatherTunes v2</h2>
-<p class="tagline">Weather + Mood = Music 🎶</p>
+<h2 class="title">🌤️ WeatherTunes</h2>
+<p class="tagline">Weather + Mood = Music</p>
 
 <div class="auth-box">
   <button id="loginBtn" class="btn-login">Login with Spotify</button>
@@ -17,9 +17,9 @@
   <p id="userName"></p>
 </div>
 
-<div class="controls">
-  <input id="location" placeholder="Enter City (e.g. Mumbai)" />
-  
+<div class="card controls fade">
+  <input id="location" placeholder="Enter city (e.g. Mumbai)" />
+
   <select id="language">
     <option value="english">English</option>
     <option value="hindi">Hindi</option>
@@ -39,21 +39,26 @@
     <option value="party">🎉 Party</option>
   </select>
 
-  <button id="searchBtn" class="btn-main">Generate Mix</button>
+  <button id="searchBtn" class="btn-main">Generate Playlist</button>
 </div>
 
-<div class="weather-box">
+<div class="card fade">
   <h3>🌦 Weather</h3>
   <div id="weather">—</div>
 </div>
 
-<div class="playlist-box">
+<div class="card fade">
   <h3>🎧 Suggested Songs</h3>
   <div id="playlist"></div>
 </div>
 
-<button id="createBtn" class="btn-create">🎵 Create Playlist</button>
-<div id="playlistResult"></div>
+<button id="createBtn" class="btn-create fade">🎵 Create Playlist</button>
+<div id="playlistResult" class="fade"></div>
+
+<div class="card history fade">
+  <h3>📂 Your Playlist History</h3>
+  <div id="historyList"></div>
+</div>
 
 </div>
 
