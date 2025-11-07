@@ -1,56 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WeatherTunes</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+<title>WeatherTunes</title>
+<link rel="stylesheet" href="styles.css">
 </head>
+<body>
 
-<body class="bg-gray-900 text-white font-sans p-6">
+<h2>WeatherTunes 🎵🌤️</h2>
 
-  <div class="max-w-xl mx-auto space-y-4">
+<button id="loginBtn">Login with Spotify</button>
+<button id="logoutBtn" style="display:none;">Logout</button>
+<p id="userName"></p>
 
-    <h1 class="text-2xl font-bold text-center mb-4">🎵 WeatherTunes</h1>
+<hr>
 
-    <!-- Auth Buttons -->
-    <button id="loginBtn" class="bg-green-500 px-4 py-2 rounded w-full">Login with Spotify</button>
-    <button id="logoutBtn" class="bg-red-500 px-4 py-2 rounded w-full hidden">Logout</button>
-    <p id="userName" class="text-center text-sm"></p>
+<input id="location" placeholder="Enter City..." />
+<select id="language">
+  <option value="english">English</option>
+  <option value="hindi">Hindi</option>
+  <option value="punjabi">Punjabi</option>
+</select>
+<button id="searchBtn">Get Weather + Playlist</button>
 
-    <!-- Search Box -->
-    <input id="location"
-      class="w-full px-3 py-2 text-black rounded"
-      placeholder="Enter city (e.g. Mumbai)" />
+<h3>Weather</h3>
+<div id="weather"></div>
 
-    <select id="language" class="w-full px-3 py-2 text-black rounded">
-      <option value="english">English</option>
-      <option value="hindi">Hindi</option>
-      <option value="punjabi">Punjabi</option>
-      <option value="tamil">Tamil</option>
-      <option value="telugu">Telugu</option>
-      <option value="korean">K-Pop</option>
-      <option value="japanese">J-Pop</option>
-      <option value="spanish">Spanish/Latin</option>
-    </select>
+<h3>Songs</h3>
+<div id="playlist"></div>
 
-    <button id="searchBtn" class="bg-blue-500 px-4 py-2 rounded w-full">
-      Get Weather & Playlist
-    </button>
+<button id="createPlaylistBtn" style="display:none;">🎧 Create Spotify Playlist</button>
+<p id="playlistStatus"></p>
 
-    <!-- Weather Output -->
-    <div id="weather" class="p-4 bg-gray-800 rounded"></div>
-
-    <!-- Playlist -->
-    <h2 class="text-xl font-semibold">Songs</h2>
-    <div id="playlist" class="space-y-2 text-sm"></div>
-  </div>
-<button id="createPlaylistBtn" class="bg-purple-600 px-4 py-2 rounded w-full mt-3 hidden">
-  🎧 Create Spotify Playlist
-</button>
-
-<p id="playlistStatus" class="text-sm text-green-400 mt-2"></p>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
