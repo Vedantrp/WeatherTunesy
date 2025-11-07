@@ -14,7 +14,7 @@ h1.logo {
   letter-spacing:1px;
 }
 
-/* Card style */
+/* Card style */ 
 .card {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.12);
@@ -86,3 +86,4 @@ h1.logo {
   h1.logo { font-size:24px; }
   .btn { padding:10px; font-size:14px; }
 }
+
