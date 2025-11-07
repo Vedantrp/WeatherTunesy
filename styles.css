@@ -1,25 +1,73 @@
 body {
-  background:#111;
+  background:#0d0d0d;
   color:#fff;
-  font-family:Arial;
+  font-family:Arial, sans-serif;
+  display:flex;
+  justify-content:center;
   padding:20px;
 }
 
-button {
-  padding:10px 15px;
-  background:#1DB954;
+.container {
+  width:400px;
+  text-align:center;
+}
+
+.tagline { font-size:12px; opacity:0.7; }
+
+input, select {
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
   border:none;
+  background:#1c1c1c;
   color:white;
+}
+
+button {
+  padding:10px;
+  border-radius:8px;
+  border:none;
   cursor:pointer;
-  margin:5px;
+  width:100%;
+  margin-top:6px;
+  font-size:14px;
 }
 
-input,select {
+.btn-login { background:#1DB954; }
+.btn-logout { background:#d9534f; }
+.btn-main { background:#3498db; }
+.btn-create { background:#1DB954; display:none; }
+
+.weather-box, .playlist-box {
+  margin-top:18px;
+  background:#111;
+  padding:12px;
+  border-radius:8px;
+}
+
+.song {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:5px 0;
+  background:#161616;
   padding:8px;
-  margin:5px;
+  border-radius:8px;
 }
 
-select option {
-  background: #1e1e1e;
-  color: #fff;
+.song img {
+  width:45px;
+  height:45px;
+  border-radius:6px;
+}
+
+.song .info {
+  text-align:left;
+  flex:1;
+}
+
+.song a {
+  color:#1DB954;
+  font-size:12px;
 }
