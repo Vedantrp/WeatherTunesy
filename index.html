@@ -2,31 +2,57 @@
 <html>
 <head>
 <title>WeatherTunes</title>
-<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-900 text-white p-6">
 
-<h2>WeatherTunes 🎵</h2>
+<h1 class="text-3xl font-bold mb-4">🌤️ WeatherTunes</h1>
 
-<button id="loginBtn">Login with Spotify</button>
-<button id="logoutBtn" style="display:none;">Logout</button>
-<p id="userName"></p>
+<!-- Auth -->
+<div class="mb-4">
+  <button id="loginBtn" class="bg-green-500 px-4 py-2 rounded">Login with Spotify</button>
+  <button id="logoutBtn" style="display:none;" class="bg-red-500 px-4 py-2 rounded">Logout</button>
+  <p id="userName" class="mt-2 text-yellow-300"></p>
+</div>
 
-<hr>
+<!-- Search area -->
+<div class="bg-gray-800 p-4 rounded mb-4">
+  <input id="location" placeholder="Enter City…" 
+    class="text-black p-2 rounded w-full mb-2" />
 
-<input id="location" placeholder="Enter City...">
-<select id="language">
-  <option value="english">English</option>
-  <option value="hindi">Hindi</option>
-  <option value="punjabi">Punjabi</option>
-</select>
-<button id="searchBtn">Get Weather + Playlist</button>
+  <label class="text-sm">Language</label>
+  <select id="language" class="text-black p-2 rounded w-full mb-2">
+    <option value="english">English</option>
+    <option value="hindi">Hindi</option>
+    <option value="punjabi">Punjabi</option>
+    <option value="tamil">Tamil</option>
+    <option value="telugu">Telugu</option>
+    <option value="kannada">Kannada</option>
+    <option value="malayalam">Malayalam</option>
+    <option value="bengali">Bengali</option>
+    <option value="marathi">Marathi</option>
+    <option value="korean">K-Pop</option>
+    <option value="japanese">J-Pop</option>
+    <option value="spanish">Spanish</option>
+  </select>
 
-<h3>Weather</h3>
-<div id="weather"></div>
+  <label class="text-sm">Mood</label>
+  <select id="mood" class="text-black p-2 rounded w-full mb-3">
+    <option value="chill">Chill</option>
+    <option value="sad">Sad</option>
+    <option value="happy">Happy</option>
+    <option value="energetic">Energetic</option>
+    <option value="party">Party</option>
+  </select>
 
-<h3>Songs</h3>
-<div id="playlist"></div>
+  <button id="searchBtn" class="bg-blue-500 w-full py-2 rounded">Get Music</button>
+</div>
+
+<!-- Weather -->
+<div id="weather" class="bg-gray-800 p-4 rounded mb-4"></div>
+
+<!-- Songs -->
+<div id="playlist" class="bg-gray-800 p-4 rounded"></div>
 
 <script src="app.js"></script>
 </body>
