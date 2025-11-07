@@ -25,16 +25,23 @@ h1.logo {
 }
 
 /* Input style */
+/* Input (text + dropdown) */
 .input {
-  width:100%; padding:12px;
+  width:100%;
+  padding:12px;
   margin:8px 0;
-  color:#e1e8f0; background:#131722;
-  border:1px solid rgba(255,255,255,0.18);
+  color:#e9f2ff;                   /* brighter text */
+  background:rgba(19,23,34,0.8);    /* darker bg */
+  border:1px solid rgba(255,255,255,0.2);
   border-radius:8px;
   font-size:15px;
-  outline:none;
+  backdrop-filter:blur(8px);
 }
-.input::placeholder { color:#8a9ab0; }
+.input option {
+  color:#000;
+  background:#fff;
+}
+
 
 /* Glass button style */
 .btn {
@@ -86,4 +93,5 @@ h1.logo {
   h1.logo { font-size:24px; }
   .btn { padding:10px; font-size:14px; }
 }
+
 
