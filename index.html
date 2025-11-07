@@ -1,50 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>WeatherTunes 🎧</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WeatherTunes 🎧</title>
+  <!-- Tailwind CDN (fine for now) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-4">
 
-<h1 class="text-3xl font-bold mb-3">WeatherTunes 🎧🌦️</h1>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-6">
 
-<div class="bg-gray-800 p-5 rounded-xl w-full max-w-md space-y-4">
+  <div class="w-full max-w-xl space-y-5">
 
-<!-- Auth -->
-<div class="flex items-center justify-between">
-  <button id="loginBtn" class="bg-green-500 px-4 py-2 rounded-lg font-bold">Login Spotify</button>
-  <button id="logoutBtn" class="hidden bg-red-500 px-4 py-2 rounded-lg font-bold">Logout</button>
-</div>
-<p id="userName" class="text-sm text-gray-300"></p>
+    <!-- Header -->
+    <div class="text-center">
+      <h1 class="text-3xl font-bold">WeatherTunes 🎧</h1>
+      <p class="text-gray-300 text-sm">Music that matches your weather & mood</p>
+    </div>
 
-<!-- Location -->
-<input id="location" class="w-full p-2 text-black rounded" placeholder="Enter City (Mumbai)" />
+    <!-- Auth -->
+    <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl">
+      <button id="loginBtn" class="bg-green-500 hover:bg-green-400 px-4 py-2 rounded-lg font-semibold">
+        Login with Spotify
+      </button>
+      <button id="logoutBtn" class="hidden bg-red-500 hover:bg-red-400 px-4 py-2 rounded-lg font-semibold">
+        Logout
+      </button>
+    </div>
+    <p id="userName" class="text-center text-green-300 text-sm"></p>
 
-<!-- Language -->
-<select id="language" class="w-full p-2 text-black rounded">
-  <option value="english">English</option>
-  <option value="hindi">Hindi</option>
-  <option value="punjabi">Punjabi</option>
-</select>
+    <!-- Inputs Card -->
+    <div class="bg-white/10 backdrop-blur-lg p-4 rounded-xl space-y-3">
+      <input id="location"
+             class="w-full px-3 py-2 rounded bg-white/5 border border-gray-600"
+             placeholder="Enter city (e.g. Mumbai)"/>
 
-<!-- Mood Slider -->
-<label class="text-sm">Mood level</label>
-<input id="moodRange" type="range" min="1" max="5" value="3" class="w-full">
-<p id="moodLabel" class="text-sm text-gray-300 text-center"></p>
+      <select id="language" class="w-full px-3 py-2 rounded bg-white/5 border border-gray-600">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+        <option value="punjabi">Punjabi</option>
+        <option value="tamil">Tamil</option>
+        <option value="telugu">Telugu</option>
+        <option value="korean">K-Pop</option>
+        <option value="japanese">J-Pop</option>
+        <option value="spanish">Spanish/Latin</option>
+      </select>
 
-<button id="searchBtn" class="bg-blue-500 w-full p-2 rounded-lg font-bold">Get Playlist</button>
+      <!-- Mood slider -->
+      <div>
+        <label class="text-sm text-gray-300">Mood</label>
+        <input id="moodRange" type="range" min="1" max="5" value="3" class="w-full">
+        <p id="moodLabel" class="text-sm text-gray-300 text-center mt-1">Mood: 😌 chill</p>
+      </div>
 
-<!-- Weather -->
-<div id="weather" class="text-center text-sm"></div>
+      <button id="searchBtn"
+              class="w-full bg-blue-500 hover:bg-blue-400 text-white py-2 rounded-lg font-bold">
+        Get Weather & Playlist
+      </button>
+    </div>
 
-<!-- Songs -->
-<div id="playlist" class="space-y-2"></div>
+    <!-- Weather -->
+    <div id="weather" class="hidden bg-white/10 p-4 rounded-xl"></div>
 
-<button id="createPlaylistBtn" class="hidden bg-green-600 w-full p-2 rounded-lg font-bold">Create Spotify Playlist</button>
-<p id="playlistStatus" class="text-center text-sm"></p>
+    <!-- Vibe name -->
+    <div id="vibeBox" class="hidden bg-white/10 p-4 rounded-xl">
+      <p class="text-sm text-gray-300">Playlist vibe</p>
+      <h3 id="vibeTitle" class="text-xl font-bold"></h3>
+      <p id="vibeDesc" class="text-gray-300 text-sm mt-1"></p>
+    </div>
 
-</div>
+    <!-- Songs -->
+    <div id="playlist" class="hidden bg-white/10 p-4 rounded-xl space-y-2"></div>
 
-<script src="app.js"></script>
+    <!-- Create Playlist -->
+    <button id="createPlaylistBtn" class="hidden bg-purple-600 hover:bg-purple-500 w-full p-2 rounded-lg font-bold">
+      🎧 Create Spotify Playlist
+    </button>
+    <p id="playlistStatus" class="text-center text-sm mt-2"></p>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
