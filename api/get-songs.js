@@ -1,6 +1,6 @@
 const langProfiles = {
   english: { market: "US", base: "english chill" },
-  hindi: { market: "IN", base: "bollywood lofi" },
+  hindi: { market: "IN", base: "bollywood chill" },
   punjabi: { market: "IN", base: "punjabi chill" },
   tamil: { market: "IN", base: "tamil chill" },
   telugu: { market: "IN", base: "telugu chill" },
@@ -37,18 +37,21 @@ export default async function handler(req, res) {
     const playlist = search.playlists.items?.[0];
     if (!playlist) return res.json({ tracks: [] });
 
-    const tracks = await fetch(
+    const raw = await fetch(
       `https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=40`,
       { headers: { Authorization: `Bearer ${token}` } }
     ).then(r => r.json());
 
-    const items = (tracks.items || []).map(i => ({
-      name: i.track.name,
-      artist: i.track.artists[0].name
-    }));
+    const tracks = (raw.items || [])
+      .filter(x => x.track)
+      .map(x => ({
+        name: x.track.name,
+        artist: x.track.artists[0].name,
+        uri: x.track.uri,
+        image: x.track.album.images?.[1]?.url || x.track.album.images?.[0]?.url
+      }));
 
-    res.json({ tracks: items.slice(0, 25) });
-
+    res.json({ tracks: tracks.slice(0, 25) });
   } catch (err) {
     console.error("Song error:", err);
     res.status(500).json({ error: "Song fetch failed" });
