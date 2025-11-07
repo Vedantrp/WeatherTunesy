@@ -1,21 +1,20 @@
 const langProfiles = {
   english: { market: "US", seeds: ["chill pop", "indie pop", "feel good"] },
-  hindi:   { market: "IN", seeds: ["bollywood chill", "arijit singh", "hindi acoustic"] },
+  hindi: { market: "IN", seeds: ["bollywood chill", "arijit singh", "hindi acoustic"] },
   punjabi: { market: "IN", seeds: ["punjabi hits", "punjabi chill", "ap dhillon"] },
-  tamil:   { market: "IN", seeds: ["tamil hits", "tamil lo-fi", "anirudh"] },
-  telugu:  { market: "IN", seeds: ["telugu hits", "tollywood lo-fi", "sid sriram"] },
-  korean:  { market: "KR", seeds: ["k-pop chill", "kpop dance", "k-indie"] },
-  japanese:{ market: "JP", seeds: ["j-pop chill", "anime songs", "city pop"] },
-  spanish: { market: "ES", seeds: ["latin chill", "reggaeton suave", "latin pop"] }
-  kannada: { market: "IN", seeds: ["kannada hits","kannada lo-fi","sandalwood songs"] },
- malayalam: { market: "IN", seeds: ["malayalam hits","malayalam chill","mollywood songs"] },
- bengali: { market: "IN", seeds: ["bengali hits","bengali indie","bengali lo-fi"] },
- marathi: { market: "IN", seeds: ["marathi hits","marathi pop","marathi lo-fi"] },
-french: { market: "FR", seeds: ["french pop","chanson française","francophone chill"] },
-italian: { market: "IT", seeds: ["italian pop","canzoni italiane","italian chill"] },
-german: { market: "DE", seeds: ["german pop","german rap","deutsche chill"] },
-arabic: { market: "SA", seeds: ["arabic chill","arab pop","arabic hits"] },
-
+  tamil: { market: "IN", seeds: ["tamil hits", "tamil lo-fi", "anirudh"] },
+  telugu: { market: "IN", seeds: ["telugu hits", "tollywood lo-fi", "sid sriram"] },
+  korean: { market: "KR", seeds: ["k-pop chill", "kpop dance", "k-indie"] },
+  japanese: { market: "JP", seeds: ["j-pop chill", "anime songs", "city pop"] },
+  spanish: { market: "ES", seeds: ["latin chill", "reggaeton suave", "latin pop"] },  // ✅ comma added
+  kannada: { market: "IN", seeds: ["kannada hits", "kannada lo-fi", "sandalwood songs"] },
+  malayalam: { market: "IN", seeds: ["malayalam hits", "malayalam chill", "mollywood songs"] },
+  bengali: { market: "IN", seeds: ["bengali hits", "bengali indie", "bengali lo-fi"] },
+  marathi: { market: "IN", seeds: ["marathi hits", "marathi pop", "marathi lo-fi"] },
+  french: { market: "FR", seeds: ["french pop", "chanson française", "francophone chill"] },
+  italian: { market: "IT", seeds: ["italian pop", "canzoni italiane", "italian chill"] },
+  german: { market: "DE", seeds: ["german pop", "german rap", "deutsche chill"] },
+  arabic: { market: "SA", seeds: ["arabic chill", "arab pop", "arabic hits"] },
 };
 
 const moodTerms = {
@@ -33,6 +32,8 @@ async function sfetch(url, token) {
 }
 
 export default async function handler(req, res) {
+  console.log("BODY:", req.body); // ✅ Debug line
+
   try {
     const { token, language = "english", mood = "chill" } = req.body || {};
     if (!token) return res.status(401).json({ error: "Missing token" });
@@ -41,7 +42,6 @@ export default async function handler(req, res) {
     const terms = moodTerms[mood] || ["chill"];
     const market = prof.market || "US";
 
-    // Try 4 playlists combining language seeds + mood terms
     const queries = [];
     for (const seed of prof.seeds) {
       for (const m of terms) queries.push(`${seed} ${m}`);
@@ -59,7 +59,6 @@ export default async function handler(req, res) {
     }
 
     if (!playlists.length) {
-      // language-only fallback
       const data = await sfetch(
         `https://api.spotify.com/v1/search?q=${encodeURIComponent(prof.seeds[0])}&type=playlist&market=${market}&limit=1`,
         token
@@ -75,13 +74,13 @@ export default async function handler(req, res) {
         token
       );
       const arr = (t.items || [])
-        .map(i => i && i.track)
+        .map(i => i?.track)
         .filter(Boolean)
         .map(tr => ({
           id: tr.id,
           uri: tr.uri,
           name: tr.name,
-          artist: tr.artists?.[0]?.name || "Unknown",
+          artist: tr.artists?.[0]?.name,
           image: tr.album?.images?.[1]?.url || tr.album?.images?.[0]?.url,
           url: tr.external_urls?.spotify
         }));
@@ -89,7 +88,6 @@ export default async function handler(req, res) {
       if (tracks.length >= 200) break;
     }
 
-    // Dedupe by id + shuffle
     const seen = new Set();
     const unique = [];
     for (const t of tracks) {
@@ -98,12 +96,10 @@ export default async function handler(req, res) {
         unique.push(t);
       }
     }
-    for (let i = unique.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [unique[i], unique[j]] = [unique[j], unique[i]];
-    }
 
-    res.json({ tracks: unique.slice(0, 50) }); // return up to 50
+    unique.sort(() => Math.random() - 0.5);
+    return res.json({ tracks: unique.slice(0, 50) });
+
   } catch (e) {
     if (e.message === "UNAUTHORIZED") {
       return res.status(401).json({ error: "Spotify token expired" });
