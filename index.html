@@ -1,93 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>WeatherTunes</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="stylesheet" href="styles.css" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
+<div id="app">
 
-<div class="wrap">
+  <h1 class="logo">🎧 WeatherTunes</h1>
 
-  <header class="fade">
-    <h1>🎧 WeatherTunes</h1>
-    <p class="tag">Weather + Mood = Music</p>
-  </header>
+  <!-- Auth -->
+  <div class="card">
+    <button id="loginBtn" class="btn green">Login with Spotify</button>
+    <button id="logoutBtn" class="btn red hidden">Logout</button>
 
-  <!-- Auth / Profile -->
-  <section class="glass fade">
-    <div class="row">
-      <button id="loginBtn" class="btn green">Login with Spotify</button>
-      <button id="logoutBtn" class="btn red hidden">Logout</button>
-    </div>
     <div id="profile" class="profile hidden">
-      <div class="avatar" id="avatar"></div>
-      <div class="pcol">
-        <div id="userName" class="uname"></div>
-        <div id="userEmail" class="uemail"></div>
+      <img id="avatar" class="avatar"/>
+      <div>
+        <div id="userName" class="name"></div>
+        <div id="userEmail" class="email"></div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- Controls -->
-  <section class="glass fade">
-    <input id="location" placeholder="Enter city… (e.g., Mumbai)" />
-    <div class="row">
-      <select id="language">
-        <option value="english">English</option>
-        <option value="hindi">Hindi</option>
-        <option value="punjabi">Punjabi</option>
-        <option value="tamil">Tamil</option>
-        <option value="telugu">Telugu</option>
-        <option value="marathi">Marathi</option>
-        <option value="kannada">Kannada</option>
-        <option value="malayalam">Malayalam</option>
-        <option value="bengali">Bengali</option>
-        <option value="korean">K-Pop</option>
-        <option value="japanese">J-Pop</option>
-        <option value="spanish">Spanish</option>
-        <option value="french">French</option>
-        <option value="german">German</option>
-        <option value="italian">Italian</option>
-        <option value="arabic">Arabic</option>
-      </select>
+  <!-- Inputs -->
+  <div class="card">
+    <input id="location" class="input" placeholder="Enter city…" />
 
-      <select id="mood">
-        <option value="chill">😌 Chill</option>
-        <option value="happy">😊 Happy</option>
-        <option value="sad">😢 Sad</option>
-        <option value="energetic">⚡ Energetic</option>
-        <option value="party">🎉 Party</option>
-      </select>
-    </div>
+    <select id="language" class="input">
+      <option value="english">English</option>
+      <option value="hindi">Hindi</option>
+      <option value="punjabi">Punjabi</option>
+      <option value="tamil">Tamil</option>
+      <option value="telugu">Telugu</option>
+      <option value="marathi">Marathi</option>
+      <option value="kannada">Kannada</option>
+      <option value="malayalam">Malayalam</option>
+      <option value="bengali">Bengali</option>
+      <option value="korean">K-Pop</option>
+      <option value="japanese">J-Pop</option>
+      <option value="spanish">Spanish</option>
+      <option value="french">French</option>
+      <option value="german">German</option>
+      <option value="italian">Italian</option>
+      <option value="arabic">Arabic</option>
+    </select>
 
-    <button id="searchBtn" class="btn blue full">Get Weather + Music</button>
+    <select id="mood" class="input">
+      <option value="chill">Chill</option>
+      <option value="happy">Happy</option>
+      <option value="sad">Sad</option>
+      <option value="energetic">Energetic</option>
+      <option value="party">Party</option>
+    </select>
 
-    <div id="weather" class="weather"></div>
-  </section>
+    <button id="searchBtn" class="btn blue full">Get Songs</button>
+  </div>
+
+  <!-- Weather -->
+  <div class="card">
+    <div id="weather"></div>
+  </div>
 
   <!-- Songs -->
-  <section class="glass fade">
-    <div class="row space">
-      <h3>🎵 Suggested Songs</h3>
-      <button id="createBtn" class="btn purple hidden">Create Spotify Playlist</button>
+  <div class="card">
+    <div class="row">
+      <h3>Songs</h3>
+      <button id="createBtn" class="btn purple hidden">Create Playlist</button>
     </div>
-    <div id="playlist" class="list"></div>
-    <div id="createResult" class="result"></div>
-  </section>
-
-  <!-- Library -->
-  <section class="glass fade">
-    <div class="row space">
-      <h3>📂 Your Library</h3>
-      <button id="clearLibBtn" class="btn ghost">Clear</button>
-    </div>
-    <div id="history" class="list small"></div>
-  </section>
+    <div id="playlist"></div>
+    <div id="createResult" class="note"></div>
+  </div>
 
 </div>
-
 <script src="app.js"></script>
 </body>
 </html>
