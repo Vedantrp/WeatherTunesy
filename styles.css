@@ -1,11 +1,23 @@
-body { transition: background 0.8s ease-in-out; }
+body {
+  background:#111;
+  color:#fff;
+  font-family:Arial;
+  padding:20px;
+}
 
-/* Optional weather gradients */
-.bg-sunny   { background: linear-gradient(135deg, #ffcc33, #ff6e7f); }
-.bg-rain    { background: linear-gradient(135deg, #667db6, #0082c8, #0082c8, #667db6); }
-.bg-haze    { background: linear-gradient(135deg, #757f9a, #d7dde8); }
-.bg-winter  { background: linear-gradient(135deg, #74ebd5, #ACB6E5); }
-.bg-night   { background: linear-gradient(135deg, #141E30, #243B55); }
+button {
+  padding:10px 15px;
+  background:#1DB954;
+  border:none;
+  color:white;
+  cursor:pointer;
+  margin:5px;
+}
+
+input,select {
+  padding:8px;
+  margin:5px;
+}
 
 select option {
   background: #1e1e1e;
