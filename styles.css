@@ -25,6 +25,7 @@ button {
   color: black;
   font-weight: bold;
   cursor: pointer;
+  background-filter: blur(10px);
 }
 
 button:hover { opacity: 0.8; }
@@ -36,4 +37,5 @@ button:hover { opacity: 0.8; }
   padding: 6px;
   border-bottom: 1px solid #444;
 }
+
 
