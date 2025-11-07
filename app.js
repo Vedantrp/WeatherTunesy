@@ -158,7 +158,21 @@ searchBtn.onclick = async () => {
         }
     };
 };
+function setWeatherBG(condition, temp) {
+  if (condition.includes("Rain")) {
+    document.body.className = "bg-rain text-white";
+  } else if (condition.includes("Haze") || condition.includes("Fog")) {
+    document.body.className = "bg-haze text-white";
+  } else if (temp < 20) {
+    document.body.className = "bg-winter text-white";
+  } else if (condition.includes("Clear")) {
+    document.body.className = "bg-sunny text-white";
+  } else {
+    document.body.className = "bg-night text-white";
+  }
+}
 
 // ===============================
 updateUI();
+
 
