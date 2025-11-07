@@ -6,3 +6,8 @@ body { transition: background 0.8s ease-in-out; }
 .bg-haze    { background: linear-gradient(135deg, #757f9a, #d7dde8); }
 .bg-winter  { background: linear-gradient(135deg, #74ebd5, #ACB6E5); }
 .bg-night   { background: linear-gradient(135deg, #141E30, #243B55); }
+
+select option {
+  background: #1e1e1e;
+  color: #fff;
+}
