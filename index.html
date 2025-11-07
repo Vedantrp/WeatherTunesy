@@ -1,66 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>WeatherTunes v3</title>
-<link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8">
+<title>WeatherTunes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Tailwind CDN (allowed for now) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+.song {
+  display: flex;
+  align-items: center;
+  background: #1f1f1f;
+  padding: 8px;
+  margin: 8px 0;
+  border-radius: 10px;
+  gap: 10px;
+}
+.song img {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+}
+.fade {
+  animation: fadeIn .4s ease-in;
+}
+@keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+</style>
+
 </head>
-<body>
+<body class="bg-black text-white p-4">
 
-<div class="container">
+<h1 class="text-xl font-bold mb-3">🎧 WeatherTunes</h1>
 
-<h2 class="title">🌤️ WeatherTunes</h2>
-<p class="tagline">Weather + Mood = Music</p>
-
-<div class="auth-box">
-  <button id="loginBtn" class="btn-login">Login with Spotify</button>
-  <button id="logoutBtn" class="btn-logout" style="display:none;">Logout</button>
-  <p id="userName"></p>
+<div class="mb-3">
+<button id="loginBtn" class="bg-green-500 px-4 py-2 rounded">Login Spotify</button>
+<button id="logoutBtn" class="bg-red-500 px-4 py-2 rounded hidden">Logout</button>
+<p id="userName" class="mt-1 text-sm opacity-80"></p>
 </div>
 
-<div class="card controls fade">
-  <input id="location" placeholder="Enter city (e.g. Mumbai)" />
+<div class="space-y-2 mb-3">
+<input id="location" placeholder="Enter city…" class="w-full p-2 rounded bg-gray-800">
+<select id="language" class="w-full p-2 rounded bg-gray-800 text-white">
+  <option value="english">English</option>
+  <option value="hindi">Hindi</option>
+  <option value="punjabi">Punjabi</option>
+  <option value="tamil">Tamil</option>
+  <option value="telugu">Telugu</option>
+  <option value="kannada">Kannada</option>
+  <option value="malayalam">Malayalam</option>
+  <option value="bengali">Bengali</option>
+  <option value="marathi">Marathi</option>
+  <option value="korean">K-Pop</option>
+  <option value="japanese">J-Pop</option>
+  <option value="spanish">Spanish</option>
+  <option value="french">French</option>
+  <option value="german">German</option>
+  <option value="italian">Italian</option>
+  <option value="arabic">Arabic</option>
+</select>
 
-  <select id="language">
-    <option value="english">English</option>
-    <option value="hindi">Hindi</option>
-    <option value="punjabi">Punjabi</option>
-    <option value="tamil">Tamil</option>
-    <option value="telugu">Telugu</option>
-    <option value="korean">Korean</option>
-    <option value="japanese">Japanese</option>
-    <option value="spanish">Spanish</option>
-  </select>
-
-  <select id="mood">
-    <option value="chill">😌 Chill</option>
-    <option value="happy">😊 Happy</option>
-    <option value="sad">😢 Sad</option>
-    <option value="energetic">⚡ Energetic</option>
-    <option value="party">🎉 Party</option>
-  </select>
-
-  <button id="searchBtn" class="btn-main">Generate Playlist</button>
+<button id="searchBtn" class="bg-blue-600 px-4 py-2 rounded w-full">Get Music</button>
 </div>
 
-<div class="card fade">
-  <h3>🌦 Weather</h3>
-  <div id="weather">—</div>
-</div>
+<div id="weather" class="mb-3 text-md"></div>
 
-<div class="card fade">
-  <h3>🎧 Suggested Songs</h3>
-  <div id="playlist"></div>
-</div>
-
-<button id="createBtn" class="btn-create fade">🎵 Create Playlist</button>
-<div id="playlistResult" class="fade"></div>
-
-<div class="card history fade">
-  <h3>📂 Your Playlist History</h3>
-  <div id="historyList"></div>
-</div>
-
-</div>
+<div id="playlist"></div>
 
 <script src="app.js"></script>
 </body>
