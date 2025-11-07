@@ -1,17 +1,16 @@
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST")
-      return res.status(405).json({ error: "Only POST allowed" });
+    const { token, tracks } = req.body;
+    if (!token) return res.status(400).json({ error: "Missing token" });
 
-    const { token, userId, tracks } = req.body;
+    // 1) Get User ID
+    const userData = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(r => r.json());
 
-    if (!token || !userId || !tracks?.length) {
-      return res.status(400).json({ error: "Missing data for playlist" });
-    }
-
-    // 1️⃣ Create empty playlist
-    const playlistRes = await fetch(
-      `https://api.spotify.com/v1/users/${userId}/playlists`,
+    // 2) Create Playlist
+    const playlist = await fetch(
+      `https://api.spotify.com/v1/users/${userData.id}/playlists`,
       {
         method: "POST",
         headers: {
@@ -19,32 +18,30 @@ export default async function handler(req, res) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          name: `WeatherTunes Mix 🎵`,
-          description: `Auto-generated weather-based playlist 🌦️`,
-          public: false
+          name: "WeatherTunes Mix 🌦️🎵",
+          public: false,
+          description: "Songs auto-generated based on weather mood"
         })
+      }
+    ).then(r => r.json());
+
+    // 3) Add tracks
+    await fetch(
+      `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ uris: tracks })
       }
     );
 
-    const playlist = await playlistRes.json();
-    if (!playlist.id) return res.status(500).json({ error: "Playlist failed" });
+    res.json({ url: playlist.external_urls.spotify });
 
-    // 2️⃣ Add tracks
-    await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ uris: tracks.slice(0, 35) })
-    });
-
-    return res.status(200).json({
-      playlistId: playlist.id,
-      playlistUrl: playlist.external_urls.spotify
-    });
-  } catch (err) {
-    console.error("Create playlist error:", err);
-    res.status(500).json({ error: "Create playlist failed" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Playlist failed" });
   }
 }
