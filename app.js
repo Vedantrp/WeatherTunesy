@@ -1,9 +1,8 @@
-// ===============================
-// GLOBAL STATE
-// ===============================
+// ===== GLOBAL STATE =====
 let spotifyToken = localStorage.getItem("spotifyToken") || null;
 let spotifyUser = JSON.parse(localStorage.getItem("spotifyUser") || "null");
 
+// ===== DOM =====
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const userName = document.getElementById("userName");
@@ -14,165 +13,103 @@ const searchBtn = document.getElementById("searchBtn");
 const playlistDiv = document.getElementById("playlist");
 const weatherBox = document.getElementById("weather");
 
-// Store songs for playlist creation
-let lastTracks = []; 
-
+// ===== UI Helper =====
 function updateUI() {
-    if (spotifyToken && spotifyUser) {
-        loginBtn.style.display = "none";
-        logoutBtn.style.display = "block";
-        userName.innerText = `Logged in as: ${spotifyUser.display_name}`;
-    } else {
-        loginBtn.style.display = "block";
-        logoutBtn.style.display = "none";
-        userName.innerText = "";
-    }
-}
-
-// ===============================
-// LOGIN FLOW
-// ===============================
-loginBtn.onclick = async () => {
-    const res = await fetch("/api/login");
-    const { authUrl } = await res.json();
-
-    const popup = window.open(authUrl, "spotifyLogin", "width=600,height=700");
-
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
-            spotifyToken = event.data.token;
-            spotifyUser = event.data.user;
-
-            localStorage.setItem("spotifyToken", spotifyToken);
-            localStorage.setItem("spotifyUser", JSON.stringify(spotifyUser));
-
-            popup.close();
-            updateUI();
-        }
-    });
-};
-
-logoutBtn.onclick = () => {
-    spotifyToken = null;
-    spotifyUser = null;
-    localStorage.clear();
-    updateUI();
-};
-
-// ===============================
-// API CALLS
-// ===============================
-async function getWeather(city) {
-    const res = await fetch("/api/get-weather", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ city })
-    });
-    return res.json();
-}
-
-async function getSongs(language, mood) {
-    const res = await fetch("/api/get-songs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            token: spotifyToken,
-            language,
-            mood
-        })
-    });
-    return res.json();
-}
-
-async function createPlaylist() {
-    const uris = lastTracks.map(t => t.uri);
-
-    const res = await fetch("/api/create-playlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            token: spotifyToken,
-            userId: spotifyUser.id,
-            tracks: uris
-        })
-    });
-
-    return res.json();
-}
-
-// ===============================
-// MAIN SEARCH
-// ===============================
-searchBtn.onclick = async () => {
-    if (!spotifyToken) return alert("Login with Spotify first");
-
-    const city = locationInput.value.trim();
-    if (!city) return alert("Enter a city");
-
-    playlistDiv.innerHTML = "⏳ Loading playlist...";
-    weatherBox.innerHTML = "⏳ Loading weather...";
-
-    // Weather
-    const weather = await getWeather(city);
-    weatherBox.innerHTML = `
-        🌍 ${city}<br>
-        🌡 ${weather.temp}°C (Feels ${weather.feels_like}°C)<br>
-        🌦 ${weather.condition}
-    `;
-
-    // Mood rules
-    let mood = "chill";
-    if (weather.temp > 30) mood = "summer";
-    if (weather.condition.includes("Rain")) mood = "lofi";
-    if (weather.condition.includes("Haze")) mood = "gloomy";
-
-    // Songs
-    const data = await getSongs(languageSelect.value, mood);
-    lastTracks = data.tracks || [];
-
-    if (!lastTracks.length) {
-        playlistDiv.innerHTML = "No songs found 😐 Try another location/language.";
-        return;
-    }
-
-    playlistDiv.innerHTML = `<h3>🎧 Songs</h3>`;
-    lastTracks.forEach(t => {
-        playlistDiv.innerHTML += `${t.name} — <b>${t.artist}</b><br>`;
-    });
-
-    // Add create playlist button
-    const btn = document.createElement("button");
-    btn.innerHTML = "🎵 Create Spotify Playlist";
-    btn.style.marginTop = "10px";
-    playlistDiv.appendChild(btn);
-
-    btn.onclick = async () => {
-        btn.disabled = true;
-        btn.innerText = "Creating...";
-
-        const result = await createPlaylist();
-        if (result.playlistUrl) {
-            playlistDiv.innerHTML += `<br><a href="${result.playlistUrl}" target="_blank">✅ Open Playlist</a>`;
-        } else {
-            alert("Error creating playlist");
-        }
-    };
-};
-function setWeatherBG(condition, temp) {
-  if (condition.includes("Rain")) {
-    document.body.className = "bg-rain text-white";
-  } else if (condition.includes("Haze") || condition.includes("Fog")) {
-    document.body.className = "bg-haze text-white";
-  } else if (temp < 20) {
-    document.body.className = "bg-winter text-white";
-  } else if (condition.includes("Clear")) {
-    document.body.className = "bg-sunny text-white";
+  if (spotifyToken && spotifyUser) {
+    loginBtn.classList.add("hidden");
+    logoutBtn.classList.remove("hidden");
+    userName.textContent = `✅ Logged in as ${spotifyUser.display_name}`;
   } else {
-    document.body.className = "bg-night text-white";
+    loginBtn.classList.remove("hidden");
+    logoutBtn.classList.add("hidden");
+    userName.textContent = "";
   }
 }
 
-// ===============================
+// ===== LOGIN =====
+loginBtn.onclick = async () => {
+  const res = await fetch("/api/login");
+  const { authUrl } = await res.json();
+  const popup = window.open(authUrl, "spotifyLogin", "width=600,height=700");
+
+  window.addEventListener("message", (event) => {
+    if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
+      spotifyToken = event.data.token;
+      spotifyUser = event.data.user;
+      localStorage.setItem("spotifyToken", spotifyToken);
+      localStorage.setItem("spotifyUser", JSON.stringify(spotifyUser));
+      popup.close();
+      updateUI();
+    }
+  });
+};
+
+// ===== LOGOUT =====
+logoutBtn.onclick = () => {
+  localStorage.clear();
+  spotifyToken = null;
+  spotifyUser = null;
+  updateUI();
+};
+
+// ===== API CALLS =====
+async function getWeather(city) {
+  return fetch("/api/get-weather", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ city }),
+  }).then(r => r.json());
+}
+
+async function getSongs(language, mood) {
+  return fetch("/api/get-songs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: spotifyToken, language, mood }),
+  }).then(r => r.json());
+}
+
+// ===== MAIN SEARCH =====
+searchBtn.onclick = async () => {
+  if (!spotifyToken) return alert("Login first");
+
+  const city = locationInput.value.trim();
+  if (!city) return alert("Enter city");
+
+  playlistDiv.innerHTML = "🎧 Loading songs...";
+  weatherBox.textContent = "🌤 Fetching weather...";
+
+  const weather = await getWeather(city);
+
+  if (weather.error) {
+    weatherBox.textContent = "Weather error";
+    playlistDiv.textContent = "";
+    return;
+  }
+
+  weatherBox.innerHTML = `
+    City: ${city}<br>
+    Temp: ${weather.temp}°C<br>
+    Feels: ${weather.feels_like}°C<br>
+    Condition: ${weather.condition}
+  `;
+
+  let mood = "chill";
+  if (weather.temp > 30) mood = "summer";
+  if (weather.condition.includes("Rain")) mood = "lofi";
+  if (weather.condition.includes("Haze")) mood = "gloomy";
+
+  const response = await getSongs(languageSelect.value, mood);
+
+  if (!response.tracks?.length) {
+    playlistDiv.innerHTML = "😕 No songs found";
+    return;
+  }
+
+  playlistDiv.innerHTML = "";
+  response.tracks.forEach(t => {
+    playlistDiv.innerHTML += `<div>🎵 ${t.name} — <b>${t.artist}</b></div>`;
+  });
+};
+
 updateUI();
-
-
