@@ -139,21 +139,30 @@ searchBtn.onclick = async () => {
 
 // ===== Create playlist click
 createBtn.onclick = async () => {
-  if (!spotifyToken || !spotifyUser) { alert("Login first."); return; }
-  if (!currentUris.length) { alert("No songs to add."); return; }
+  if (!songs.length) return alert("No songs to add");
 
-  createResult.textContent = "Creating playlist…";
-  const city = createBtn.dataset.city || "City";
-  const mood = createBtn.dataset.mood || "Vibes";
-  const name = `${mood} · ${city}`;
+  createBtn.disabled = true;
+  createBtn.innerText = "Creating...";
 
   try {
-    const out = await createPl(name, currentUris.slice(0, 35));
-    if (out?.url) {
-      createResult.innerHTML = `✅ Playlist ready — <a href="${out.url}" target="_blank" rel="noopener">Open</a>`;
-    } else {
-      createResult.textContent = "Failed to create playlist.";
-    }
+    const data = await postJSON("/api/create-playlist", {
+      token: spotifyToken,
+      tracks: songs,
+      mood: currentMood
+    });
+
+    if (!data.playlistUrl) throw new Error("no link");
+
+    createBtn.innerText = "✅ Playlist Ready!";
+    window.open(data.playlistUrl, "_blank");
+
+  } catch (e) {
+    console.error(e);
+    alert("Playlist failed 😢");
+    createBtn.innerText = "Create Playlist";
+  }
+};
+
   } catch (err) {
     createResult.textContent = `Error: ${err.message}`;
     console.error(err);
@@ -162,3 +171,4 @@ createBtn.onclick = async () => {
 
 // Initial UI
 updateUI();
+
