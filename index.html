@@ -2,71 +2,60 @@
 <html lang="en">
 <head>
 <title>WeatherTunes</title>
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background:#111;
-  color:white;
-  padding:20px;
-}
-button {
-  padding:10px 15px;
-  margin:5px 0;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
-#loginBtn { background:#1DB954; }
-#logoutBtn { background:#d9534f; }
-input, select {
-  padding:8px;
-  margin:5px 0;
-  width:200px;
-  border-radius:6px;
-}
-.song {
-  padding:4px 0;
-  border-bottom:1px solid #444;
-}
-#createBtn {
-  background:#1DB954;
-  margin-top:10px;
-  display:none;
-}
-</style>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<h2>🎵 WeatherTunes (Stable Base Version)</h2>
+<div class="container">
 
-<button id="loginBtn">Login with Spotify</button>
-<button id="logoutBtn" style="display:none;">Logout</button>
-<p id="userName"></p>
+<h2>🌤️ WeatherTunes v2</h2>
+<p class="tagline">Weather + Mood = Music 🎶</p>
 
-<hr>
+<div class="auth-box">
+  <button id="loginBtn" class="btn-login">Login with Spotify</button>
+  <button id="logoutBtn" class="btn-logout" style="display:none;">Logout</button>
+  <p id="userName"></p>
+</div>
 
-<input id="location" placeholder="Enter City (e.g. Mumbai)" />
-<select id="language">
-  <option value="english">English</option>
-  <option value="hindi">Hindi</option>
-  <option value="punjabi">Punjabi</option>
-  <option value="tamil">Tamil</option>
-  <option value="telugu">Telugu</option>
-  <option value="korean">Korean</option>
-  <option value="japanese">Japanese</option>
-  <option value="spanish">Spanish</option>
-</select>
+<div class="controls">
+  <input id="location" placeholder="Enter City (e.g. Mumbai)" />
+  
+  <select id="language">
+    <option value="english">English</option>
+    <option value="hindi">Hindi</option>
+    <option value="punjabi">Punjabi</option>
+    <option value="tamil">Tamil</option>
+    <option value="telugu">Telugu</option>
+    <option value="korean">Korean</option>
+    <option value="japanese">Japanese</option>
+    <option value="spanish">Spanish</option>
+  </select>
 
-<button id="searchBtn">Get Weather + Music</button>
+  <select id="mood">
+    <option value="chill">😌 Chill</option>
+    <option value="happy">😊 Happy</option>
+    <option value="sad">😢 Sad</option>
+    <option value="energetic">⚡ Energetic</option>
+    <option value="party">🎉 Party</option>
+  </select>
 
-<h3>🌦 Weather</h3>
-<div id="weather"></div>
+  <button id="searchBtn" class="btn-main">Generate Mix</button>
+</div>
 
-<h3>🎧 Suggested Songs</h3>
-<div id="playlist"></div>
+<div class="weather-box">
+  <h3>🌦 Weather</h3>
+  <div id="weather">—</div>
+</div>
 
-<button id="createBtn">🎵 Create Playlist</button>
+<div class="playlist-box">
+  <h3>🎧 Suggested Songs</h3>
+  <div id="playlist"></div>
+</div>
+
+<button id="createBtn" class="btn-create">🎵 Create Playlist</button>
 <div id="playlistResult"></div>
+
+</div>
 
 <script src="app.js"></script>
 </body>
