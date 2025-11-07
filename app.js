@@ -128,12 +128,29 @@ async function getWeather(city) {
 }
 
 async function getSongs(language, mood) {
-  return fetch("/api/get-songs", {
+  const res = await fetch("/api/get-songs", {
     method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ token: spotifyToken, language, mood })
-  }).then(r => r.json());
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      token: spotifyToken,
+      language,
+      mood
+    })
+  });
+
+  const text = await res.text(); // <-- get raw text
+
+  try {
+    const data = JSON.parse(text);
+    if (!data.tracks) throw new Error("No tracks found");
+    return data;
+  } catch (err) {
+    console.error("Song API failed:", text);
+    playlistDiv.innerHTML = "⚠️ Song server error — try again.";
+    return { tracks: [] };
+  }
 }
+
 
 async function createPlaylist(uris, name, description) {
   return fetch("/api/create-playlist", {
@@ -240,3 +257,4 @@ createBtn.onclick = async () => {
 };
 
 updateUI();
+
