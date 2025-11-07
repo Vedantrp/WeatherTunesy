@@ -86,6 +86,9 @@ searchBtn.onclick = async () => {
     playlistDiv.textContent = "";
     return;
   }
+response.tracks.forEach(t => {
+  playlistDiv.innerHTML += `<div>🎵 ${t.name} — <b>${t.artist}</b></div>`;
+});
 
   weatherBox.innerHTML = `
     City: ${city}<br>
@@ -113,3 +116,4 @@ searchBtn.onclick = async () => {
 };
 
 updateUI();
+
