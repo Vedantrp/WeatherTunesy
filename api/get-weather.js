@@ -1,15 +1,15 @@
 export default async function handler(req, res) {
   const { city } = req.body;
-  if (!city) return res.status(400).json({ error: "City missing" });
+  const key = process.env.WEATHER_API_KEY;
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${process.env.WEATHER_API_KEY}&units=metric`;
+  const r = await fetch(
+    `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${key}`
+  );
+  const j = await r.json();
 
-  const r = await fetch(url);
-  const d = await r.json();
-
-  return res.json({
-    temp: d.main.temp,
-    feels_like: d.main.feels_like,
-    condition: d.weather[0].description,
+  res.json({
+    temp: j.main.temp,
+    feels_like: j.main.feels_like,
+    condition: j.weather[0].main
   });
 }
