@@ -1,35 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>WeatherTunes</title>
-<link rel="stylesheet" href="styles.css">
+<title>WeatherTunes 🎧</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-4">
 
-<h2>WeatherTunes 🎵🌤️</h2>
+<h1 class="text-3xl font-bold mb-3">WeatherTunes 🎧🌦️</h1>
 
-<button id="loginBtn">Login with Spotify</button>
-<button id="logoutBtn" style="display:none;">Logout</button>
-<p id="userName"></p>
+<div class="bg-gray-800 p-5 rounded-xl w-full max-w-md space-y-4">
 
-<hr>
+<!-- Auth -->
+<div class="flex items-center justify-between">
+  <button id="loginBtn" class="bg-green-500 px-4 py-2 rounded-lg font-bold">Login Spotify</button>
+  <button id="logoutBtn" class="hidden bg-red-500 px-4 py-2 rounded-lg font-bold">Logout</button>
+</div>
+<p id="userName" class="text-sm text-gray-300"></p>
 
-<input id="location" placeholder="Enter City..." />
-<select id="language">
+<!-- Location -->
+<input id="location" class="w-full p-2 text-black rounded" placeholder="Enter City (Mumbai)" />
+
+<!-- Language -->
+<select id="language" class="w-full p-2 text-black rounded">
   <option value="english">English</option>
   <option value="hindi">Hindi</option>
   <option value="punjabi">Punjabi</option>
 </select>
-<button id="searchBtn">Get Weather + Playlist</button>
 
-<h3>Weather</h3>
-<div id="weather"></div>
+<!-- Mood Slider -->
+<label class="text-sm">Mood level</label>
+<input id="moodRange" type="range" min="1" max="5" value="3" class="w-full">
+<p id="moodLabel" class="text-sm text-gray-300 text-center"></p>
 
-<h3>Songs</h3>
-<div id="playlist"></div>
+<button id="searchBtn" class="bg-blue-500 w-full p-2 rounded-lg font-bold">Get Playlist</button>
 
-<button id="createPlaylistBtn" style="display:none;">🎧 Create Spotify Playlist</button>
-<p id="playlistStatus"></p>
+<!-- Weather -->
+<div id="weather" class="text-center text-sm"></div>
+
+<!-- Songs -->
+<div id="playlist" class="space-y-2"></div>
+
+<button id="createPlaylistBtn" class="hidden bg-green-600 w-full p-2 rounded-lg font-bold">Create Spotify Playlist</button>
+<p id="playlistStatus" class="text-center text-sm"></p>
+
+</div>
 
 <script src="app.js"></script>
 </body>
