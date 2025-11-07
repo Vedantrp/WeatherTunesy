@@ -1,51 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>WeatherTunes</title>
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8" />
+  <title>WeatherTunes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<div class="container">
-  <h2>🌤 WeatherTunes</h2>
+  <div class="container">
+    <h1 class="logo">🎧 WeatherTunes</h1>
 
-  <div id="authBox">
-    <button id="loginBtn">Login with Spotify</button>
-    <button id="logoutBtn" style="display:none;">Logout</button>
-    <p id="userName"></p>
+    <div class="card">
+      <button id="loginBtn" class="btn green">Login with Spotify</button>
+      <button id="logoutBtn" class="btn red hidden">Logout</button>
+      <p id="userName" class="note"></p>
+    </div>
+
+    <div class="card">
+      <input id="location" class="input" placeholder="Enter city… (e.g., Mumbai)" />
+      <select id="language" class="input">
+        <!-- options as before -->
+      </select>
+      <select id="mood" class="input">
+        <option value="chill">Chill</option>
+        <option value="happy">Happy</option>
+        <option value="sad">Sad</option>
+        <option value="energetic">Energetic</option>
+        <option value="party">Party</option>
+      </select>
+      <button id="searchBtn" class="btn blue full">Get Weather + Songs</button>
+    </div>
+
+    <div class="card">
+      <div id="weather" class="text note"></div>
+    </div>
+
+    <div class="card">
+      <div class="row space">
+        <h3>Songs</h3>
+        <button id="createBtn" class="btn purple hidden">Create Playlist</button>
+      </div>
+      <div id="playlist" class="list"></div>
+      <div id="createResult" class="note"></div>
+    </div>
   </div>
 
-  <hr>
-
-  <input id="location" placeholder="Enter City..." />
-  
-  <select id="language">
-    <option value="english">English</option>
-    <option value="hindi">Hindi</option>
-    <option value="punjabi">Punjabi</option>
-    <option value="tamil">Tamil</option>
-    <option value="telugu">Telugu</option>
-    <option value="kannada">Kannada</option>
-    <option value="malayalam">Malayalam</option>
-    <option value="bengali">Bengali</option>
-    <option value="marathi">Marathi</option>
-    <option value="korean">Korean</option>
-    <option value="japanese">Japanese</option>
-    <option value="spanish">Spanish</option>
-  </select>
-
-  <button id="searchBtn">Get Weather + Playlist</button>
-
-  <h3>🌧 Weather</h3>
-  <div id="weather"></div>
-
-  <h3>🎵 Recommended Songs</h3>
-  <div id="playlist"></div>
-
-  <button id="createBtn" style="display:none;">Create Spotify Playlist</button>
-
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
