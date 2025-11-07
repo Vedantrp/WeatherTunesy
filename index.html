@@ -1,61 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>WeatherTunes</title>
-<link rel="stylesheet" href="styles.css" />
- <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WeatherTunes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body> 
 
-<body class="bg-neutral-900 text-white font-sans">
+<body class="bg-gray-900 text-white font-sans p-6">
 
-<div class="max-w-lg mx-auto p-6 space-y-6">
+  <div class="max-w-xl mx-auto space-y-4">
 
-  <h1 class="text-3xl font-bold text-center">🎧 WeatherTunes</h1>
-  <p class="text-center text-gray-400 text-sm">Music that matches your weather mood</p>
+    <h1 class="text-2xl font-bold text-center mb-4">🎵 WeatherTunes</h1>
 
-  <div class="flex justify-center gap-3">
-    <button id="loginBtn" class="px-5 py-2 bg-green-500 hover:bg-green-400 rounded-lg font-semibold">
-      Login with Spotify
-    </button>
+    <!-- Auth Buttons -->
+    <button id="loginBtn" class="bg-green-500 px-4 py-2 rounded w-full">Login with Spotify</button>
+    <button id="logoutBtn" class="bg-red-500 px-4 py-2 rounded w-full hidden">Logout</button>
+    <p id="userName" class="text-center text-sm"></p>
 
-    <button id="logoutBtn" class="px-5 py-2 bg-red-500 hover:bg-red-400 rounded-lg font-semibold hidden">
-      Logout
-    </button>
-  </div>
+    <!-- Search Box -->
+    <input id="location"
+      class="w-full px-3 py-2 text-black rounded"
+      placeholder="Enter city (e.g. Mumbai)" />
 
-  <p id="userName" class="text-center text-green-300"></p>
-
-  <!-- SEARCH INPUTS -->
-  <div class="bg-white/10 backdrop-blur-lg p-4 rounded-xl space-y-3">
-
-    <input id="location" 
-      class="w-full px-3 py-2 rounded bg-white/5 border border-gray-600"
-      placeholder="Enter city (e.g. Mumbai)"
-    />
-
-    <select id="language" class="w-full px-3 py-2 rounded bg-white/5 border border-gray-600">
+    <select id="language" class="w-full px-3 py-2 text-black rounded">
       <option value="english">English</option>
       <option value="hindi">Hindi</option>
       <option value="punjabi">Punjabi</option>
+      <option value="tamil">Tamil</option>
+      <option value="telugu">Telugu</option>
+      <option value="korean">K-Pop</option>
+      <option value="japanese">J-Pop</option>
+      <option value="spanish">Spanish/Latin</option>
     </select>
 
-    <button id="searchBtn"
-      class="w-full bg-blue-500 hover:bg-blue-400 text-white py-2 rounded-lg font-bold">
-      Get Weather + Playlist
+    <button id="searchBtn" class="bg-blue-500 px-4 py-2 rounded w-full">
+      Get Weather & Playlist
     </button>
+
+    <!-- Weather Output -->
+    <div id="weather" class="p-4 bg-gray-800 rounded"></div>
+
+    <!-- Playlist -->
+    <h2 class="text-xl font-semibold">Songs</h2>
+    <div id="playlist" class="space-y-2 text-sm"></div>
   </div>
 
-  <!-- WEATHER CARD -->
-  <div id="weather" class="bg-white/10 backdrop-blur-lg p-4 rounded-xl text-center hidden"></div>
-
-  <!-- SONG LIST -->
-  <div id="playlist" class="bg-white/10 backdrop-blur-lg p-4 rounded-xl hidden"></div>
-
-</div>
-
-<script src="app.js"></script>
-</body>
-
+  <script src="app.js"></script>
 </body>
 </html>
