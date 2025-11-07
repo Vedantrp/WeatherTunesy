@@ -1,17 +1,35 @@
-body{margin:0;background:#0d1117;color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
-#app{max-width:640px;margin:0 auto;padding:20px}
-.logo{text-align:center;font-size:26px;margin:10px 0 14px}
-.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;margin:12px 0}
-.input{width:100%;padding:10px;border-radius:8px;margin:6px 0;background:#0d1117;border:1px solid #30363d;color:#fff}
-.btn{padding:10px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:600}
-.full{width:100%}
-.green{background:#1DB954}
-.red{background:#d9534f}
-.blue{background:#1f6feb}
-.purple{background:#8e44ad}
-.hidden{display:none}
-.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.note{font-size:12px;opacity:.75;margin-top:6px}
-.text{font-size:14px;line-height:1.5}
-.list{display:flex;flex-direction:column;gap:8px}
-.item{padding:10px;border:1px solid #30363d;border-radius:8px;background:#0f1420}
+body {
+  background: #0b0f19;
+  color: white;
+  font-family: sans-serif;
+  display: flex; justify-content: center;
+  padding: 40px;
+}
+
+.container {
+  width: 350px;
+  background: #151a28;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+input, select, button {
+  width: 100%; padding: 10px; margin-top: 10px;
+  border-radius: 6px; border: none;
+  font-size: 15px;
+}
+
+button {
+  background: #1db954;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover { opacity: 0.8; }
+
+#playlist div {
+  padding: 6px;
+  border-bottom: 1px solid #444;
+}
