@@ -224,7 +224,7 @@ clearLibBtn.onclick = () => {
   if(!library.length) return;
   if(confirm("Clear your saved playlists?")){
     library = [];
-    localStorage.setItem("wt_library","[]");
-    renderLibrary();
+  
   }
 };
+
