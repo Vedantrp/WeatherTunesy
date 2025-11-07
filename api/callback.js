@@ -1,36 +1,35 @@
-export default async function handler(req, res) {
-  try {
-    const code = req.query.code;
-    const cid = process.env.SPOTIFY_CLIENT_ID;
-    const sec = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirect = process.env.SPOTIFY_REDIRECT_URI;
+export default async function handler(req,res){
+  const code = req.query.code;
+  const redirect = process.env.SPOTIFY_REDIRECT_URI;
 
-    const basic = Buffer.from(`${cid}:${sec}`).toString("base64");
-    const token = await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basic}`,
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: `grant_type=authorization_code&code=${code}&redirect_uri=${encodeURIComponent(redirect)}`
-    }).then(r => r.json());
+  const body = new URLSearchParams({
+    grant_type:"authorization_code",
+    code,
+    redirect_uri:redirect,
+    client_id:process.env.SPOTIFY_CLIENT_ID,
+    client_secret:process.env.SPOTIFY_CLIENT_SECRET
+  });
 
-    const user = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${token.access_token}` }
-    }).then(r => r.json());
+  const r = await fetch("https://accounts.spotify.com/api/token",{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body
+  });
 
-    res.send(`
-      <script>
-        window.opener.postMessage({
-          type: "SPOTIFY_AUTH_SUCCESS",
-          token: "${token.access_token}",
-          user: ${JSON.stringify(user)}
-        }, "*");
-        window.close();
-      </script>
-    `);
-  } catch (e) {
-    console.error("CALLBACK ERROR:", e);
-    res.status(500).send("<script>window.close()</script>");
-  }
+  const tokenData = await r.json();
+
+  const user = await fetch("https://api.spotify.com/v1/me",{
+    headers:{Authorization:`Bearer ${tokenData.access_token}`}
+  }).then(r=>r.json());
+
+  res.send(`
+<script>
+window.opener.postMessage({
+  type:"SPOTIFY_AUTH_SUCCESS",
+  token:"${tokenData.access_token}",
+  refreshToken:"${tokenData.refresh_token}",
+  user:${JSON.stringify(user)}
+},"*");
+window.close();
+</script>`);
 }
