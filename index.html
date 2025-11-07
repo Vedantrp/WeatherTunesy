@@ -15,10 +15,9 @@
   <p id="userName" class="mt-2 text-yellow-300"></p>
 </div>
 
-<!-- Search area -->
+<!-- Search -->
 <div class="bg-gray-800 p-4 rounded mb-4">
-  <input id="location" placeholder="Enter City…" 
-    class="text-black p-2 rounded w-full mb-2" />
+  <input id="location" placeholder="Enter City…" class="text-black p-2 rounded w-full mb-2" />
 
   <label class="text-sm">Language</label>
   <select id="language" class="text-black p-2 rounded w-full mb-2">
@@ -45,14 +44,18 @@
     <option value="party">Party</option>
   </select>
 
-  <button id="searchBtn" class="bg-blue-500 w-full py-2 rounded">Get Music</button>
+  <button id="searchBtn" class="bg-blue-500 w-full py-2 rounded mb-2">Get Music</button>
+  <button id="createPlaylistBtn" style="display:none;" class="bg-purple-500 w-full py-2 rounded">Create Spotify Playlist</button>
 </div>
 
 <!-- Weather -->
 <div id="weather" class="bg-gray-800 p-4 rounded mb-4"></div>
 
-<!-- Songs -->
-<div id="playlist" class="bg-gray-800 p-4 rounded"></div>
+<!-- Songs Grid -->
+<div id="playlist" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+
+<!-- Playlist link -->
+<div id="playlistLink" class="mt-4"></div>
 
 <script src="app.js"></script>
 </body>
