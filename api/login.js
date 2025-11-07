@@ -1,13 +1,10 @@
 export default function handler(req, res) {
-  const redirect = process.env.SPOTIFY_REDIRECT_URI;
-  const client = process.env.SPOTIFY_CLIENT_ID;
-
   const scope = "playlist-modify-private playlist-modify-public user-read-email";
-
   const authUrl =
-    `https://accounts.spotify.com/authorize?client_id=${client}` +
-    `&response_type=code&redirect_uri=${encodeURIComponent(redirect)}` +
+    `https://accounts.spotify.com/authorize?client_id=${process.env.SPOTIFY_CLIENT_ID}` +
+    `&response_type=code` +
+    `&redirect_uri=${encodeURIComponent(process.env.SPOTIFY_REDIRECT_URI)}` +
     `&scope=${encodeURIComponent(scope)}`;
 
-  res.status(200).json({ authUrl });
+  res.json({ authUrl });
 }
