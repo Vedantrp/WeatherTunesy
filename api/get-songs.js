@@ -1,37 +1,28 @@
-export default async function handler(req,res){
-  try{
-    const { token, language="english", mood="chill" } = req.body;
+export default async function handler(req, res) {
+  const { token, language="english" } = req.body;
 
-    const markets = { english:"US", hindi:"IN", punjabi:"IN" };
-    const q = `${language} ${mood}`;
-    const market = markets[language] || "US";
+  if (!token) return res.status(401).json({ error: "No token" });
 
-    const r = await fetch(
-      `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`,
-      { headers:{ Authorization:`Bearer ${token}` } }
-    );
+  const market = language === "hindi" ? "IN" : "US";
+  const q = language === "hindi" ? "bollywood hits" : "english chill";
 
-    if(r.status === 401){
-      return res.status(401).json({ error:"expired" });
-    }
+  const search = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=playlist&market=${market}&limit=1`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  ).then(r => r.json());
 
-    const p = await r.json();
-    const id = p?.playlists?.items?.[0]?.id;
-    if(!id) return res.json({ tracks:[] });
+  const playlist = search.playlists.items?.[0];
+  if (!playlist) return res.json({ tracks: [] });
 
-    const t = await fetch(
-      `https://api.spotify.com/v1/playlists/${id}/tracks`,
-      { headers:{ Authorization:`Bearer ${token}` } }
-    ).then(r=>r.json());
+  const tracks = await fetch(
+    `https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=30`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  ).then(r => r.json());
 
-    const tracks = (t.items || []).map(i=>({
-      name:i.track.name,
-      artist:i.track.artists[0].name
-    }));
+  const items = (tracks.items || []).map(i => ({
+    name: i.track.name,
+    artist: i.track.artists[0].name
+  }));
 
-    res.json({ tracks });
-
-  } catch(e){
-    res.status(500).json({ error:"server" });
-  }
+  res.json({ tracks: items });
 }
