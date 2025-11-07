@@ -1,22 +1,8 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #121212;
-  color: white;
-  text-align: center;
-  padding: 20px;
-}
+body { transition: background 0.8s ease-in-out; }
 
-input, select, button {
-  padding: 10px;
-  margin: 5px;
-}
-
-button {
-  cursor: pointer;
-  background: #1DB954;
-  border: none;
-  color: white;
-  border-radius: 5px;
-}
-
-#playlist div { margin: 5px 0; }
+/* Optional weather gradients */
+.bg-sunny   { background: linear-gradient(135deg, #ffcc33, #ff6e7f); }
+.bg-rain    { background: linear-gradient(135deg, #667db6, #0082c8, #0082c8, #667db6); }
+.bg-haze    { background: linear-gradient(135deg, #757f9a, #d7dde8); }
+.bg-winter  { background: linear-gradient(135deg, #74ebd5, #ACB6E5); }
+.bg-night   { background: linear-gradient(135deg, #141E30, #243B55); }
