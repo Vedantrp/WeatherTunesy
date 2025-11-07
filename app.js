@@ -23,15 +23,15 @@ function updateUI() {
 loginBtn.onclick = async () => {
   const r = await fetch("/api/login");
   const { authUrl } = await r.json();
-  const popup = window.open(authUrl, "", "width=600,height=700");
+  const p = window.open(authUrl, "", "width=600,height=700");
 
   window.addEventListener("message", (ev) => {
-    if (ev.data.type === "SPOTIFY_AUTH_SUCCESS") {
+    if (ev.data?.type === "SPOTIFY_AUTH_SUCCESS") {
       token = ev.data.token;
       user = ev.data.user;
       localStorage.setItem("spotifyToken", token);
       localStorage.setItem("spotifyUser", JSON.stringify(user));
-      popup.close();
+      p.close();
       updateUI();
     }
   });
@@ -44,7 +44,7 @@ logoutBtn.onclick = () => {
   updateUI();
 };
 
-async function fetchJSON(url, body={}) {
+async function post(url, body) {
   return fetch(url, {
     method: "POST",
     headers: {"Content-Type":"application/json"},
@@ -54,49 +54,47 @@ async function fetchJSON(url, body={}) {
 
 searchBtn.onclick = async () => {
   const city = document.getElementById("location").value;
-  const language = document.getElementById("language").value;
+  const lang = document.getElementById("language").value;
   const mood = document.getElementById("mood").value;
 
-  if (!city) return alert("Enter city");
+  if (!city) return alert("Enter a city");
 
-  playlistDiv.innerHTML = "⏳";
-  weatherBox.innerHTML = "⏳";
+  playlistDiv.innerHTML = "⏳ Loading songs...";
+  weatherBox.innerHTML = "⏳ Fetching weather...";
 
-  const weather = await fetchJSON("/api/get-weather", { city });
+  const weather = await post("/api/get-weather", { city });
   weatherBox.innerHTML = `🌍 ${city}<br>🌡 ${weather.temp}°C<br>${weather.condition}`;
 
-  const songs = await fetchJSON("/api/get-songs", { token, language, mood });
+  const result = await post("/api/get-songs", { token, language: lang, mood });
 
-  if (!songs.tracks?.length) {
+  if (!result.tracks?.length) {
     playlistDiv.innerHTML = "No songs found 😐";
     createBtn.style.display = "none";
     return;
   }
 
   playlistDiv.innerHTML = "";
-  songs.tracks.forEach(t => {
+  result.tracks.forEach(t => {
     playlistDiv.innerHTML += `
-      <div class="bg-gray-700 p-2 rounded text-sm">
-        <img src="${t.image}" class="rounded mb-1">
-        ${t.name}<br>
-        <span class="text-xs text-gray-300">${t.artist}</span>
+      <div class="bg-gray-800 p-2 rounded">
+        🎵 <b>${t.name}</b><br>
+        👤 ${t.artist}
       </div>`;
   });
 
   createBtn.style.display = "block";
-  createBtn.dataset.uris = JSON.stringify(songs.tracks.map(t => t.uri));
+  createBtn.dataset.uris = JSON.stringify(result.tracks.map(t => t.uri));
 };
 
 createBtn.onclick = async () => {
   const uris = JSON.parse(createBtn.dataset.uris);
-
-  const r = await fetchJSON("/api/create-playlist", {
+  const r = await post("/api/create-playlist", {
     token,
     userId: user.id,
     tracks: uris
   });
 
-  playlistLink.innerHTML = `<a href="${r.url}" class="text-green-400 underline" target="_blank">🎧 Open Playlist</a>`;
+  playlistLink.innerHTML = `<a href="${r.url}" class="text-green-400 underline" target="_blank">✅ Open Playlist</a>`;
 };
 
 updateUI();
