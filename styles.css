@@ -1,37 +1,22 @@
-body{margin:0;background:#0d0d0d;color:#eee;font-family:system-ui,Arial,sans-serif}
-.container{max-width:680px;margin:0 auto;padding:16px}
-h1{margin:8px 0}
-.sub{color:#aaa;margin-top:0}
-.card{background:#171717;border:1px solid #222;padding:12px;border-radius:10px;margin-top:12px}
-button{display:block;width:100%;padding:12px;border:none;border-radius:8px;cursor:pointer;margin-top:10px}
-.primary{background:#1db954;color:#fff}
-.danger{background:#b71c1c;color:#fff}
-input,select{width:100%;padding:10px;border:none;border-radius:8px;background:#101010;color:#fff;margin-top:8px}
-#aiSongList{list-style:none;margin:0;padding:0}
-#aiSongList li{border-bottom:1px solid #222;padding:8px 0;font-size:14px}
-.hidden{display:none}
-#error{background:#b00020;color:#fff;padding:10px;border-radius:8px;margin-top:8px}
-
 body {
-  transition: background 1s ease-in-out;
+  font-family: Arial, sans-serif;
+  background: #121212;
+  color: white;
+  text-align: center;
+  padding: 20px;
 }
 
-.bg-sunny {
-  background: linear-gradient(135deg, #ffcc33, #ff6e7f);
+input, select, button {
+  padding: 10px;
+  margin: 5px;
 }
 
-.bg-rain {
-  background: linear-gradient(135deg, #667db6, #0082c8, #0082c8, #667db6);
+button {
+  cursor: pointer;
+  background: #1DB954;
+  border: none;
+  color: white;
+  border-radius: 5px;
 }
 
-.bg-haze {
-  background: linear-gradient(135deg, #757f9a, #d7dde8);
-}
-
-.bg-winter {
-  background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-}
-
-.bg-night {
-  background: linear-gradient(135deg, #141E30, #243B55);
-}
+#playlist div { margin: 5px 0; }
