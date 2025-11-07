@@ -11,3 +11,27 @@ input,select{width:100%;padding:10px;border:none;border-radius:8px;background:#1
 #aiSongList li{border-bottom:1px solid #222;padding:8px 0;font-size:14px}
 .hidden{display:none}
 #error{background:#b00020;color:#fff;padding:10px;border-radius:8px;margin-top:8px}
+
+body {
+  transition: background 1s ease-in-out;
+}
+
+.bg-sunny {
+  background: linear-gradient(135deg, #ffcc33, #ff6e7f);
+}
+
+.bg-rain {
+  background: linear-gradient(135deg, #667db6, #0082c8, #0082c8, #667db6);
+}
+
+.bg-haze {
+  background: linear-gradient(135deg, #757f9a, #d7dde8);
+}
+
+.bg-winter {
+  background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+}
+
+.bg-night {
+  background: linear-gradient(135deg, #141E30, #243B55);
+}
