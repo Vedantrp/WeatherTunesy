@@ -5,68 +5,70 @@
 <title>WeatherTunes</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Tailwind CDN (allowed for now) -->
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-.song {
-  display: flex;
-  align-items: center;
-  background: #1f1f1f;
-  padding: 8px;
-  margin: 8px 0;
-  border-radius: 10px;
-  gap: 10px;
+.glass {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
 }
-.song img {
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-}
-.fade {
-  animation: fadeIn .4s ease-in;
-}
-@keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+.fade { animation: fadeIn .4s ease-in-out; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px);} to {opacity:1; transform:translateY(0);}}
+.song { padding:8px; border-bottom:1px solid rgba(255,255,255,0.1); }
+.song:last-child { border-bottom:0; }
 </style>
 
 </head>
-<body class="bg-black text-white p-4">
+<body class="bg-black text-white min-h-screen flex flex-col items-center p-4">
 
-<h1 class="text-xl font-bold mb-3">🎧 WeatherTunes</h1>
+<h1 class="text-2xl font-bold mb-4 fade">🎧 WeatherTunes</h1>
 
-<div class="mb-3">
-<button id="loginBtn" class="bg-green-500 px-4 py-2 rounded">Login Spotify</button>
-<button id="logoutBtn" class="bg-red-500 px-4 py-2 rounded hidden">Logout</button>
-<p id="userName" class="mt-1 text-sm opacity-80"></p>
+<div class="glass w-full max-w-md p-4 space-y-3 fade">
+
+  <div class="flex gap-2">
+    <button id="loginBtn" class="flex-1 bg-green-600 py-2 rounded">Login</button>
+    <button id="logoutBtn" class="flex-1 bg-red-600 py-2 rounded hidden">Logout</button>
+  </div>
+
+  <p id="userName" class="text-sm opacity-70"></p>
+
+  <input id="location" placeholder="Enter city…" class="w-full p-2 rounded bg-gray-800">
+  
+  <select id="language" class="w-full p-2 rounded bg-gray-800">
+    <option value="english">English</option>
+    <option value="hindi">Hindi</option>
+    <option value="punjabi">Punjabi</option>
+    <option value="tamil">Tamil</option>
+    <option value="telugu">Telugu</option>
+    <option value="marathi">Marathi</option>
+    <option value="kannada">Kannada</option>
+    <option value="malayalam">Malayalam</option>
+    <option value="bengali">Bengali</option>
+    <option value="korean">K-Pop</option>
+    <option value="japanese">J-Pop</option>
+    <option value="spanish">Spanish</option>
+    <option value="french">French</option>
+    <option value="german">German</option>
+    <option value="italian">Italian</option>
+    <option value="arabic">Arabic</option>
+  </select>
+
+  <button id="searchBtn" class="w-full bg-blue-500 py-2 rounded">
+    Get Weather + Music
+  </button>
+
+  <div id="weather" class="text-sm fade"></div>
+
+  <div id="playlist" class="fade"></div>
+
+  <button id="createBtn" class="w-full bg-purple-600 py-2 rounded hidden">
+    ✅ Create Playlist on Spotify
+  </button>
+
+  <div id="history" class="text-xs opacity-50"></div>
 </div>
-
-<div class="space-y-2 mb-3">
-<input id="location" placeholder="Enter city…" class="w-full p-2 rounded bg-gray-800">
-<select id="language" class="w-full p-2 rounded bg-gray-800 text-white">
-  <option value="english">English</option>
-  <option value="hindi">Hindi</option>
-  <option value="punjabi">Punjabi</option>
-  <option value="tamil">Tamil</option>
-  <option value="telugu">Telugu</option>
-  <option value="kannada">Kannada</option>
-  <option value="malayalam">Malayalam</option>
-  <option value="bengali">Bengali</option>
-  <option value="marathi">Marathi</option>
-  <option value="korean">K-Pop</option>
-  <option value="japanese">J-Pop</option>
-  <option value="spanish">Spanish</option>
-  <option value="french">French</option>
-  <option value="german">German</option>
-  <option value="italian">Italian</option>
-  <option value="arabic">Arabic</option>
-</select>
-
-<button id="searchBtn" class="bg-blue-600 px-4 py-2 rounded w-full">Get Music</button>
-</div>
-
-<div id="weather" class="mb-3 text-md"></div>
-
-<div id="playlist"></div>
 
 <script src="app.js"></script>
 </body>
