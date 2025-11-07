@@ -29,7 +29,11 @@ button {
 
 button:hover { opacity: 0.8; }
 
+
+button:hover { opacity: 0.8; }
+
 #playlist div {
   padding: 6px;
   border-bottom: 1px solid #444;
 }
+
