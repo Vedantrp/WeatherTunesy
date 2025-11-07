@@ -7,6 +7,15 @@ const langProfiles = {
   korean:  { market: "KR", seeds: ["k-pop chill", "kpop dance", "k-indie"] },
   japanese:{ market: "JP", seeds: ["j-pop chill", "anime songs", "city pop"] },
   spanish: { market: "ES", seeds: ["latin chill", "reggaeton suave", "latin pop"] }
+  kannada: { market: "IN", seeds: ["kannada hits","kannada lo-fi","sandalwood songs"] },
+ malayalam: { market: "IN", seeds: ["malayalam hits","malayalam chill","mollywood songs"] },
+ bengali: { market: "IN", seeds: ["bengali hits","bengali indie","bengali lo-fi"] },
+ marathi: { market: "IN", seeds: ["marathi hits","marathi pop","marathi lo-fi"] },
+french: { market: "FR", seeds: ["french pop","chanson française","francophone chill"] },
+italian: { market: "IT", seeds: ["italian pop","canzoni italiane","italian chill"] },
+german: { market: "DE", seeds: ["german pop","german rap","deutsche chill"] },
+arabic: { market: "SA", seeds: ["arabic chill","arab pop","arabic hits"] },
+
 };
 
 const moodTerms = {
