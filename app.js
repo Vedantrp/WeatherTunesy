@@ -15,7 +15,7 @@ const playlistDiv = document.getElementById("playlist");
 const weatherBox = document.getElementById("weather");
 
 // Store songs for playlist creation
-let lastTracks = [];
+let lastTracks = []; 
 
 function updateUI() {
     if (spotifyToken && spotifyUser) {
@@ -161,3 +161,4 @@ searchBtn.onclick = async () => {
 
 // ===============================
 updateUI();
+
