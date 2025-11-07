@@ -1,22 +1,13 @@
 export default function handler(req, res) {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
-
-  if (!clientId || !redirectUri) {
-    return res.status(500).json({
-      error: "Missing env",
-      clientId: !!clientId,
-      redirectUri: !!redirectUri
-    });
-  }
+  const redirect = process.env.SPOTIFY_REDIRECT_URI;
+  const client = process.env.SPOTIFY_CLIENT_ID;
 
   const scope = "playlist-modify-private playlist-modify-public user-read-email";
 
-  const authUrl = 
-    `https://accounts.spotify.com/authorize?client_id=${clientId}` +
-    `&response_type=code` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+  const authUrl =
+    `https://accounts.spotify.com/authorize?client_id=${client}` +
+    `&response_type=code&redirect_uri=${encodeURIComponent(redirect)}` +
     `&scope=${encodeURIComponent(scope)}`;
 
-  return res.status(200).json({ authUrl });
+  res.status(200).json({ authUrl });
 }
