@@ -114,6 +114,35 @@ response.tracks.forEach(t => {
     playlistDiv.innerHTML += `<div>🎵 ${t.name} — <b>${t.artist}</b></div>`;
   });
 };
+document.getElementById("createPlaylistBtn").onclick = async () => {
+  if (!spotifyToken) return alert("Login again");
+
+  if (!window.songURIs || !window.songURIs.length) {
+    return alert("No songs to add");
+  }
+
+  document.getElementById("playlistStatus").innerText = "⏳ Creating playlist...";
+
+  const res = await fetch("/api/create-playlist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      token: spotifyToken,
+      tracks: window.songURIs
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data.url) {
+    document.getElementById("playlistStatus").innerText = "❌ Failed to create playlist";
+    return;
+  }
+
+  document.getElementById("playlistStatus").innerHTML =
+    `✅ Playlist Created! <a href="${data.url}" target="_blank" class="text-blue-400 underline">Open Playlist</a>`;
+};
 
 updateUI();
+
 
