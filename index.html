@@ -1,78 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <title>WeatherTunes</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#111;
+  color:white;
+  padding:20px;
+}
+button {
+  padding:10px 15px;
+  margin:5px 0;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+#loginBtn { background:#1DB954; }
+#logoutBtn { background:#d9534f; }
+input, select {
+  padding:8px;
+  margin:5px 0;
+  width:200px;
+  border-radius:6px;
+}
+.song {
+  padding:4px 0;
+  border-bottom:1px solid #444;
+}
+#createBtn {
+  background:#1DB954;
+  margin-top:10px;
+  display:none;
+}
+</style>
 </head>
-<body class="bg-gray-900 text-white p-6">
+<body>
 
-<h1 class="text-3xl font-bold mb-4">🌤️ WeatherTunes</h1>
+<h2>🎵 WeatherTunes (Stable Base Version)</h2>
 
-<!-- Auth -->
-<div class="mb-4">
-  <button id="loginBtn" class="bg-green-500 px-4 py-2 rounded">Login with Spotify</button>
-  <button id="logoutBtn" style="display:none;" class="bg-red-500 px-4 py-2 rounded">Logout</button>
-  <p id="userName" class="mt-2 text-yellow-300"></p>
-</div>
+<button id="loginBtn">Login with Spotify</button>
+<button id="logoutBtn" style="display:none;">Logout</button>
+<p id="userName"></p>
 
-<!-- Search Controls -->
-<div class="bg-gray-800 p-4 rounded mb-4">
-  <input id="location" placeholder="Enter City…" class="text-black p-2 rounded w-full mb-2" />
+<hr>
 
-  <label class="text-sm">Language</label>
-  <select id="language" class="text-black p-2 rounded w-full mb-2">
-    <option value="english">English</option>
-    <option value="hindi">Hindi</option>
-    <option value="punjabi">Punjabi</option>
-    <option value="tamil">Tamil</option>
-    <option value="telugu">Telugu</option>
-    <option value="kannada">Kannada</option>
-    <option value="malayalam">Malayalam</option>
-    <option value="bengali">Bengali</option>
-    <option value="marathi">Marathi</option>
-    <option value="korean">K-Pop</option>
-    <option value="japanese">J-Pop</option>
-    <option value="spanish">Spanish</option>
-  </select>
+<input id="location" placeholder="Enter City (e.g. Mumbai)" />
+<select id="language">
+  <option value="english">English</option>
+  <option value="hindi">Hindi</option>
+  <option value="punjabi">Punjabi</option>
+  <option value="tamil">Tamil</option>
+  <option value="telugu">Telugu</option>
+  <option value="korean">Korean</option>
+  <option value="japanese">Japanese</option>
+  <option value="spanish">Spanish</option>
+</select>
 
-  <label class="text-sm">Mood</label>
-  <select id="mood" class="text-black p-2 rounded w-full mb-3">
-    <option value="chill">Chill</option>
-    <option value="sad">Sad</option>
-    <option value="happy">Happy</option>
-    <option value="energetic">Energetic</option>
-    <option value="party">Party</option>
-  </select>
+<button id="searchBtn">Get Weather + Music</button>
 
-  <button id="searchBtn" class="bg-blue-500 w-full py-2 rounded mb-2">Get Playlist</button>
-  <button id="createPlaylistBtn" style="display:none;" class="bg-purple-600 w-full py-2 rounded">Create Spotify Playlist</button>
-</div>
+<h3>🌦 Weather</h3>
+<div id="weather"></div>
 
-<!-- Weather -->
-<div id="weather" class="bg-gray-800 p-4 rounded mb-4"></div>
-
-<!-- Songs -->
-<h3>Songs</h3>
+<h3>🎧 Suggested Songs</h3>
 <div id="playlist"></div>
 
-<button id="createBtn" style="
-  background:#1DB954;
-  padding:10px 15px;
-  margin-top:12px;
-  border:none;
-  cursor:pointer;
-  color:white;
-  border-radius:6px;
-  display:none;
-">
-  🎵 Create Spotify Playlist
-</button>
-
-<div id="playlistResult" style="margin-top:10px;color:#1DB954;font-weight:bold;"></div>
-
-
-<!-- Playlist Link -->
-<div id="playlistLink" class="mt-4"></div>
+<button id="createBtn">🎵 Create Playlist</button>
+<div id="playlistResult"></div>
 
 <script src="app.js"></script>
 </body>
