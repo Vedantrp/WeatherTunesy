@@ -81,7 +81,8 @@ export default async function handler(req, res) {
     const unique = [...new Map(tracks.map(t => [t.uri, t])).values()];
     unique.sort(() => Math.random() - 0.5);
 
-    return res.status(200).json({ tracks: unique.slice(0, 35) });
+  return res.status(200).json({ tracks: unique.slice(0, 35) });
+
 
   } catch (err) {
     console.error("get-songs error:", err);
