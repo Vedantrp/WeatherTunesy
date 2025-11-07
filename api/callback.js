@@ -9,26 +9,25 @@ export default async function handler(req, res) {
     client_secret: process.env.SPOTIFY_CLIENT_SECRET
   });
 
-  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+  const r = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
-    headers: {"Content-Type":"application/x-www-form-urlencoded"},
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body
   });
 
-  const tokens = await tokenRes.json();
+  const tokenData = await r.json();
 
-  const userRes = await fetch("https://api.spotify.com/v1/me", {
-    headers:{ Authorization:`Bearer ${tokens.access_token}` }
-  });
-  const user = await userRes.json();
+  const user = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` }
+  }).then(r => r.json());
 
   return res.send(`
     <script>
       window.opener.postMessage({
-        type:'SPOTIFY_AUTH_SUCCESS',
-        token:'${tokens.access_token}',
+        type:"SPOTIFY_AUTH_SUCCESS",
+        token:"${tokenData.access_token}",
         user:${JSON.stringify(user)}
-      }, '*');
+      }, "*");
       window.close();
     </script>
   `);
