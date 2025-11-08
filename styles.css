@@ -1,108 +1,104 @@
-/* Base */
 body {
-  margin:0; padding:0;
-  background:#0d1117; color:#fff;
-  font-family: 'Poppins', sans-serif;
-  display:flex; justify-content:center;
-  padding:40px 10px; 
-}
-.container {
-  width:100%; max-width:640px;
-}
-h1.logo {
-  text-align:center; font-size:28px; margin-bottom:20px; font-weight:700;
-  letter-spacing:1px;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 20px;
+  color: white;
+  position: relative;
+  overflow-x: hidden;
+  background: #0d0d0d;
 }
 
-/* Card style */ 
-.card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius:14px;
-  padding:20px; margin:16px 0;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+/* animated layer */
+.bg-effect {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  animation: fadeIn 1.5s ease-in-out;
 }
 
-/* Input style */
-/* Input (text + dropdown) */
+/* ☀️ Sunny */
+.bg-sunny {
+  background: radial-gradient(circle at top, #ffdf87, #ff9b00, #0d0d0d);
+}
+
+/* ☁️ Clouds */
+.bg-cloudy {
+  background: linear-gradient(#8fa3b0, #455a64);
+  animation: cloudsMove 30s linear infinite;
+}
+@keyframes cloudsMove {
+  0% {background-position: 0 0;}
+  100% {background-position: -800px 0;}
+}
+
+/* 🌧 Rain */
+.bg-rain {
+  background: linear-gradient(#4b6070, #1b2735);
+}
+.bg-rain::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background: url("https://i.imgur.com/NM7sH9f.png");
+  animation: rain 0.5s linear infinite;
+  opacity: 0.5;
+}
+@keyframes rain {
+  from { background-position: 0 0; }
+  to { background-position: -10px 100px; }
+}
+
+/* 🌫 Haze/Fog */
+.bg-haze {
+  background: linear-gradient(#c1c5c6, #606d71);
+  backdrop-filter: blur(5px);
+}
+
+/* ❄ Snow */
+.bg-snow {
+  background: linear-gradient(#9ebedb, #ffffff);
+}
+.bg-snow::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background: url("https://i.imgur.com/2yaf2wb.png");
+  animation: snow 4s linear infinite;
+  opacity: 0.8;
+}
+@keyframes snow {
+  from { background-position: 0 0; }
+  to { background-position: 200px 400px; }
+}
+
+/* UI elements */
 .input {
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  color:#e9f2ff;                   /* brighter text */
-  background:rgba(19,23,34,0.8);    /* darker bg */
-  border:1px solid rgba(255,255,255,0.2);
-  border-radius:8px;
-  font-size:15px;
-  backdrop-filter:blur(8px);
-}
-.input option {
-  color:#000;
-  background:#fff;
+  padding: 10px;
+  margin: 5px;
 }
 
-
-/* Glass button style */
 .btn {
-  width:100%;
-  padding:12px;
-  font-size:15px;
-  font-weight:600;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  color:#fff;
-  background:rgba(255,255,255,0.1);
-  border:1px solid rgba(255,255,255,0.22);
-  backdrop-filter:blur(12px);
-  box-shadow:0 0 8px rgba(0,255,200,0.15);
-  transition:all 0.25s ease;
+  margin: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.15);
+  color: white;
+  transition: 0.2s;
 }
-
-/* Hover + Glow */
 .btn:hover {
-  background:rgba(0,255,200,0.18);
-  box-shadow:
-    0 0 12px rgba(0,255,200,0.4),
-    0 0 20px rgba(0,255,200,0.3);
-  transform:scale(1.05);
+  background: rgba(255,255,255,0.25);
 }
 
-/* Button click animation */
-.btn:active {
-  transform:scale(0.97);
-  box-shadow:0 0 6px rgba(0,255,200,0.2);
+.primary {
+  background: rgba(0, 200, 255, 0.4);
 }
 
-/* Color variants */
-.btn.green { color:#1EFF7A; }
-.btn.blue  { color:#4EA0FF; }
-.btn.purple{ color:#D78BFF; }
-.btn.red   { color:#FF5E5E; }
-
-/* Hidden helper */
-.hidden { display:none !important; }
-
-/* Row layout */
-.row { display:flex; gap:12px; align-items:center; }
-
-/* Text note */
-.note { font-size:12px; color:#a0aabf; margin-top:10px; }
-
-/* List items */
-.list .item {
-  padding:10px; margin:6px 0;
-  background: rgba(255,255,255,0.06);
-  border-radius:8px;
-  border:1px solid rgba(255,255,255,0.12);
+.hidden {
+  display: none;
 }
-
-/* Responsive */
-@media (max-width:600px){
-  h1.logo { font-size:24px; }
-  .btn { padding:10px; font-size:14px; }
-}
-
-
-
