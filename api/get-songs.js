@@ -1,43 +1,77 @@
-const profiles = {
-  english:{market:"US", seeds:["chill pop","indie pop","feel good"]},
-  hindi:{market:"IN", seeds:["bollywood chill","arijit singh"]},
-  punjabi:{market:"IN", seeds:["punjabi hits","ap dhillon"]},
-  tamil:{market:"IN", seeds:["tamil hits","anirudh"]},
-  telugu:{market:"IN", seeds:["telugu hits","sid sriram"]},
-  kannada:{market:"IN", seeds:["kannada lo-fi"]},
-  malayalam:{market:"IN", seeds:["malayalam hits"]},
-  bengali:{market:"IN", seeds:["bengali lo-fi"]},
-  marathi:{market:"IN", seeds:["marathi hits"]},
-  korean:{market:"KR", seeds:["k-pop chill"]},
-  japanese:{market:"JP", seeds:["j-pop chill"]},
-  spanish:{market:"ES", seeds:["latin chill"]}
-}; 
+const langProfiles = {
+  english: { market:"US", seeds:["pop", "chill", "indie pop"] },
+  hindi:   { market:"IN", seeds:["bollywood", "hindi acoustic", "arijit singh"] },
+  punjabi: { market:"IN", seeds:["punjabi", "ap dhillon", "punjabi lo-fi"] },
+  tamil:   { market:"IN", seeds:["tamil", "anirudh", "kollywood"] },
+  telugu:  { market:"IN", seeds:["telugu", "tollywood", "sid sriram"] },
+  kannada: { market:"IN", seeds:["kannada hits","sandalwood"] },
+  malayalam:{ market:"IN", seeds:["malayalam hits","mollywood"] },
+  bengali: { market:"IN", seeds:["bengali hits"] },
+  marathi: { market:"IN", seeds:["marathi hits"] },
+  spanish: { market:"ES", seeds:["latin", "reggaeton"] },
+  french: { market:"FR", seeds:["french pop"] },
+  japanese:{ market:"JP", seeds:["j-pop","anime"] },
+  korean:  { market:"KR", seeds:["k-pop","korean chill"] }
+};
+
+const moods = {
+  chill:["chill","acoustic","lofi"],
+  summer:["summer","happy","tropical"],
+  lofi:["lofi","rainy","soft"],
+  sad:["sad","soft","piano"]
+};
+
+async function api(url, token) {
+  const r = await fetch(url, { headers:{Authorization:`Bearer ${token}`}});
+  return r.json();
+}
 
 export default async function handler(req,res){
-  const { token, language, mood } = req.body;
-  const p = profiles[language] || profiles.english;
+  try {
+    const { token, language="english", mood="chill" } = req.body;
+    if (!token) return res.status(401).json({ error:"No token" });
 
-  const q = encodeURIComponent(`${p.seeds[0]} ${mood}`);
+    const prof = langProfiles[language] || langProfiles.english;
+    const moodSeeds = moods[mood] || moods.chill;
 
-  const search = await fetch(
-    `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${p.market}&limit=1`,
-    { headers:{Authorization:`Bearer ${token}`} }
-  ).then(r=>r.json());
+    const queries = [];
+    prof.seeds.forEach(s => moodSeeds.forEach(m => queries.push(`${s} ${m}`)));
 
-  const pl = search.playlists.items[0];
+    let all = [];
 
-  const tr = await fetch(
-    `https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=80`,
-    { headers:{Authorization:`Bearer ${token}`} }
-  ).then(r=>r.json());
+    for (let i=0;i<3;i++){
+      const q = encodeURIComponent(queries[i]);
+      const p = await api(`https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${prof.market}&limit=1`,token);
 
-  const list = (tr.items||[])
-  .map(i=>({
-    name:i.track.name,
-    artist:i.track.artists[0].name,
-    uri:i.track.uri
-  }))
-  .slice(0,35);
+      const pl = p.playlists?.items?.[0];
+      if (!pl) continue;
 
-  res.json({tracks:list});
+      const tr = await api(`https://api.spotify.com/v1/playlists/${pl.id}/tracks?limit=100`,token);
+      tr.items?.forEach(t=>{
+        if (t.track)
+          all.push({
+            id:t.track.id,
+            name:t.track.name,
+            artist:t.track.artists[0].name,
+            uri:t.track.uri
+          });
+      });
+    }
+
+    // Unique & shuffle
+    const seen = new Set();
+    const final = [];
+    for(const t of all){
+      if(!seen.has(t.id)){
+        seen.add(t.id);
+        final.push(t);
+      }
+    }
+    final.sort(()=>Math.random()-0.5);
+
+    res.json({ tracks: final.slice(0,50) });
+
+  }catch(e){
+    res.status(500).json({ error:"server fail" });
+  }
 }
