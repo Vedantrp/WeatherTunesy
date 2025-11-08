@@ -1,118 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WeatherTunes</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body class="theme-default">
-  <!-- Motion gradient background -->
-  <div id="bg" class="bg"></div>
-  <div id="particles" class="particles"></div>
 
-  <header class="header">
-    <div class="brand">
-      <div class="logo">♪</div>
-      <div class="title">
-        <h1>WeatherTunes</h1>
-        <p>Music that resonates with your atmosphere</p>
-      </div>
+<div id="bg" class="bg"></div>
+<div id="particles" class="particles"></div>
+
+<header class="header">
+  <div class="brand">
+    <div class="logo">♪</div>
+    <div class="title">
+      <h1>WeatherTunes</h1>
+      <p>Music that matches your mood</p>
+    </div>
+  </div>
+
+  <div class="auth">
+    <span id="userName" class="user-name"></span>
+    <button id="loginBtn" class="btn glass">Login with Spotify</button>
+    <button id="logoutBtn" class="btn glass btn-danger hidden">Logout</button>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div class="hero-icon">♪</div>
+    <h2>Weather-based music experience</h2>
+    <p>We blend weather, language & mood to craft playlists</p>
+  </section>
+
+  <section class="query">
+    <div class="query-group glass">
+      <label for="location">City</label>
+      <input id="location" placeholder="e.g., Mumbai"/>
     </div>
 
-    <div class="auth">
-      <span id="userName" class="user-name"></span>
-      <button id="loginBtn" class="btn glass">Login with Spotify</button>
-      <button id="logoutBtn" class="btn glass btn-danger hidden">Logout</button>
+    <div class="query-group glass">
+      <label for="language">Language</label>
+      <select id="language">
+        <option value="english">English</option>
+        <option value="hindi">Hindi / Bollywood</option>
+        <option value="punjabi">Punjabi</option>
+        <option value="tamil">Tamil</option>
+        <option value="telugu">Telugu</option>
+        <option value="kannada">Kannada</option>
+        <option value="malayalam">Malayalam</option>
+        <option value="bengali">Bengali</option>
+        <option value="marathi">Marathi</option>
+        <option value="spanish">Spanish</option>
+        <option value="french">French</option>
+        <option value="german">German</option>
+        <option value="italian">Italian</option>
+        <option value="korean">Korean</option>
+        <option value="japanese">Japanese</option>
+        <option value="chinese">Chinese</option>
+        <option value="arabic">Arabic</option>
+      </select>
     </div>
-  </header>
 
-  <main class="container">
-    <!-- Hero copy -->
-    <section class="hero">
-      <div class="hero-icon">♪</div>
-      <h2>Experience music that matches your weather</h2>
-      <p>We blend real-time weather, mood, and language to curate the perfect playlist.</p>
-    </section>
+    <button id="searchBtn" class="btn cta">Get Playlist</button>
+  </section>
 
-    <!-- Query row -->
-    <section class="query">
-      <div class="query-group glass">
-        <label for="location">Location</label>
-        <input id="location" placeholder="Enter city (e.g., London)" />
-      </div>
+  <section class="weather-cards">
+    <div class="card glass"><div class="card-icon">📍</div><div id="wLocation" class="card-value">—</div></div>
+    <div class="card glass"><div class="card-icon">🌡️</div><div id="wTemp" class="card-value">—</div></div>
+    <div class="card glass"><div class="card-icon">🎧</div><div id="wMood" class="card-value">—</div></div>
+  </section>
 
-      <div class="query-group glass">
-        <label for="language">Language</label>
-        <select id="language">
-          <option value="english">English</option>
-          <option value="hindi">Hindi / Bollywood</option>
-          <option value="punjabi">Punjabi</option>
-          <option value="tamil">Tamil</option>
-          <option value="telugu">Telugu</option>
-          <option value="kannada">Kannada</option>
-          <option value="malayalam">Malayalam</option>
-          <option value="bengali">Bengali</option>
-          <option value="marathi">Marathi</option>
-          <option value="spanish">Spanish</option>
-          <option value="french">French</option>
-          <option value="german">German</option>
-          <option value="italian">Italian</option>
-          <option value="korean">Korean</option>
-          <option value="japanese">Japanese</option>
-          <option value="chinese">Chinese</option>
-          <option value="arabic">Arabic</option>
-        </select>
-      </div>
+  <section class="curation">
+    <h3>Your Playlist</h3>
+    <div id="playlistGrid" class="grid"></div>
 
-      <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
-    </section>
+    <div class="actions">
+      <button id="createBtn" class="btn glass hidden">Create Playlist</button>
+      <a id="playlistLink" class="btn link hidden" target="_blank">Open Playlist →</a>
+    </div>
+  </section>
 
-    <!-- Weather summary -->
-    <section class="weather-cards">
-      <div class="card glass">
-        <div class="card-icon">📍</div>
-        <div class="card-body">
-          <div class="card-label">Location</div>
-          <div id="wLocation" class="card-value">—</div>
-        </div>
-      </div>
+  <div id="donatePopup" class="popup hidden glass">
+    <h3>☕ Support WeatherTunes</h3>
+    <p>Your coffee keeps this project alive 💙</p>
 
-      <div class="card glass">
-        <div class="card-icon">🌡</div>
-        <div class="card-body">
-          <div class="card-label">Temperature</div>
-          <div id="wTemp" class="card-value">—</div>
-        </div>
-      </div>
+    <img src="upi-qr.png" class="qr-img" alt="Pay UPI QR"/>
 
-      <div class="card glass">
-        <div class="card-icon">🎧</div>
-        <div class="card-body">
-          <div class="card-label">Current Mood</div>
-          <div id="wMood" class="card-value">—</div>
-        </div>
-      </div>
-    </section>
+    <a href="upi://pay?pa=7040135660@fam&pn=WeatherTunes&cu=INR&tn=Support%20WeatherTunes"
+       class="btn cta" style="margin-top:10px;">
+       Pay via UPI
+    </a>
 
-    <!-- Curated section -->
-    <section class="curation">
-      <h3 id="curationTitle">Your Weather Collection</h3>
-      <p class="subtitle">Immersive playlists tailored to current conditions.</p>
+    <button id="closeDonate" class="btn glass" style="margin-top:10px;">Close</button>
+  </div>
 
-      <div id="playlistGrid" class="grid"></div>
+  <button id="coffeeBtn" class="coffee-floating">☕ Support</button>
 
-      <div class="actions">
-        <button id="createBtn" class="btn glass hidden">Create Playlist on Spotify</button>
-        <a id="playlistLink" class="btn link hidden" target="_blank" rel="noopener">Open Playlist →</a>
-      </div>
-    </section>
+  <div id="toast" class="toast hidden"></div>
+</main>
 
-    <div id="toast" class="toast hidden"></div>
-  </main>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
