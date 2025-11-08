@@ -21,12 +21,9 @@ body{
   filter:saturate(1.1);
   animation:float 18s ease-in-out infinite alternate;
 }
-@keyframes float{
-  from{transform:translateY(0)}
-  to{transform:translateY(-18px)}
-}
+@keyframes float{ from{transform:translateY(0)} to{transform:translateY(-18px)} }
 
-/* Particles (dust) */
+/* Particles */
 .particles{
   position:fixed; inset:0; z-index:-1; pointer-events:none;
   background-image:radial-gradient(#ffffff22 1px, transparent 1px);
@@ -34,7 +31,7 @@ body{
 }
 @keyframes drift{from{background-position:0 0} to{background-position:200px 200px}}
 
-/* Weather-based themes */
+/* Weather themes */
 .theme-sunny .bg{
   background:
     radial-gradient(1000px 600px at 50% -10%, #ff9f3b55, transparent 60%),
@@ -134,20 +131,14 @@ body{
   background:linear-gradient(180deg,#141b2a,#0c111a);
   transition:.2s;
 }
-.tile:hover{
-  transform:translateY(-4px); box-shadow:0 8px 24px #00000077;
-}
-.cover{
-  height:170px; background:#111 center/cover no-repeat;
-}
+.tile:hover{ transform:translateY(-4px); box-shadow:0 8px 24px #00000077; }
+.cover{ height:170px; background:#111 center/cover no-repeat; }
 .meta{padding:14px}
 .meta .name{font-weight:700; margin-bottom:4px}
 .meta .artist{color:var(--muted); font-size:13px}
 
 /* Buttons */
-.btn{
-  border:none; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:700;
-}
+.btn{ border:none; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:700; }
 .btn.glass{
   background:var(--glass); border:1px solid var(--glassStroke); color:var(--text);
   backdrop-filter:blur(8px);
@@ -161,9 +152,16 @@ body{
 }
 .btn.cta:hover{ transform:translateY(-2px); box-shadow:0 12px 28px #1f9cf555 }
 
-.btn.link{
-  background:transparent; color:var(--cta); text-decoration:none; font-weight:800;
+.btn.link{ background:transparent; color:var(--cta); text-decoration:none; font-weight:800 }
+
+/* Support */
+.support{
+  margin-top:28px; padding:14px 16px; border-radius:16px;
+  display:flex; align-items:center; justify-content:space-between;
 }
+.support-title{font-weight:800}
+.support-sub{color:var(--muted); font-size:13px}
+.support-right{display:flex; gap:10px; align-items:center}
 
 /* Toast */
 .toast{
