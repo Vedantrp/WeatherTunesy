@@ -2,116 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WeatherTunes</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:," />
+  <style>
+    :root{
+      --bg:#0f1220;--panel:#151a2eaa;--text:#eaf0ff;--muted:#9fb2ff;--accent:#6da3ff;
+      --card:#1a2040;--card2:#202750;--glass:rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0e1326,#0a0e1a);
+      color:var(--text);font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    .wrap{max-width:1100px;margin:auto;padding:24px}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    h1{margin:0;font-size:22px;letter-spacing:.5px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    button,select,input{
+      background:var(--panel);color:var(--text);border:1px solid #2b3566;border-radius:10px;
+      padding:10px 14px;outline:0;transition:.2s;backdrop-filter:blur(8px)
+    }
+    button:hover{transform:translateY(-1px);box-shadow:0 6px 20px #0006}
+    button[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+    input,select{min-width:220px}
+    #status{color:var(--muted);margin-left:8px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:16px}
+    .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid #2b3566;border-radius:14px;padding:10px}
+    .cover{width:100%;aspect-ratio:1/1;border-radius:10px;object-fit:cover;background:#0002}
+    .meta{margin-top:8px}
+    .title{font-weight:600;font-size:14px}
+    .artist{font-size:13px;color:#b9c6ff}
+    .toolbar{display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap}
+    .pill{padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid #2b3566}
+    .hidden{display:none}
+    .success{color:#7dffa6}
+    .error{color:#ff8f8f}
+    hr{border:0;border-top:1px solid #2b356688;margin:20px 0}
+    @media (max-width:520px){
+      .cards{grid-template-columns:repeat(2,1fr)}
+      input,select{min-width:160px}
+    }
+  </style>
 </head>
-<body class="theme-default">
-  <!-- Motion gradient background -->
-  <div id="bg" class="bg"></div>
-  <div id="particles" class="particles"></div>
-
-  <header class="header">
-    <div class="brand">
-      <div class="logo">♪</div>
-      <div class="title">
-        <h1>WeatherTunes</h1>
-        <p>Music that resonates with your atmosphere</p>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🎧 WeatherTunes</h1>
+      <div class="row">
+        <button id="loginBtn">Login with Spotify</button>
+        <button id="logoutBtn" class="hidden">Logout</button>
+        <span id="userName"></span>
       </div>
+    </header>
+
+    <div class="toolbar">
+      <input id="location" placeholder="Enter city (e.g., Mumbai)" />
+      <select id="language">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+        <option value="punjabi">Punjabi</option>
+        <option value="tamil">Tamil</option>
+        <option value="telugu">Telugu</option>
+        <option value="kannada">Kannada</option>
+        <option value="malayalam">Malayalam</option>
+        <option value="bengali">Bengali</option>
+        <option value="marathi">Marathi</option>
+        <option value="korean">Korean</option>
+        <option value="japanese">Japanese</option>
+        <option value="spanish">Spanish</option>
+        <option value="french">French</option>
+        <option value="german">German</option>
+        <option value="italian">Italian</option>
+        <option value="arabic">Arabic</option>
+      </select>
+      <button id="searchBtn">Get Weather & Songs</button>
+      <span id="status"></span>
     </div>
 
-    <div class="auth">
-      <span id="userName" class="user-name"></span>
-      <button id="loginBtn" class="btn glass">Login with Spotify</button>
-      <button id="logoutBtn" class="btn glass btn-danger hidden">Logout</button>
+    <div id="weather" class="pill" style="margin-top:12px;"></div>
+
+    <hr />
+
+    <div class="row">
+      <button id="createBtn" class="hidden">Create Playlist on Spotify</button>
+      <a id="playlistLink" class="pill hidden" target="_blank" rel="noopener">Open Playlist →</a>
     </div>
-  </header>
 
-  <main class="container">
-    <!-- Hero copy -->
-    <section class="hero">
-      <div class="hero-icon">♪</div>
-      <h2>Experience music that matches your weather</h2>
-      <p>We blend real-time weather, mood, and language to curate the perfect playlist.</p>
-    </section>
-
-    <!-- Query row -->
-    <section class="query">
-      <div class="query-group glass">
-        <label for="location">Location</label>
-        <input id="location" placeholder="Enter city (e.g., London)" />
-      </div>
-
-      <div class="query-group glass">
-        <label for="language">Language</label>
-        <select id="language">
-          <option value="english">English</option>
-          <option value="hindi">Hindi / Bollywood</option>
-          <option value="punjabi">Punjabi</option>
-          <option value="tamil">Tamil</option>
-          <option value="telugu">Telugu</option>
-          <option value="kannada">Kannada</option>
-          <option value="malayalam">Malayalam</option>
-          <option value="bengali">Bengali</option>
-          <option value="marathi">Marathi</option>
-          <option value="spanish">Spanish</option>
-          <option value="french">French</option>
-          <option value="german">German</option>
-          <option value="italian">Italian</option>
-          <option value="korean">Korean</option>
-          <option value="japanese">Japanese</option>
-          <option value="chinese">Chinese</option>
-          <option value="arabic">Arabic</option>
-        </select>
-      </div>
-
-      <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
-    </section>
-
-    <!-- Weather summary -->
-    <section class="weather-cards">
-      <div class="card glass">
-        <div class="card-icon">📍</div>
-        <div class="card-body">
-          <div class="card-label">Location</div>
-          <div id="wLocation" class="card-value">—</div>
-        </div>
-      </div>
-
-      <div class="card glass">
-        <div class="card-icon">🌡</div>
-        <div class="card-body">
-          <div class="card-label">Temperature</div>
-          <div id="wTemp" class="card-value">—</div>
-        </div>
-      </div>
-
-      <div class="card glass">
-        <div class="card-icon">🎧</div>
-        <div class="card-body">
-          <div class="card-label">Current Mood</div>
-          <div id="wMood" class="card-value">—</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Curated section -->
-    <section class="curation">
-      <h3 id="curationTitle">Your Weather Collection</h3>
-      <p class="subtitle">Immersive playlists tailored to current conditions.</p>
-
-      <div id="playlistGrid" class="grid"></div>
-
-      <div class="actions">
-        <button id="createBtn" class="btn glass hidden">Create Playlist on Spotify</button>
-        <a id="playlistLink" class="btn link hidden" target="_blank" rel="noopener">Open Playlist →</a>
-      </div>
-    </section>
-
-    <div id="toast" class="toast hidden"></div>
-  </main>
+    <div id="playlist" class="cards"></div>
+  </div>
 
   <script src="app.js"></script>
 </body>
