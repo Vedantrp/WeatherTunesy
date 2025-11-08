@@ -1,18 +1,25 @@
 const langProfiles = {
-  english: { market:"US", seeds:["pop", "chill", "indie pop"] },
-  hindi:   { market:"IN", seeds:["bollywood", "hindi acoustic", "arijit singh"] },
-  punjabi: { market:"IN", seeds:["punjabi", "ap dhillon", "punjabi lo-fi"] },
-  tamil:   { market:"IN", seeds:["tamil", "anirudh", "kollywood"] },
-  telugu:  { market:"IN", seeds:["telugu", "tollywood", "sid sriram"] },
-  kannada: { market:"IN", seeds:["kannada hits","sandalwood"] },
-  malayalam:{ market:"IN", seeds:["malayalam hits","mollywood"] },
-  bengali: { market:"IN", seeds:["bengali hits"] },
-  marathi: { market:"IN", seeds:["marathi hits"] },
-  spanish: { market:"ES", seeds:["latin", "reggaeton"] },
-  french: { market:"FR", seeds:["french pop"] },
-  japanese:{ market:"JP", seeds:["j-pop","anime"] },
-  korean:  { market:"KR", seeds:["k-pop","korean chill"] }
+  english:   { market:"US", seeds:["chill pop","indie pop","feel good"] },
+  hindi:     { market:"IN", seeds:["bollywood chill","hindi acoustic","arijit singh"] },
+  punjabi:   { market:"IN", seeds:["punjabi hits","punjabi lo-fi","ap dhillon"] },
+  tamil:     { market:"IN", seeds:["tamil hits","tamil lo-fi","anirudh"] },
+  telugu:    { market:"IN", seeds:["telugu hits","tollywood lo-fi","sid sriram"] },
+  kannada:   { market:"IN", seeds:["kannada hits","kannada lo-fi","sandalwood songs"] },
+  malayalam: { market:"IN", seeds:["malayalam hits","malayalam chill","mollywood songs"] },
+  bengali:   { market:"IN", seeds:["bengali hits","bengali lo-fi","bengali indie"] },
+  marathi:   { market:"IN", seeds:["marathi hits","marathi lo-fi","marathi pop"] },
+  gujarati:  { market:"IN", seeds:["gujarati hits","gujarati lo-fi","gujarati pop"] },
+
+  spanish:   { market:"ES", seeds:["latin chill","latin pop","reggaeton"] },
+  french:    { market:"FR", seeds:["french pop","chanson française","francophone chill"] },
+  german:    { market:"DE", seeds:["german pop","deutsche rap","german indie"] },
+  italian:   { market:"IT", seeds:["italian pop","italian chill","canzoni italiane"] },
+  arabic:    { market:"SA", seeds:["arabic pop","arabic chill","arabic hits"] },
+  korean:    { market:"KR", seeds:["k-pop","k-indie","kpop chill"] },
+  japanese:  { market:"JP", seeds:["j-pop","anime songs","city pop"] },
+  chinese:   { market:"HK", seeds:["c-pop","mandarin chill","chinese pop"] }
 };
+
 
 const moods = {
   chill:["chill","acoustic","lofi"],
