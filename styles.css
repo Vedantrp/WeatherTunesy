@@ -1,184 +1,61 @@
-:root{
-  --bg1:#0e1220; --bg2:#121a2e;
-  --glass:#ffffff22; --glassStroke:#ffffff33;
-  --text:#e9edf3; --muted:#b8c1d9; --accent:#6ea8ff; --cta:#7dd3fc;
-  --ok:#52f09b; --danger:#ff7070;
+/* Global */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui}
+body{background:#000;color:#fff;min-height:100vh}
+
+/* Dynamic Weather Background */
+#appBg{
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  transition:0.7s;
 }
 
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  color:var(--text); background:#0b1220; overflow-x:hidden;
-}
-
-/* Animated gradient background */
-.bg{
-  position:fixed; inset:0; z-index:-2;
-  background: radial-gradient(1200px 800px at 20% -10%, #6a5cff44, transparent 60%),
-              radial-gradient(900px 700px at 110% 10%, #00e5ff22, transparent 55%),
-              linear-gradient(180deg, var(--bg1), var(--bg2));
-  filter:saturate(1.1);
-  animation:float 18s ease-in-out infinite alternate;
-}
-@keyframes float{
-  from{transform:translateY(0)}
-  to{transform:translateY(-18px)}
-}
-
-/* Weather themes (auto applied) */
-.theme-sunny .bg{
-  background:
-    radial-gradient(1000px 600px at 50% -10%, #ff9f3b55, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #ffd16633, transparent 55%),
-    linear-gradient(180deg,#2a2112,#120c06);
-}
-.theme-cloudy .bg{
-  background:
-    radial-gradient(1000px 600px at -10% -10%, #6b7a8f44, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #44506644, transparent 55%),
-    linear-gradient(180deg,#141922,#0b1018);
-}
-.theme-rainy .bg{
-  background:
-    radial-gradient(1000px 600px at 10% -10%, #4b82d877, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #233a5f66, transparent 55%),
-    linear-gradient(180deg,#0c1530,#0a0f1e);
-}
-.theme-snowy .bg{
-  background:
-    radial-gradient(1000px 600px at 0% -10%, #b8e6ff66, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #e3f2ff44, transparent 55%),
-    linear-gradient(180deg,#16232d,#0a141b);
-}
-.theme-stormy .bg{
-  background:
-    radial-gradient(1000px 600px at 10% -10%, #8b5cf699, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #111827aa, transparent 55%),
-    linear-gradient(180deg,#0a0a16,#070710);
-}
-.theme-foggy .bg{
-  background:
-    radial-gradient(1000px 600px at 10% -10%, #bfc6cf66, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #a6b0bf33, transparent 55%),
-    linear-gradient(180deg,#161b20,#0c0f13);
-}
-
-/* tiny floating dust */
-.particles{
-  position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background-image:radial-gradient(#ffffff22 1px, transparent 1px);
-  background-size: 40px 40px; opacity:.25; animation:drift 24s linear infinite;
-}
-@keyframes drift{from{background-position:0 0} to{background-position:200px 200px}}
-
-.header{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:18px 24px; max-width:1200px; margin:0 auto;
-}
-.brand{display:flex; gap:14px; align-items:center}
-.logo{
-  width:44px; height:44px; display:grid; place-items:center;
-  background:var(--glass); border:1px solid var(--glassStroke);
-  border-radius:12px; backdrop-filter:blur(10px)
-}
-.title h1{margin:0; font-size:20px; font-weight:800}
-.title p{margin:0; color:var(--muted); font-size:12px}
-
-.auth{display:flex; gap:10px; align-items:center}
-.user-name{color:var(--muted); margin-right:6px}
-
-.container{max-width:1200px; margin:0 auto; padding:10px 24px 64px}
-
-.hero{ text-align:center; margin:10px 0 24px}
-.hero-icon{
-  width:68px; height:68px; margin:10px auto 8px; display:grid; place-items:center;
-  background:var(--glass); border:1px solid var(--glassStroke); border-radius:20px;
-  transform:rotate(-8deg);
-}
-.hero h2{margin:6px 0 6px}
-.hero p{margin:0; color:var(--muted)}
-
-.query{display:grid; grid-template-columns:1.2fr 1fr auto; gap:12px; margin:22px 0}
-.query-group{padding:12px 14px; border-radius:16px}
-.query-group label{display:block; color:var(--muted); font-size:12px; margin-bottom:6px}
-.query-group input, .query-group select{
-  width:100%; background:transparent; border:none; outline:none; color:black;
-  font-size:15px;
-}
-
-.weather-cards{
-  display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin:10px 0 16px;
-}
-.card{
-  display:flex; gap:12px; padding:16px; border-radius:18px; align-items:center
-}
-.card-icon{
-  width:52px; height:52px; display:grid; place-items:center;
-  background:var(--glass); border:1px solid var(--glassStroke); border-radius:14px
-}
-.card-label{color:var(--muted); font-size:12px}
-.card-value{font-size:18px; font-weight:600}
-
-.curation{margin-top:10px}
-.curation h3{margin:0 0 6px}
-.subtitle{color:var(--muted); margin:0 0 16px}
-
-.grid{
-  display:grid; gap:16px;
-  grid-template-columns:repeat(4, minmax(0,1fr));
-}
-.tile{
-  border-radius:18px; overflow:hidden; background:linear-gradient(180deg,#141b2a,#0c111a);
-  border:1px solid #ffffff16; position:relative; transition:transform .18s ease, box-shadow .18s ease;
-}
-.tile:hover{ transform:translateY(-4px); box-shadow:0 10px 24px #00000055}
-.cover{
-  height:170px; background:#0f1726 url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop') center/cover no-repeat;
-  filter:saturate(0.9) contrast(1.05) brightness(0.9)
-}
-.meta{ padding:14px}
-.meta .name{font-weight:700; margin:0 0 6px}
-.meta .artist{color:var(--muted); font-size:13px; margin:0 0 10px}
-.meta .chip{display:inline-flex; gap:6px; font-size:12px; color:#a9b8d9; background:#ffffff12; border:1px solid #ffffff1f; padding:6px 10px; border-radius:999px}
-
-.actions{display:flex; gap:12px; justify-content:center; margin:20px 0 0}
-.btn{
-  border:none; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:700;
-}
-.btn.glass{
-  background:var(--glass); border:1px solid var(--glassStroke); color:var(--text);
-  backdrop-filter:blur(8px); transition:transform .14s ease, background .2s ease, border-color .2s ease;
-}
-.btn.glass:hover{ transform:translateY(-2px); background:#ffffff33; border-color:#ffffff55}
-.btn.btn-danger{ border-color:#ff7a7a55; }
-.btn.link{ background:transparent; color:var(--cta); text-decoration:none; font-weight:800 }
-
-.btn.cta{
-  background:linear-gradient(90deg,#60a5fa,#22d3ee);
-  color:#00131a; border:0; box-shadow:0 8px 24px #1f9cf533; transition:transform .14s ease, box-shadow .14s ease;
-}
-.btn.cta:hover{ transform:translateY(-2px); box-shadow:0 12px 28px #1f9cf555 }
-
+/* Glass Card */
 .glass{
-  background:var(--glass); border:1px solid var(--glassStroke);
-  backdrop-filter: blur(10px);
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:15px;
 }
 
-.toast{
-  position:fixed; left:50%; transform:translateX(-50%);
-  bottom:24px; background:#0b1322ee; padding:10px 14px; border-radius:12px;
-  border:1px solid #ffffff22; z-index:5
+/* Layout */
+.nav{
+  padding:15px 30px;display:flex;justify-content:space-between;align-items:center
 }
-.hidden{display:none!important}
+.logo{font-size:22px;font-weight:700}
+.auth button{margin-left:8px}
+.container{max-width:900px;margin:auto;padding:25px}
 
-/* Responsive */
-@media (max-width:1024px){
-  .grid{grid-template-columns:repeat(3,1fr)}
-  .query{grid-template-columns:1fr; gap:10px}
-  .weather-cards{grid-template-columns:1fr; gap:10px}
+/* Inputs & Buttons */
+.input{
+  width:100%;padding:12px;margin:6px 0;border-radius:10px;
+  background:#121727;color:#fff;border:1px solid #2a3552
 }
-@media (max-width:640px){
-  .grid{grid-template-columns:repeat(2,1fr)}
+.btn{
+  padding:12px 18px;border-radius:10px;border:none;cursor:pointer;
+  font-weight:600;margin-top:10px
 }
+.primary{background:#6da3ff}
+.primary:hover{background:#528aff}
+.success{background:#57e389}
+.success:hover{background:#38c56f}
 
+/* Weather Box */
+.weatherBox{padding:20px;margin-bottom:25px;text-align:center}
+.weatherText{margin-top:14px;font-size:18px;font-weight:600}
+
+/* Tracks */
+.songHeader{padding:15px;margin-bottom:10px;text-align:right}
+.songList{display:flex;flex-direction:column;gap:14px}
+.track{
+  display:flex;align-items:center;gap:12px;padding:10px;
+  border:1px solid rgba(255,255,255,.1);border-radius:10px;
+  background:rgba(255,255,255,.06);cursor:pointer
+}
+.track:hover{background:rgba(255,255,255,.12)}
+.cover{width:60px;height:60px;border-radius:8px;object-fit:cover}
+.title{font-size:15px;font-weight:600}
+.artist{font-size:13px;color:#9bb2ff}
+
+/* Hidden */
+.hidden{display:none}
