@@ -4,136 +4,71 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WeatherTunes</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css"/>
 </head>
+
 <body class="theme-default">
-  <!-- Motion BG -->
-  <div id="bg" class="bg"></div>
-  <div id="particles" class="particles"></div>
 
-  <header class="header">
-    <div class="brand">
-      <div class="logo">♪</div>
-      <div class="title">
-        <h1>WeatherTunes</h1>
-        <p>Music that matches your weather</p>
-      </div>
-    </div>
-    <div class="auth">
-      <span id="userName" class="user-name"></span>
-      <button id="loginBtn" class="btn glass">Login</button>
-      <button id="logoutBtn" class="btn glass btn-danger hidden">Logout</button>
-    </div>
-  </header>
+<div id="bg" class="bg"></div>
 
-  <main class="container">
-    <!-- Query -->
-    <section class="query">
-      <div class="query-group glass">
-        <label>Location</label>
-        <input id="location" placeholder="Enter city (e.g., Mumbai)" />
-      </div>
+<header class="glass nav">
+  <span class="logo">🎧 WeatherTunes</span>
 
-      <div class="query-group glass">
-        <label>Language</label>
-        <select id="language">
-          <option value="english" selected>English</option>
-          <option value="hindi">Hindi / Bollywood</option>
-          <option value="punjabi">Punjabi</option>
-          <option value="tamil">Tamil</option>
-          <option value="telugu">Telugu</option>
-          <option value="kannada">Kannada</option>
-          <option value="malayalam">Malayalam</option>
-          <option value="bengali">Bengali</option>
-          <option value="marathi">Marathi</option>
-          <option value="spanish">Spanish</option>
-          <option value="french">French</option>
-          <option value="german">German</option>
-          <option value="italian">Italian</option>
-          <option value="korean">Korean</option>
-          <option value="japanese">Japanese</option>
-          <option value="chinese">Chinese</option>
-          <option value="arabic">Arabic</option>
-        </select>
-      </div>
+  <div id="authArea">
+    <button id="loginBtn" class="btn glass">Login</button>
+    <button id="logoutBtn" class="btn glass danger hidden">Logout</button>
+    <span id="userName" class="user"></span>
+  </div>
+</header>
 
-      <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
-    </section>
+<main class="container">
 
-    <!-- Weather summary -->
-    <section class="weather-cards">
-      <div class="card glass">
-        <div class="card-icon">📍</div>
-        <div class="card-body">
-          <div class="card-label">Location</div>
-          <div id="wLocation" class="card-value">—</div>
-        </div>
-      </div>
-      <div class="card glass">
-        <div class="card-icon">🌡</div>
-        <div class="card-body">
-          <div class="card-label">Temperature</div>
-          <div id="wTemp" class="card-value">—</div>
-        </div>
-      </div>
-      <div class="card glass">
-        <div class="card-icon">🎧</div>
-        <div class="card-body">
-          <div class="card-label">Mood</div>
-          <div id="wMood" class="card-value">—</div>
-        </div>
-      </div>
-    </section>
+  <!-- Input -->
+  <div class="card glass">
+    <input id="location" class="input" placeholder="Enter city..."/>
+    <select id="language" class="input">
+      <option value="english">English</option>
+      <option value="hindi">Hindi</option>
+      <option value="punjabi">Punjabi</option>
+      <option value="tamil">Tamil</option>
+      <option value="telugu">Telugu</option>
+      <option value="kannada">Kannada</option>
+      <option value="malayalam">Malayalam</option>
+      <option value="bengali">Bengali</option>
+      <option value="marathi">Marathi</option>
+      <option value="spanish">Spanish</option>
+      <option value="french">French</option>
+      <option value="german">German</option>
+      <option value="italian">Italian</option>
+      <option value="korean">Korean</option>
+      <option value="japanese">Japanese</option>
+      <option value="chinese">Chinese</option>
+      <option value="arabic">Arabic</option>
+    </select>
+    <button id="searchBtn" class="btn cta">Get Playlist</button>
+  </div>
 
-    <!-- DJ text intro bubble (no billing) -->
-    <section class="dj glass hidden" id="djIntro">
-      <div class="dj-avatar">🎙</div>
-      <div class="dj-text" id="djText">—</div>
-    </section>
+  <!-- Weather -->
+  <div id="weatherBox" class="weather glass hidden"></div>
 
-    <!-- Playlist -->
-    <section class="curation">
-      <div class="curation-header">
-        <h3>Your Weather Playlist</h3>
-        <div class="curation-actions">
-          <button id="shuffleBtn" class="btn glass">Shuffle</button>
-          <button id="downloadBtn" class="btn glass">Download List</button>
-        </div>
-      </div>
-      <p class="subtitle">Tap ▶ to hear 30-sec previews</p>
+  <!-- Playlist -->
+  <h3 id="plTitle" class="hidden">Recommended Tracks</h3>
+  <div id="playlistGrid" class="grid"></div>
 
-      <div id="playlistGrid" class="grid"></div>
+  <div class="actions">
+    <button id="createBtn" class="btn glass hidden">Create Playlist</button>
+    <a id="playlistLink" class="btn link hidden" target="_blank">Open Playlist →</a>
+  </div>
 
-      <div class="actions">
-        <button id="createBtn" class="btn glass hidden">Create Playlist</button>
-        <a id="playlistLink" class="btn link hidden" target="_blank" rel="noopener"></a>
-      </div>
-    </section>
+  <!-- Donate -->
+  <div class="donate glass">
+    ☕ Like it? Support dev —  
+    <b>UPI:</b> <span style="color:#7df;">7040135660@fam</span>
+  </div>
 
-    <!-- History -->
-    <section class="history glass" id="historySection">
-      <h4>Recent Sessions</h4>
-      <div id="historyList" class="history-list"></div>
-    </section>
+</main>
 
-    <!-- Support -->
-    <footer class="footer glass">
-      <p>Enjoying the vibes? Support ☕</p>
-      <button id="donateBtn" class="btn glass">Support ❤️</button>
-    </footer>
-
-    <div id="donatePopup" class="popup hidden glass">
-      <h3>Support the Vibes 🔥</h3>
-      <img src="upi-qr.png" class="qr" alt="UPI QR"/>
-      <p class="upi-text">UPI ID</p>
-      <div class="upi-id glass">7040135660@fam</div>
-      <button id="closeDonate" class="btn glass">Close</button>
-    </div>
-
-    <div id="toast" class="toast hidden"></div>
-  </main>
-
-  <script src="/app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
