@@ -99,18 +99,26 @@ export default async function handler(req,res){
     }
 
     // ✅ English filter – STRONG
-    if(language==="english"){
-      tracks = tracks.filter(t=>{
-        const title = (t.name||"").toLowerCase();
-        const artist = (t.artist||"").toLowerCase();
+  // ✅ English language filter (balanced)
+if (language === "english") {
 
-        if(nonEnglishRegex.test(title)) return false;   // non english characters
-        if(nonEnglishRegex.test(artist)) return false;
-        if(indiaWords.test(title) || indiaWords.test(artist)) return false;
+  const indianKeywords = /(bollywood|arijit|atif|neha|tseries|sidhu|punjabi|hindi|raag|armaan|shraddha kapoor|sonu nigam|aditya|mithoon|jubin|ar rahman|desi|bhajan)/i;
 
-        return true;
-      });
-    }
+  const indianScripts = /[\u0900-\u097F\u0A00-\u0A7F]/; // Hindi + Punjabi unicode
+
+  tracks = tracks.filter(t => {
+    const title = (t.name || "").toLowerCase();
+    const artist = (t.artist || "").toLowerCase();
+
+    // ❌ block clear Indian scripts/keywords
+    if (indianScripts.test(title) || indianScripts.test(artist)) return false;
+    if (indianKeywords.test(title) || indianKeywords.test(artist)) return false;
+
+    // ✅ allow English, even with symbols or emojis
+    return true;
+  });
+}
+
 
     // ✅ remove duplicates
     const seen = new Set();
