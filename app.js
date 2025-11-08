@@ -201,7 +201,15 @@ createBtn.onclick = async () => {
   playlistLink.textContent = "✅ Open Playlist";
   showToast("🎧 Playlist created!");
 };
+// ===== DONATION POPUP =====
+const coffeeBtn = document.getElementById("coffeeBtn");
+const donatePopup = document.getElementById("donatePopup");
+const closeDonate = document.getElementById("closeDonate");
+
+coffeeBtn.onclick = () => donatePopup.classList.remove("hidden");
+closeDonate.onclick = () => donatePopup.classList.add("hidden");
 
 
 // Init UI
 updateUI();
+
