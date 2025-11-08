@@ -103,7 +103,7 @@ body{
 .query-group{padding:12px 14px; border-radius:16px}
 .query-group label{display:block; color:var(--muted); font-size:12px; margin-bottom:6px}
 .query-group input, .query-group select{
-  width:100%; background:transparent; border:none; outline:none; color:var(--text);
+  width:100%; background:transparent; border:none; outline:none; color:black;
   font-size:15px;
 }
 
@@ -181,3 +181,4 @@ body{
 @media (max-width:640px){
   .grid{grid-template-columns:repeat(2,1fr)}
 }
+
