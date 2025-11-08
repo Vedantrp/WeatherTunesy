@@ -182,5 +182,43 @@ body{
   .grid{grid-template-columns:repeat(2,1fr)}
 }
 
+/* Coffee floating button */
+.coffee-floating {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  padding: 13px 18px;
+  border-radius: 50px;
+  background: #ffd29b;
+  color: #4b2200;
+  font-size: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  cursor: pointer;
+  z-index: 2000;
+  transition: 0.25s;
+}
+.coffee-floating:hover { transform: scale(1.12); }
+
+/* Popup */
+.popup {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  padding: 18px;
+  border-radius: 18px;
+  text-align: center;
+  z-index: 5000;
+  backdrop-filter: blur(12px);
+}
+
+.qr-img {
+  width: 180px;
+  margin: 12px auto;
+  border-radius: 14px;
+}
+
+.hidden { display:none !important; }
+
 
 
