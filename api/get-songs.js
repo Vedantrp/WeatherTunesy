@@ -5,39 +5,39 @@ const langProfiles = {
     market: "US",
     seeds: [
       "english indie",
-      "english pop",
-      "acoustic english",
+      "acoustic pop english",
       "chill pop english",
-      "soft english pop",
+      "soft rock english",
+      "usa pop",
+      "uk indie",
       "english lofi"
     ]
   },
 
-  hindi: { market: "IN", seeds: ["bollywood chill", "arijit singh", "hindi acoustic"] },
-  punjabi: { market: "IN", seeds: ["punjabi hits", "punjabi chill", "ap dhillon"] },
-  tamil: { market: "IN", seeds: ["tamil hits", "tamil lo-fi", "anirudh"] },
-  telugu: { market: "IN", seeds: ["telugu hits", "tollywood lo-fi", "sid sriram"] },
-  kannada: { market: "IN", seeds: ["kannada hits","kannada lo-fi","sandalwood songs"] },
-  malayalam: { market: "IN", seeds: ["malayalam hits","malayalam chill","mollywood songs"] },
-  bengali: { market: "IN", seeds: ["bengali hits","bengali indie","bengali lo-fi"] },
-  marathi: { market: "IN", seeds: ["marathi hits","marathi pop","marathi lo-fi"] },
-
-  spanish: { market: "ES", seeds: ["latin chill", "reggaeton suave", "latin pop"] },
-  french: { market: "FR", seeds: ["french pop","chanson française","francophone chill"] },
-  german: { market: "DE", seeds: ["german pop","german rap","deutsche chill"] },
-  italian: { market: "IT", seeds: ["italian pop","canzoni italiane","italian chill"] },
-  korean: { market: "KR", seeds: ["k-pop chill","kpop dance","k-indie"] },
-  japanese:{ market: "JP", seeds: ["j-pop chill","anime songs","city pop"] },
-  chinese: { market:"HK", seeds:["chinese pop","mandopop","cpop"] },
-  arabic: { market:"SA", seeds:["arabic chill","arab pop","arabic hits"] },
+  hindi: { market:"IN", seeds:["bollywood","hindi acoustic","arijit singh"] },
+  punjabi:{ market:"IN", seeds:["punjabi hits","ap dhillon","punjabi chill"] },
+  tamil:{ market:"IN", seeds:["tamil hits","tamil lo-fi","anirudh"] },
+  telugu:{ market:"IN", seeds:["telugu hits","sid sriram","tollywood lofi"] },
+  kannada:{ market:"IN", seeds:["kannada hits","kannada lo-fi","sandalwood"] },
+  malayalam:{ market:"IN", seeds:["malayalam hits","mollywood","malayalam lofi"] },
+  bengali:{ market:"IN", seeds:["bengali indie","bangla chill","bengali lo-fi"] },
+  marathi:{ market:"IN", seeds:["marathi pop","marathi indie","marathi lofi"] },
+  spanish:{ market:"ES", seeds:["latin pop","reggaeton","latin chill"] },
+  french:{ market:"FR", seeds:["french pop","chanson","french indie"] },
+  german:{ market:"DE", seeds:["german pop","german rap","deutsch chill"] },
+  italian:{ market:"IT", seeds:["italian pop","italian indie","italian chill"] },
+  korean:{ market:"KR", seeds:["kpop","k chill","k indie"] },
+  japanese:{ market:"JP", seeds:["jpop","anime songs","city pop"] },
+  chinese:{ market:"HK", seeds:["mandopop","c-pop","chinese pop"] },
+  arabic:{ market:"SA", seeds:["arab pop","arab chill","arabic hits"] },
 };
 
 const moodTerms = {
-  sad:["sad", "soft", "piano"],
-  chill:["chill", "acoustic", "lofi"],
-  happy:["happy", "feel good", "summer"],
-  energetic:["energy", "dance", "edm"],
-  party:["party", "bangers", "dance"]
+  sad:["sad","emotional","piano"],
+  chill:["chill","lofi","acoustic"],
+  happy:["happy","summer","feel good"],
+  energetic:["energetic","edm","dance"],
+  party:["party","bangers","club"]
 };
 
 async function sfetch(url, token) {
@@ -46,48 +46,45 @@ async function sfetch(url, token) {
   return r.json();
 }
 
-export default async function handler(req, res) {
+// ❌ Languages we filter out for English
+const nonEnglishRegex = /[^\u0000-\u007F]+/; // unicode
+const indiaWords = /(bollywood|arijit|atif|neha|tseries|sidhu|punjabi|hindi|raag|desi|kumar|mithoon|armaan|armaan malik|hindi pop)/i;
+
+export default async function handler(req,res){
   try {
     const { token, language="english", mood="chill" } = req.body || {};
-    if (!token) return res.status(401).json({ error:"Missing token" });
+    if(!token) return res.status(401).json({error:"Missing token"});
 
     const prof = langProfiles[language] || langProfiles.english;
     const terms = moodTerms[mood] || ["chill"];
     const market = prof.market;
 
     let queries=[];
-    for (const s of prof.seeds) {
-      for (const m of terms) queries.push(`${s} ${m}`);
+    for(const seed of prof.seeds){
+      for(const m of terms){
+        queries.push(`${seed} ${m}`);
+      }
     }
 
     let playlists=[];
-    for (let i=0;i<Math.min(4,queries.length);i++){
+    for(let i=0;i<4;i++){
       const q = encodeURIComponent(queries[i]);
       const d = await sfetch(
         `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`,
         token
       );
       const item = d?.playlists?.items?.[0];
-      if (item) playlists.push(item);
-    }
-
-    if (!playlists.length) {
-      const d = await sfetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(prof.seeds[0])}&type=playlist&market=${market}&limit=1`,
-        token
-      );
-      const item = d?.playlists?.items?.[0];
-      if (item) playlists.push(item);
+      if(item) playlists.push(item);
     }
 
     let tracks=[];
-    for (const pl of playlists) {
-      const t = await sfetch(
+    for(const pl of playlists){
+      const d = await sfetch(
         `https://api.spotify.com/v1/playlists/${pl.id}/tracks?market=${market}&limit=100`,
         token
       );
-      const arr = (t.items || [])
-        .map(i => i && i.track)
+      const arr = (d.items||[])
+        .map(i=>i?.track)
         .filter(Boolean)
         .map(tr => ({
           id:tr.id,
@@ -97,38 +94,41 @@ export default async function handler(req, res) {
           image:tr.album?.images?.[1]?.url || tr.album?.images?.[0]?.url,
           url:tr.external_urls?.spotify
         }));
+
       tracks = tracks.concat(arr);
-      if (tracks.length > 200) break;
     }
 
-    // ✅ Strict English filter
-    if (language === "english") {
-      tracks = tracks.filter(t => {
-        const name = (t.name || "").toLowerCase();
-        const artist = (t.artist || "").toLowerCase();
-        const block = /(hindi|punjabi|bollywood|arijit|atif|udit|nehakakkar|sidhu|shreya|mithoon|tseries)/i;
-        if (block.test(name) || block.test(artist)) return false;
-        return /^[a-z0-9\s\.,\-!'&]+$/i.test(name);
+    // ✅ English filter – STRONG
+    if(language==="english"){
+      tracks = tracks.filter(t=>{
+        const title = (t.name||"").toLowerCase();
+        const artist = (t.artist||"").toLowerCase();
+
+        if(nonEnglishRegex.test(title)) return false;   // non english characters
+        if(nonEnglishRegex.test(artist)) return false;
+        if(indiaWords.test(title) || indiaWords.test(artist)) return false;
+
+        return true;
       });
     }
 
-    // dedupe
+    // ✅ remove duplicates
     const seen = new Set();
-    const unique=[];
-    for (const x of tracks) {
-      if (!seen.has(x.id)) {
-        seen.add(x.id);
-        unique.push(x);
+    const unique = [];
+    for(const t of tracks){
+      if(!seen.has(t.id)){
+        seen.add(t.id);
+        unique.push(t);
       }
     }
 
-    res.json({ tracks: unique.slice(0, 50) });
+    res.json({tracks: unique.slice(0, 50)});
 
-  } catch(e) {
-    if (e.message === "UNAUTHORIZED") {
-      return res.status(401).json({ error:"Spotify token expired" });
-    }
-    console.error("SONG API ERR", e);
-    res.status(500).json({ error:"song fetch failed" });
+  } catch(e){
+    if(e.message==="UNAUTHORIZED")
+      return res.status(401).json({error:"Spotify token expired"});
+
+    console.error("ERR",e);
+    res.status(500).json({error:"Song fetch failed"});
   }
 }
