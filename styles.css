@@ -38,7 +38,7 @@ body{margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-
 .query{display:grid; grid-template-columns:1.2fr 1fr auto; gap:12px; margin:22px 0}
 .query-group{padding:12px 14px; border-radius:16px}
 .query-group label{display:block; color:var(--muted); font-size:12px; margin-bottom:6px}
-.query-group input,.query-group select{width:100%; background:transparent; border:none; outline:none; color:var(--text); font-size:15px}
+.query-group input,.query-group select{width:100%; background:transparent; border:none; outline:none; color:black; font-size:15px}
 
 .weather-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:10px 0 16px}
 .card{display:flex; gap:12px; padding:16px; border-radius:18px; align-items:center}
@@ -97,3 +97,4 @@ body{margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-
 @media (max-width:640px){
   .grid{grid-template-columns:repeat(2,1fr)}
 }
+
