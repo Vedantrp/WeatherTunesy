@@ -84,19 +84,28 @@
     </div>
   </section>
 
-  <div id="donatePopup" class="popup hidden glass">
-    <h3>☕ Support WeatherTunes</h3>
-    <p>Your coffee keeps this project alive 💙</p>
+ <div id="donatePopup" class="popup hidden glass">
+  <h3 style="font-weight:700; font-size:20px; margin-bottom:6px;">☕ Support WeatherTunes</h3>
+  <p style="font-size:14px; color:#cfd8ff; margin-bottom:12px;">Your coffee keeps this project alive 💙</p>
 
-    <img src="upi-qr.png" class="qr-img" alt="Pay UPI QR"/>
-
-    <a href="upi://pay?pa=7040135660@fam&pn=WeatherTunes&cu=INR&tn=Support%20WeatherTunes"
-       class="btn cta" style="margin-top:10px;">
-       Pay via UPI
-    </a>
-
-    <button id="closeDonate" class="btn glass" style="margin-top:10px;">Close</button>
+  <div class="qr-wrapper">
+    <img src="upi-qr.png" class="qr-img" alt="UPI QR"/>
   </div>
+
+  <a
+    href="upi://pay?pa=7040135660@fam&pn=WeatherTunes&cu=INR&tn=Support%20WeatherTunes"
+    class="btn cta"
+    style="margin-top:10px; width:100%; text-align:center; font-size:15px;"
+  >
+    Pay via UPI
+  </a>
+
+  <button id="closeDonate" class="btn glass"
+    style="margin-top:10px; width:100%; font-size:14px;">
+    Close
+  </button>
+</div>
+
 
   <button id="coffeeBtn" class="coffee-floating">☕ Support</button>
 
