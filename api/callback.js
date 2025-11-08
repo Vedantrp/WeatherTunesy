@@ -1,53 +1,54 @@
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
-  const code = req.query.code;
-  const redirect = process.env.SPOTIFY_REDIRECT_URI;
+  try {
+    const code = req.query.code;
+    if (!code) return res.status(400).send("Missing code");
 
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: redirect,
-    client_id: process.env.SPOTIFY_CLIENT_ID,
-    client_secret: process.env.SPOTIFY_CLIENT_SECRET
-  });
+    const client_id = process.env.SPOTIFY_CLIENT_ID;
+    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
-  const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body
-  });
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri,
+      client_id,
+      client_secret
+    });
 
-  const tokenJson = await tokenRes.json();
-  const accessToken = tokenJson.access_token;
+    const tokenResp = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+    const tokenData = await tokenResp.json();
+    if (tokenData.error) {
+      return res.status(400).send(`<script>window.opener && window.opener.postMessage({ error: "${tokenData.error}" }, "*"); window.close();</script>`);
+    }
 
-  // Fetch user
-  const user = await fetch("https://api.spotify.com/v1/me", {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  }).then(r => r.json());
+    const meResp = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+    const user = await meResp.json();
 
-  // Return HTML that SAFELY handles whether popup or not
-  return res.send(`
-    <script>
-      const data = {
-        type: "SPOTIFY_SUCCESS",
-        token: "${accessToken}",
-        user: ${JSON.stringify(user)}
-      };
-
-      try {
-        // ✅ Try popup message first
-        if (window.opener) {
-          window.opener.postMessage(data, "*");
-          window.close();
-        } else {
-          // ✅ Fallback (no popup)
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          window.location.href = "/";
+    return res.send(`
+      <script>
+        if (window.opener && typeof window.opener.postMessage === 'function') {
+          window.opener.postMessage({
+            type: 'SPOTIFY_AUTH_SUCCESS',
+            token: '${tokenData.access_token}',
+            refreshToken: '${tokenData.refresh_token || ""}',
+            user: ${JSON.stringify(user)}
+          }, '*');
         }
-      } catch(e) {
-        console.error("Callback error:", e);
-        window.location.href = "/";
-      }
-    </script>
-  `);
+        window.close();
+      </script>
+    `);
+  } catch (e) {
+    console.error("CALLBACK ERROR:", e);
+    return res
+      .status(500)
+      .send(`<script>window.opener && window.opener.postMessage({ error: "Callback failed" }, "*"); window.close();</script>`);
+  }
 }
