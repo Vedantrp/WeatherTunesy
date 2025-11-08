@@ -11,3 +11,4 @@ export default async function handler(req, res) {
     condition: w.weather[0].main
   });
 }
+ 
