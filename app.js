@@ -14,13 +14,20 @@ const createBtn = document.getElementById("createBtn");
 const playlistLink = document.getElementById("playlistLink");
 
 function ui() {
-  if (token) {
+  const auth = document.getElementById("authArea");
+
+  if (token && user) {
     loginBtn.classList.add("hidden");
     logoutBtn.classList.remove("hidden");
-    userName.textContent = user?.display_name;
+
+    // ✅ Show username beautifully
+    userName.classList.remove("hidden");
+    userName.textContent = 👋 Hello, ${user.display_name};
   } else {
     loginBtn.classList.remove("hidden");
     logoutBtn.classList.add("hidden");
+
+    userName.classList.add("hidden");
     userName.textContent = "";
   }
 }
@@ -109,3 +116,4 @@ searchBtn.onclick = async () => {
     playlistLink.classList.remove("hidden");
   };
 };
+
