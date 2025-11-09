@@ -1,54 +1,64 @@
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
+  const code = req.query.code;
+  if (!code) return res.status(400).send("No code");
+
   try {
-    const code = req.query.code;
-    if (!code) return res.status(400).send("Missing code");
-
-    const client_id = process.env.SPOTIFY_CLIENT_ID;
-    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
-
-    const body = new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri,
-      client_id,
-      client_secret
-    });
-
-    const tokenResp = await fetch("https://accounts.spotify.com/api/token", {
+    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+        client_id: process.env.SPOTIFY_CLIENT_ID,
+        client_secret: process.env.SPOTIFY_CLIENT_SECRET
+      })
     });
-    const tokenData = await tokenResp.json();
-    if (tokenData.error) {
-      return res.status(400).send(`<script>window.opener && window.opener.postMessage({ error: "${tokenData.error}" }, "*"); window.close();</script>`);
-    }
 
-    const meResp = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    const data = await tokenRes.json();
+    if (!data.access_token) return res.status(400).send("Token error");
+
+    const userRes = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${data.access_token}` }
     });
-    const user = await meResp.json();
 
-    return res.send(`
-      <script>
-        if (window.opener && typeof window.opener.postMessage === 'function') {
-          window.opener.postMessage({
-            type: 'SPOTIFY_AUTH_SUCCESS',
-            token: '${tokenData.access_token}',
-            refreshToken: '${tokenData.refresh_token || ""}',
-            user: ${JSON.stringify(user)}
-          }, '*');
-        }
-        window.close();
-      </script>
+    const user = await userRes.json();
+    const htmlUser = encodeURIComponent(JSON.stringify(user));
+
+    // Secure callback UI
+    res.send(`
+<!DOCTYPE html>
+<html>
+<body style="background:#0b0f1a;color:white;font-family:sans-serif;text-align:center;padding-top:50px;">
+  <h2>✅ Login successful</h2>
+  <p>Returning to app…</p>
+
+<script>
+(function(){
+  const payload = {
+    type: "SPOTIFY_AUTH_SUCCESS",
+    token: "${data.access_token}",
+    user: ${JSON.stringify(user)}
+  };
+
+  if (window.opener) {
+    window.opener.postMessage(payload, "*");
+    window.close();
+  } else if (window.parent) {
+    window.parent.postMessage(payload, "*");
+  } else {
+    document.body.innerHTML = "<h3>Login complete. Please return to app.</h3>";
+  }
+})();
+</script>
+</body>
+</html>
     `);
-  } catch (e) {
-    console.error("CALLBACK ERROR:", e);
-    return res
-      .status(500)
-      .send(`<script>window.opener && window.opener.postMessage({ error: "Callback failed" }, "*"); window.close();</script>`);
+
+  } catch(e) {
+    console.error(e);
+    res.status(500).send("Callback crash");
   }
 }
