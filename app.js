@@ -69,7 +69,8 @@ loginBtn.onclick = async () => {
       }
     });
   } catch {
-    alert("Popup blocked! Please enable popups for login.");
+    alert("Please enable popup permissions to login with Spotify ✅");
+
   }
 };
   }
@@ -191,5 +192,6 @@ document.getElementById("upiBtn").onclick = () => {
   navigator.clipboard.writeText("7040135660@fam");
   showToast("UPI ID copied: 7040135660@fam");
 };
+
 
 
