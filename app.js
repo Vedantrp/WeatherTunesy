@@ -50,38 +50,52 @@ function applyThemeByCondition(cond="") {
 
 // ====== Auth ======
 loginBtn.onclick = async () => {
+  // Immediately open popup so browser doesn’t block
+  const popup = window.open("", "spotifyLogin", "width=560,height=680");
+
+  if (!popup) {
+    alert("Please enable pop-ups to login ✅");
+    return;
+  }
+
+  popup.document.write(`<p style="font-family:sans-serif;padding:20px">Loading Spotify Login...</p>`);
+
   try {
     const r = await fetch("/api/login");
     const data = await r.json();
     if (!data.authUrl) throw new Error("Auth URL failed");
 
-    const popup = window.open(data.authUrl, "_blank", "width=560,height=680,noopener");
-    if (!popup) {
-      alert("Please enable pop-ups to login.");
-      return;
-    }
+    // Redirect popup
+    popup.location.href = data.authUrl;
 
     const onMsg = (e) => {
       if (e.data?.type === "SPOTIFY_AUTH_SUCCESS") {
         token = e.data.token;
         user  = e.data.user;
+
         localStorage.setItem("spotifyToken", token);
         localStorage.setItem("spotifyUser", JSON.stringify(user));
-        ui();
+
         popup.close();
         window.removeEventListener("message", onMsg);
+        ui();
         showToast("Logged in ✅");
-      } else if (e.data?.error) {
-        showToast("Login failed: " + e.data.error, "error");
+      }
+      if (e.data?.error) {
         popup.close();
+        showToast("Login failed", "error");
         window.removeEventListener("message", onMsg);
       }
     };
+
     window.addEventListener("message", onMsg);
+
   } catch (err) {
-    showToast("Login crash: " + err.message, "error");
+    popup.close();
+    showToast("Login crashed: " + err.message, "error");
   }
 };
+
 
 logoutBtn.onclick = () => {
   localStorage.clear();
@@ -198,3 +212,4 @@ document.getElementById("upiBtn").onclick = () => {
   navigator.clipboard.writeText("7040135660@fam");
   showToast("UPI ID copied: 7040135660@fam");
 };
+
