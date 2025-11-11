@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   try {
     const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: { "Content-Type":"application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
@@ -16,49 +16,32 @@ export default async function handler(req, res) {
         client_secret: process.env.SPOTIFY_CLIENT_SECRET
       })
     });
-
     const data = await tokenRes.json();
     if (!data.access_token) return res.status(400).send("Token error");
 
-    const userRes = await fetch("https://api.spotify.com/v1/me", {
+    const meRes = await fetch("https://api.spotify.com/v1/me", {
       headers: { Authorization: `Bearer ${data.access_token}` }
     });
+    const user = await meRes.json();
 
-    const user = await userRes.json();
-    const htmlUser = encodeURIComponent(JSON.stringify(user));
-
-    // Secure callback UI
-    res.send(`
-<!DOCTYPE html>
-<html>
-<body style="background:#0b0f1a;color:white;font-family:sans-serif;text-align:center;padding-top:50px;">
-  <h2>✅ Login successful</h2>
-  <p>Returning to app…</p>
-
+    res.setHeader("Content-Type","text/html; charset=utf-8");
+    res.end(`
+<!DOCTYPE html><html><body style="background:#0b0f1a;color:white;font-family:sans-serif;text-align:center;padding-top:40px">
+<h2>✅ Login successful</h2><p>Returning to app…</p>
 <script>
 (function(){
-  const payload = {
-    type: "SPOTIFY_AUTH_SUCCESS",
-    token: "${data.access_token}",
-    user: ${JSON.stringify(user)}
-  };
-
-  if (window.opener) {
-    window.opener.postMessage(payload, "*");
-    window.close();
-  } else if (window.parent) {
-    window.parent.postMessage(payload, "*");
-  } else {
-    document.body.innerHTML = "<h3>Login complete. Please return to app.</h3>";
-  }
+  var payload = { type:"SPOTIFY_AUTH_SUCCESS", token:"${data.access_token}", user:${JSON.stringify(user)} };
+  try {
+    if (window.opener) { window.opener.postMessage(payload,"*"); window.close(); return; }
+    if (window.parent) { window.parent.postMessage(payload,"*"); return; }
+  } catch(_) {}
+  document.body.innerHTML = "<h3>Login complete. Please return to the app window.</h3>";
 })();
 </script>
-</body>
-</html>
+</body></html>
     `);
-
-  } catch(e) {
-    console.error(e);
+  } catch (e) {
+    console.error("CALLBACK ERR", e);
     res.status(500).send("Callback crash");
   }
 }
