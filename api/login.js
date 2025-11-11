@@ -3,7 +3,11 @@ export default function handler(req, res) {
   const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
 
   if (!clientId || !redirectUri) {
-    return res.status(500).json({ error: "Env missing", clientId: !!clientId, redirectUri: !!redirectUri });
+    return res.status(500).json({
+      error: "Env missing",
+      clientId: !!clientId,
+      redirectUri: !!redirectUri
+    });
   }
 
   const scope = [
