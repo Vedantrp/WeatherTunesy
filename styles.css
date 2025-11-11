@@ -164,3 +164,55 @@ body{
   .grid{grid-template-columns:repeat(2,1fr)}
 }
 
+.select-wrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  padding: 8px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+}
+
+.nice-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+}
+
+.nice-select option {
+  background: #0e1424;
+  color: white;
+  font-size: 15px;
+  padding: 8px;
+}
+
+.nice-select:focus {
+  outline: none;
+  border: none;
+}
+
+.select-wrap::after {
+  content: "▼";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #9bb8ff;
+  pointer-events: none;
+  transition: .3s;
+}
+
+.select-wrap:hover::after {
+  transform: translateY(-50%) rotate(180deg);
+  color: #fff;
+}
+
