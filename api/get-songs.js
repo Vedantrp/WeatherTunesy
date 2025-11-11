@@ -1,145 +1,153 @@
-import fetch from "node-fetch";
-
+// Strong language profile map
 const langProfiles = {
-  english:  { market: "US", seeds: ["chill pop","indie pop","feel good","pop vibes"], requireLang: false },
-  hindi:    { market: "IN", seeds: ["bollywood","arijit singh","hindi lo-fi","indian chill"], requireLang: true, langChars: /[\u0900-\u097F]/ },
-  punjabi:  { market: "IN", seeds: ["punjabi hits","punjabi chill","ap dhillon"], requireLang: true, langChars: /[\u0A00-\u0A7F]/ },
-  tamil:    { market: "IN", seeds: ["tamil hits","tamil lo-fi","anirudh"], requireLang: true, langChars: /[\u0B80-\u0BFF]/ },
-  telugu:   { market: "IN", seeds: ["telugu hits","sid sriram","tollywood lo-fi"], requireLang: true, langChars: /[\u0C00-\u0C7F]/ },
-  kannada:  { market: "IN", seeds: ["kannada hits","kannada lo-fi"], requireLang: true, langChars: /[\u0C80-\u0CFF]/ },
-  malayalam:{ market: "IN", seeds: ["malayalam hits","malayalam chill"], requireLang: true, langChars: /[\u0D00-\u0D7F]/ },
-  bengali:  { market: "IN", seeds: ["bengali hits","bengali lo-fi"], requireLang: true, langChars: /[\u0980-\u09FF]/ },
-  marathi:  { market: "IN", seeds: ["marathi hits","marathi chill"], requireLang: true, langChars: /[\u0900-\u097F]/ },
-  spanish:  { market: "ES", seeds: ["latin chill","reggaeton suave","latin pop"], requireLang: false },
-  french:   { market: "FR", seeds: ["french pop","chanson française","fr chill"], requireLang: false },
-  german:   { market: "DE", seeds: ["german pop","german rap"], requireLang: false },
-  italian:  { market: "IT", seeds: ["italian pop","italian chill"], requireLang: false },
-  korean:   { market: "KR", seeds: ["kpop","kpop chill","korean r&b"], requireLang: false },
-  japanese: { market: "JP", seeds: ["jpop","anime songs","city pop"], requireLang: false },
-  chinese:  { market: "HK", seeds: ["c-pop","mandopop","cantopop"], requireLang: false },
-  arabic:   { market: "SA", seeds: ["arabic hits","arab chill"], requireLang: false },
+  english: {
+    market: "US",
+    seeds: ["english pop", "indie pop", "pop classics", "acoustic english"],
+    mustNotContain: /[\u0900-\u097F\u0A00-\u0A7F\u0B80-\u0BFF\u0C00-\u0C7F\u4E00-\u9FFF\uAC00-\uD7AF]/ // No Hindi, Punjabi, Tamil, Telugu, Chinese, Korean chars
+  },
+  hindi: {
+    market: "IN",
+    seeds: ["hindi mix", "bollywood hits", "arijit singh", "bollywood acoustic"],
+    mustContain: /[\u0900-\u097F]/, // Hindi script
+  },
+  punjabi: {
+    market: "IN",
+    seeds: ["punjabi hits", "ap dhillon", "punjabi mix"],
+    mustContain: /[\u0A00-\u0A7F]/ // Gurmukhi
+  },
+  tamil: {
+    market: "IN",
+    seeds: ["tamil hits", "kollywood", "anirudh lo-fi"],
+    mustContain: /[\u0B80-\u0BFF]/
+  },
+  telugu: {
+    market: "IN",
+    seeds: ["telugu hits", "tollywood lo-fi"],
+    mustContain: /[\u0C00-\u0C7F]/
+  },
+  kannada: {
+    market: "IN",
+    seeds: ["kannada hits"],
+    mustContain: /[\u0C80-\u0CFF]/
+  },
+  malayalam: {
+    market: "IN",
+    seeds: ["malayalam hits"],
+    mustContain: /[\u0D00-\u0D7F]/
+  },
+  bengali: {
+    market: "IN",
+    seeds: ["bengali hits"],
+    mustContain: /[\u0980-\u09FF]/
+  },
+  marathi: {
+    market: "IN",
+    seeds: ["marathi hits"],
+    mustContain: /[\u0900-\u097F]/
+  },
+  spanish: {
+    market: "ES",
+    seeds: ["latin pop", "reggaeton suave"]
+  },
+  korean: {
+    market: "KR",
+    seeds: ["k-pop", "korean indie"],
+    mustContain: /[\uAC00-\uD7AF]/
+  },
+  japanese: {
+    market: "JP",
+    seeds: ["j-pop", "anime soundtrack"],
+    mustContain: /[\u3040-\u30FF]/
+  },
+  chinese: {
+    market: "TW",
+    seeds: ["c-pop", "mandarin chill"],
+    mustContain: /[\u4E00-\u9FFF]/
+  },
+  arabic: {
+    market: "AE",
+    seeds: ["arab pop", "arabic chill"],
+    mustContain: /[\u0600-\u06FF]/
+  },
 };
 
+// Mood mapping
 const moodTerms = {
-  chill: ["chill","vibe","lofi","soft"],
-  lofi: ["lofi","study","sad"],
-  gloomy: ["ambient","moody","dark"],
-  summer: ["summer","happy","dance"],
-  warmth: ["acoustic","calm","soft"],
-  calm: ["calm","sleep","ambient"]
+  chill: ["chill", "lofi", "acoustic"],
+  happy: ["happy", "feel good", "pop"],
+  sad: ["sad", "piano", "soft"],
+  party: ["party", "dance", "club"],
+  energetic: ["edm", "boost", "workout"]
 };
 
-async function sfetch(url, token){
-  const r = await fetch(url, { headers:{ Authorization:`Bearer ${token}` }});
+async function sfetch(url, token) {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   return r.json();
 }
 
-function matchesLang(track, prof) {
+// strict language validation function
+function validateLanguage(track, profile) {
   const text = (track.name + " " + track.artists?.[0]?.name).toLowerCase();
 
-  // English must not contain any non-latin alphabet
-  if (prof === langProfiles.english) {
-    return !/[^\u0000-\u007F]/.test(text);
-  }
-
-  // Languages requiring native script
-  if (prof.requireLang) {
-    return prof.langChars?.test(text);
-  }
+  if (profile.mustContain && !profile.mustContain.test(text)) return false;
+  if (profile.mustNotContain && profile.mustNotContain.test(text)) return false;
 
   return true;
 }
 
+export default async function handler(req, res) {
+  try {
+    const { token, language = "english", mood = "chill" } = req.body || {};
+    if (!token) return res.status(401).json({ error: "No token" });
 
-export default async function handler(req, res){
-  try{
-    const { token, language="english", mood="chill" } = req.body;
-    if (!token) return res.status(401).json({ error:"No token" });
+    const p = langProfiles[language] || langProfiles.english;
+    const terms = moodTerms[mood] || ["chill"];
+    const queries = [];
 
-    const prof = langProfiles[language] || langProfiles.english;
-    const terms = moodTerms[mood] || moodTerms.chill;
-    const market = prof.market;
+    for (let s of p.seeds) for (let m of terms) queries.push(`${s} ${m}`);
 
-    let pool = [];
+    let tracks = [];
 
-    // fetch playlists based on language & mood
-    for (const seed of prof.seeds.slice(0,3)){
-      for (const term of terms.slice(0,2)){
-        const q = encodeURIComponent(`${seed} ${term}`);
-        const d = await sfetch(
-          `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`,
-          token
-        );
-        const pl = d?.playlists?.items?.[0];
-        if (!pl) continue;
-
-        const tr = await sfetch(
-          `https://api.spotify.com/v1/playlists/${pl.id}/tracks?market=${market}&limit=50`,
-          token
-        );
-
-        for (const t of tr.items || []){
-          const track = t.track;
-          if (!track?.uri) continue;
-
-          if (!matchesLang(track, prof)) continue; 
-
-          pool.push({
-            id: track.id,
-            uri: track.uri,
-            name: track.name,
-            artist: track.artists?.[0]?.name,
-            image: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url,
-            url: track.external_urls?.spotify
-          });
-        }
-      }
-    }
-
-    // not enough songs? fallback global mood playlists
-    if (pool.length < 10){
-      const fallback = await sfetch(
-        `https://api.spotify.com/v1/search?q=${encodeURIComponent(mood + " chill")}&type=playlist&market=US&limit=1`,
+    // fetch up to 4 playlists
+    for (let i = 0; i < 4; i++) {
+      const q = encodeURIComponent(queries[i]);
+      const data = await sfetch(
+        `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${p.market}&limit=1`,
         token
       );
 
-      const fpl = fallback?.playlists?.items?.[0];
-      if (fpl){
-        const tr = await sfetch(
-          `https://api.spotify.com/v1/playlists/${fpl.id}/tracks?limit=50`,
-          token
-        );
-        for (const t of tr.items || []){
-          const track = t.track;
-          if (!track?.uri) continue;
-          pool.push({
-            id: track.id,
-            uri: track.uri,
-            name: track.name,
-            artist: track.artists?.[0]?.name,
-            image: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url,
-            url: track.external_urls?.spotify
-          });
-        }
+      const pl = data.playlists?.items?.[0];
+      if (!pl) continue;
+
+      const songs = await sfetch(
+        `https://api.spotify.com/v1/playlists/${pl.id}/tracks?market=${p.market}&limit=80`,
+        token
+      );
+
+      for (const it of songs.items || []) {
+        const tr = it.track;
+        if (!tr?.id) continue;
+        if (!validateLanguage(tr, p)) continue;
+
+        tracks.push({
+          id: tr.id,
+          uri: tr.uri,
+          name: tr.name,
+          artist: tr.artists?.[0]?.name,
+          image: tr.album?.images?.[1]?.url,
+          link: tr.external_urls?.spotify,
+        });
       }
+
+      if (tracks.length >= 120) break;
     }
 
-    // de-dupe + shuffle
-    const seen = new Set();
-    const unique = [];
-    for (const t of pool){
-      if (!seen.has(t.id)){
-        seen.add(t.id);
-        unique.push(t);
-      }
-    }
-    for (let i = unique.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      [unique[i], unique[j]] = [unique[j], unique[i]];
-    }
+    const unique = [...new Map(tracks.map(t => [t.id, t])).values()];
+    unique.sort(() => Math.random() - 0.5);
 
-    return res.json({ tracks: unique.slice(0,30) });
-  } catch (e){
-    return res.status(500).json({ error:"Song fetch failed" });
+    return res.json({ tracks: unique.slice(0, 40) });
+  } catch (e) {
+    console.error("SONG ERROR", e);
+    res.status(500).json({ error: "Failed song fetch" });
   }
 }
