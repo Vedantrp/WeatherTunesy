@@ -34,11 +34,22 @@ async function sfetch(url, token){
   return r.json();
 }
 
-function matchesLang(track, prof){
-  if (!prof.requireLang) return true;
-  const s = `${track.name} ${track.artists?.[0]?.name}`.toLowerCase();
-  return prof.langChars?.test(s);
+function matchesLang(track, prof) {
+  const text = (track.name + " " + track.artists?.[0]?.name).toLowerCase();
+
+  // English must not contain any non-latin alphabet
+  if (prof === langProfiles.english) {
+    return !/[^\u0000-\u007F]/.test(text);
+  }
+
+  // Languages requiring native script
+  if (prof.requireLang) {
+    return prof.langChars?.test(text);
+  }
+
+  return true;
 }
+
 
 export default async function handler(req, res){
   try{
