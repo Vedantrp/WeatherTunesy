@@ -1,25 +1,29 @@
 export default async function handler(req, res) {
   try {
     const { city } = req.body || {};
-    if (!city) return res.status(400).json({ error: "Enter a city" });
+    if (!city) return res.status(400).json({ error: "City required" });
 
-    const key = process.env.WEATHER_API_KEY;
-    if (!key) return res.status(500).json({ error: "Weather key missing" });
+    const apiKey = process.env.WEATHER_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
 
-    const url = `https://api.weatherapi.com/v1/current.json?key=${key}&q=${encodeURIComponent(city)}&aqi=no`;
-    const data = await fetch(url).then(r => r.json());
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
 
-    if (data?.error) {
-      return res.status(400).json({ error: "City not found" });
-    }
+    const r = await fetch(url);
+    if (!r.ok) return res.status(400).json({ error: "Invalid city" });
+    const d = await r.json();
+
+    const condition = d.weather?.[0]?.main || "Unknown";
+    const temp = d.main?.temp ?? null;
+    const feels_like = d.main?.feels_like ?? null;
 
     res.json({
-      temp: data.current.temp_c,
-      feels_like: data.current.feelslike_c,
-      condition: data.current.condition.text,
-      icon: data.current.condition.icon
+      city,
+      temp,
+      feels_like,
+      condition
     });
-  } catch {
-    res.status(500).json({ error: "Server weather error" });
+  } catch (err) {
+    console.error("WEATHER_API_ERROR", err);
+    res.status(500).json({ error: "Weather fetch failed" });
   }
 }
