@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WeatherTunes</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles.css"/>
 </head>
-
 <body class="theme-default">
-  <!-- motion background -->
   <div id="bg" class="bg"></div>
   <div id="particles" class="particles"></div>
 
@@ -18,23 +17,28 @@
       <div class="logo">♪</div>
       <div class="title">
         <h1>WeatherTunes</h1>
-        <p>Music that matches your sky</p>
+        <p>Music that resonates with your atmosphere</p>
       </div>
     </div>
-
-    <div id="authArea" class="auth">
-      <span id="userName" class="user hidden"></span>
-      <button id="loginBtn" class="btn glass">Login</button>
+    <div class="auth">
+      <span id="userName" class="user-name"></span>
+      <button id="loginBtn" class="btn glass">Login with Spotify</button>
       <button id="logoutBtn" class="btn glass btn-danger hidden">Logout</button>
     </div>
   </header>
 
   <main class="container">
-    <!-- Query row -->
+    <section class="hero">
+      <div class="hero-icon">♪</div>
+      <h2>Experience music that matches your weather</h2>
+      <p>We blend real-time weather, mood, and language to curate the perfect playlist.</p>
+      <div id="popupHint" class="hint hidden">⚠️ Please enable pop-ups for Spotify login.</div>
+    </section>
+
     <section class="query">
       <div class="query-group glass">
-        <label for="location">City</label>
-        <input id="location" placeholder="Mumbai, London, Tokyo..." />
+        <label for="location">Location</label>
+        <input id="location" placeholder="Enter city (e.g., London)"/>
       </div>
 
       <div class="query-group glass">
@@ -63,7 +67,6 @@
       <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
     </section>
 
-    <!-- Weather summary -->
     <section class="weather-cards">
       <div class="card glass">
         <div class="card-icon">📍</div>
@@ -72,7 +75,6 @@
           <div id="wLocation" class="card-value">—</div>
         </div>
       </div>
-
       <div class="card glass">
         <div class="card-icon">🌡</div>
         <div class="card-body">
@@ -80,38 +82,24 @@
           <div id="wTemp" class="card-value">—</div>
         </div>
       </div>
-
       <div class="card glass">
         <div class="card-icon">🎧</div>
         <div class="card-body">
-          <div class="card-label">Mood</div>
+          <div class="card-label">Current Mood</div>
           <div id="wMood" class="card-value">—</div>
         </div>
       </div>
     </section>
 
-    <!-- Playlist -->
     <section class="curation">
-      <h3>Your Playlist</h3>
-      <p class="subtitle">Curated using your weather and language.</p>
+      <h3 id="curationTitle">Your Weather Collection</h3>
+      <p class="subtitle">Immersive playlists tailored to current conditions.</p>
 
       <div id="playlistGrid" class="grid"></div>
 
       <div class="actions">
         <button id="createBtn" class="btn glass hidden">Create Playlist on Spotify</button>
         <a id="playlistLink" class="btn link hidden" target="_blank" rel="noopener">Open Playlist →</a>
-      </div>
-    </section>
-
-    <!-- Support -->
-    <section class="support glass">
-      <div class="support-left">
-        <div class="support-title">☕ Support WeatherTunes</div>
-        <div class="support-sub">If you love it, fuel it!</div>
-      </div>
-      <div class="support-right">
-        <button id="upiBtn" class="btn glass">Pay via UPI (₹)</button>
-        <a class="btn link" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener">Buy Me a Coffee</a>
       </div>
     </section>
 
