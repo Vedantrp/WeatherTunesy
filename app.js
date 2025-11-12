@@ -85,23 +85,19 @@ async function post(url, body) {
 window.onload = () => {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(async(pos) => {
-      try {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
 
-        // Reverse geocoding (accurate city)
-        const geoRes = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
-        );
-        const geo = await geoRes.json();
+      // Reverse geocode to get city name for UI only
+      const geo = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+      ).then(r => r.json());
 
-        if (geo.city) {
-          els.city.value = geo.city; // ✅ sets Kolhapur correctly
-        }
+      if (geo.city) els.city.value = geo.city;
 
-      } catch (err) {
-        console.log("Location error", err);
-      }
+      // Fetch weather using lat/lon (REAL temp)
+      const weather = await post("/api/get-weather", { lat, lon });
+      updateWeatherUI(weather);
     });
   }
 
@@ -143,4 +139,5 @@ els.search.onclick = async () => {
     els.grid.appendChild(el);
   });
 };
+
 
