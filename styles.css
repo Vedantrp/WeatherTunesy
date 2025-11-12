@@ -185,3 +185,62 @@ body{
 @media (max-width:640px){
   .grid{grid-template-columns:repeat(2,1fr)}
 }
+
+/* New luxury song card */
+.song-card{
+  background:#0f1320e6;
+  border-radius:22px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.07);
+  box-shadow:0 12px 28px rgba(0,0,0,0.45);
+  transition:transform .25s, box-shadow .25s;
+}
+.song-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 18px 40px rgba(0,0,0,0.55);
+}
+
+/* Top Image */
+.song-img{
+  height:170px;
+  background-size:cover;
+  background-position:center;
+  filter:saturate(1.05) brightness(.92);
+  position:relative;
+}
+
+/* Floating Buttons */
+.fab{
+  width:42px;height:42px;
+  border-radius:50%;
+  border:none;
+  position:absolute;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  cursor:pointer;
+  backdrop-filter:blur(10px);
+  background:linear-gradient(135deg,#6a5cff,#22d3ee);
+  color:white;
+  box-shadow:0 4px 12px rgba(0,0,0,.35);
+  transition:.18s;
+}
+.fab:hover{transform:scale(1.08)}
+
+.fab.share{top:12px;right:12px;background:rgba(255,255,255,.2)}
+.fab.play{bottom:-20px;right:20px}
+
+/* Bottom info area */
+.song-meta{
+  padding:26px 18px 18px;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.song-icon{
+  width:38px;height:38px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.18);
+}
+.song-title{
+  font-weight:700;font-size:16px;margin-bottom:2px;
+}
+.song-artist{color:#b4c1dd;font-size:13px;margin-bottom:6px}
+.song-count{font-size:12px;color:#a8b2cc}
