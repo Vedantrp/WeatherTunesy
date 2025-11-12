@@ -75,6 +75,14 @@ function detectMood(temp,condition){
   if(temp > 30) return "summer";
   return "chill";
 }
+let mood = "chill";
+
+if (weather.temp > 32) mood = "summer";
+if (weather.temp < 18) mood = "sad";
+if (weather.condition.includes("Rain")) mood = "lofi";
+if (weather.condition.includes("Haze")) mood = "gloomy";
+if (weather.condition.includes("Clear")) mood = "happy";
+if (weather.condition.includes("Cloud")) mood = "chill";
 
 // ============== SEARCH ==============
 qs("searchBtn").onclick = async () => {
@@ -115,3 +123,4 @@ qs("searchBtn").onclick = async () => {
     }
   };
 };
+
