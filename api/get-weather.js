@@ -1,30 +1,29 @@
-// /api/get-weather.js
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
   try {
+    if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
     const { city } = req.body || {};
-    if (!city) return res.status(400).json({ error: "City required" });
+    if (!city) return res.status(400).json({ error: "Missing city" });
 
-    const apiKey = process.env.WEATHER_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
+    const key = process.env.WEATHER_API_KEY;
+    if (!key) return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
 
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-      city
-    )}&units=metric&appid=${apiKey}`;
+    const url = `https://api.weatherapi.com/v1/current.json?key=${key}&q=${encodeURIComponent(city)}&aqi=no`;
+    const data = await fetch(url).then(r => r.json());
 
-    const r = await fetch(url);
-    if (!r.ok) return res.status(400).json({ error: "Invalid city" });
-    const d = await r.json();
+    if (!data?.location || !data?.current) {
+      return res.status(400).json({ error: "Weather not found" });
+    }
 
-    const condition = d.weather?.[0]?.main || "Unknown";
-    const temp = d.main?.temp ?? null;
-
-    res.json({
-      city,
-      temp,
-      condition
+    return res.status(200).json({
+      location: `${data.location.name}, ${data.location.country}`,
+      temp: data.current.temp_c,
+      feels_like: data.current.feelslike_c,
+      condition: data.current.condition?.text || "—",
+      icon: data.current.condition?.icon || ""
     });
-  } catch (err) {
-    console.error("WEATHER_API_ERROR", err);
-    res.status(500).json({ error: "Weather fetch failed" });
+  } catch (e) {
+    return res.status(500).json({ error: "Weather fetch failed" });
   }
 }
