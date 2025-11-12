@@ -2,8 +2,10 @@ import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-    const { city } = req.body || {};
+    const city = req.method === "POST"
+      ? req.body?.city
+      : req.query?.city;
+
     if (!city) return res.status(400).json({ error: "Missing city" });
 
     const key = process.env.WEATHER_API_KEY;
@@ -23,6 +25,7 @@ export default async function handler(req, res) {
       condition: data.current.condition?.text || "—",
       icon: data.current.condition?.icon || ""
     });
+
   } catch (e) {
     return res.status(500).json({ error: "Weather fetch failed" });
   }
