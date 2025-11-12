@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WeatherTunes</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WeatherTunes</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body class="theme-default">
-<div id="bg" class="bg"></div>
-<div id="particles" class="particles"></div>
+
+<div class="bg"></div>
+<div class="particles"></div>
 
 <header class="header">
   <div class="brand">
@@ -29,52 +32,72 @@
 
 <main class="container">
 
-<section class="query">
-  <div class="query-group glass">
-    <label>City</label>
-    <input id="location" placeholder="Enter city (e.g., Kolhapur)">
-  </div>
+  <section class="query">
+    <div class="query-group glass">
+      <label>City</label>
+      <input id="location" placeholder="Enter city..." />
+    </div>
 
-  <div class="query-group glass">
-    <label>Language</label>
-    <select id="language">
-      <option value="english">English</option>
-      <option value="hindi">Hindi</option>
-      <option value="punjabi">Punjabi</option>
-      <option value="marathi">Marathi</option>
-      <option value="tamil">Tamil</option>
-      <option value="telugu">Telugu</option>
-      <option value="kannada">Kannada</option>
-      <option value="malayalam">Malayalam</option>
-      <option value="bengali">Bengali</option>
-      <option value="spanish">Spanish</option>
-      <option value="korean">Korean</option>
-      <option value="japanese">Japanese</option>
-    </select>
-  </div>
+    <div class="query-group glass">
+      <label>Language</label>
+      <select id="language">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+        <option value="punjabi">Punjabi</option>
+        <option value="tamil">Tamil</option>
+        <option value="telugu">Telugu</option>
+        <option value="kannada">Kannada</option>
+        <option value="malayalam">Malayalam</option>
+        <option value="bengali">Bengali</option>
+        <option value="marathi">Marathi</option>
+        <option value="spanish">Spanish</option>
+        <option value="french">French</option>
+        <option value="german">German</option>
+        <option value="italian">Italian</option>
+        <option value="korean">Korean</option>
+        <option value="japanese">Japanese</option>
+        <option value="arabic">Arabic</option>
+      </select>
+    </div>
 
-  <button id="searchBtn" class="btn cta">Get Music</button>
-</section>
+    <button id="searchBtn" class="btn cta">Get Music</button>
+  </section>
 
-<section class="weather-cards">
-  <div class="card glass"><div class="card-icon">📍</div><div class="card-body"><div class="card-label">Location</div><div id="wLocation" class="card-value">—</div></div></div>
-  <div class="card glass"><div class="card-icon">🌡</div><div class="card-body"><div class="card-label">Temp</div><div id="wTemp" class="card-value">—</div></div></div>
-  <div class="card glass"><div class="card-icon">🎧</div><div class="card-body"><div class="card-label">Mood</div><div id="wMood" class="card-value">—</div></div></div>
-</section>
 
-<section class="curation">
-  <h3>Your Playlist</h3>
-  <div id="playlistGrid" class="grid"></div>
+  <section class="weather-cards">
+    <div class="card glass">
+      <div class="card-icon">📍</div>
+      <div class="card-body">
+        <div class="card-label">Location</div>
+        <div id="wLocation" class="card-value">—</div>
+      </div>
+    </div>
 
-  <div class="actions">
-    <button id="createBtn" class="btn glass hidden">Create Playlist</button>
-    <a id="playlistLink" class="btn link hidden" target="_blank">Open Playlist →</a>
-  </div>
-</section>
+    <div class="card glass">
+      <div class="card-icon">🌡</div>
+      <div class="card-body">
+        <div class="card-label">Temp</div>
+        <div id="wTemp" class="card-value">—</div>
+      </div>
+    </div>
 
-<div id="toast" class="toast hidden"></div>
+    <div class="card glass">
+      <div class="card-icon">🎧</div>
+      <div class="card-body">
+        <div class="card-label">Mood</div>
+        <div id="wMood" class="card-value">—</div>
+      </div>
+    </div>
+  </section>
 
+  <section class="curation">
+    <h3>Your Playlist</h3>
+    <div id="playlistGrid" class="grid"></div>
+  </section>
+
+  <div id="toast" class="toast hidden"></div>
 </main>
+
 <script src="app.js"></script>
 </body>
 </html>
