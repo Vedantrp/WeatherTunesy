@@ -125,9 +125,51 @@ function mapWeatherToMood(w){
   if (w.tempC <= 12) return "cozy";
   return "chill";
 }
-async function getWeather(city){
-  return postJSON("/api/get-weather", {city});
+async function fetchWeather(city) {
+  const r = await fetch("/api/get-weather", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ city })
+  });
+
+  const w = await r.json();
+  if (!r.ok) throw new Error(w.error || "Weather fail");
+
+  return w; // already formatted by backend
 }
+
+async function handleSearch() {
+  const city = document.getElementById("location").value.trim();
+  if (!city) return alert("Enter a city!");
+
+  try {
+    // 1️⃣ get weather
+    const w = await fetchWeather(city);
+
+    wLocation.textContent = w.city;
+    wTemp.textContent = `${w.temp}°C (Feels ${w.feels}°C)`;
+    wMood.textContent = w.condition;
+
+    // mood logic
+    let mood = "chill";
+    if (w.temp > 30) mood = "energetic";
+    if (["Rain", "Thunderstorm"].includes(w.condition)) mood = "lofi";
+    if (["Haze", "Smoke", "Mist", "Fog"].includes(w.condition)) mood = "gloomy";
+
+    lastWeather = { ...w, mood };
+
+    // 🔥 set theme for background
+    applyTheme(w.condition);
+
+    // 2️⃣ get songs next (your function continues here...)
+    getSongsAndRender();
+    
+  } catch (e) {
+    console.error(e);
+    alert("Unable to get weather — try another city");
+  }
+}
+
 
 // ---------------------------
 // Songs
@@ -285,3 +327,4 @@ searchBtn.onclick = async ()=>{
 
 // ---------------------------
 updateAuthUI();
+
