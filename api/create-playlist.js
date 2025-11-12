@@ -1,39 +1,27 @@
+import fetch from "node-fetch";
+
 export default async function handler(req, res) {
   try {
-    const { token, name, description, uris = [] } = req.body || {};
-    if (!token) return res.status(401).json({ error: "Missing token" });
-    if (!uris.length) return res.status(400).json({ error: "No URIs" });
+    if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+    const { token, userId, name, description, uris } = req.body || {};
+    if (!token || !userId || !uris?.length) return res.status(400).json({ error: "Missing fields" });
 
-    const me = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: `Bearer ${token}` }
+    const create = await fetch(`https://api.spotify.com/v1/users/${userId}/playlists`,{
+      method:"POST",
+      headers:{ "Authorization":`Bearer ${token}`, "Content-Type":"application/json" },
+      body: JSON.stringify({ name: name || "WeatherTunes Mix", description: description || "", public:false })
     }).then(r=>r.json());
 
-    const created = await fetch(`https://api.spotify.com/v1/users/${me.id}/playlists`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type":"application/json"
-      },
-      body: JSON.stringify({
-        name: name || "WeatherTunes Mix",
-        description: description || "Auto-generated weather mix",
-        public: false
-      })
-    }).then(r=>r.json());
+    if (!create?.id) return res.status(400).json({ error:"Create failed" });
 
-    if (!created?.id) return res.status(500).json({ error: "Create failed" });
-
-    await fetch(`https://api.spotify.com/v1/playlists/${created.id}/tracks`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type":"application/json"
-      },
+    await fetch(`https://api.spotify.com/v1/playlists/${create.id}/tracks`,{
+      method:"POST",
+      headers:{ "Authorization":`Bearer ${token}`, "Content-Type":"application/json" },
       body: JSON.stringify({ uris })
     });
 
-    res.json({ id: created.id, url: created.external_urls?.spotify });
+    return res.status(200).json({ id:create.id, url:create.external_urls?.spotify });
   } catch (e) {
-    res.status(500).json({ error: "Create failed" });
+    return res.status(500).json({ error: "Playlist create failed" });
   }
 }
