@@ -1,225 +1,117 @@
-// ---------- Global state ----------
-let spotifyToken = localStorage.getItem("spotifyToken") || null;
-let spotifyUser  = JSON.parse(localStorage.getItem("spotifyUser") || "null");
-let lastTracks   = [];   // [{id, uri, name, artist, image, url}]
-let lastMood     = "chill";
-let lastWeather  = null;
+// ============== GLOBALS ==============
+let token = localStorage.getItem("spotifyToken");
+let user = JSON.parse(localStorage.getItem("spotifyUser") || "null");
 
-const loginBtn    = document.getElementById("loginBtn");
-const logoutBtn   = document.getElementById("logoutBtn");
-const userName    = document.getElementById("userName");
-const locationEl  = document.getElementById("location");
-const languageSel = document.getElementById("language");
-const searchBtn   = document.getElementById("searchBtn");
-const playlistGrid= document.getElementById("playlistGrid");
-const wLocation   = document.getElementById("wLocation");
-const wTemp       = document.getElementById("wTemp");
-const wMood       = document.getElementById("wMood");
-const createBtn   = document.getElementById("createBtn");
-const playlistLink= document.getElementById("playlistLink");
-const toast       = document.getElementById("toast");
-const supportBtn  = document.getElementById("supportBtn");
-const supportModal= document.getElementById("supportModal");
-const closeSupport= document.getElementById("closeSupport");
-const upiDeepLink = document.getElementById("upiDeepLink");
+const qs = id => document.getElementById(id);
+const loginBtn = qs("loginBtn");
+const logoutBtn = qs("logoutBtn");
+const userName = qs("userName");
+const playlistGrid = qs("playlistGrid");
+const createBtn = qs("createBtn");
+const playlistLink = qs("playlistLink");
 
-// ---------- Helpers ----------
-const showToast = (msg) => {
-  toast.textContent = msg;
-  toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 3000);
-};
+// ============== TOAST ==============
+function toast(msg){
+  const t = qs("toast");
+  t.innerText = msg;
+  t.classList.remove("hidden");
+  setTimeout(()=>t.classList.add("hidden"),2500);
+}
 
-const setThemeByCondition = (text) => {
-  const body = document.body;
-  body.classList.remove("theme-sunny","theme-cloudy","theme-rainy","theme-snowy","theme-stormy","theme-foggy");
-  const t = (text || "").toLowerCase();
-  let theme = "theme-cloudy";
-  if (/sun|clear/.test(t)) theme = "theme-sunny";
-  else if (/rain|drizzle|shower/.test(t)) theme = "theme-rainy";
-  else if (/snow|sleet|ice/.test(t)) theme = "theme-snowy";
-  else if (/thunder|storm/.test(t)) theme = "theme-stormy";
-  else if (/fog|mist|haze|smoke/.test(t)) theme = "theme-foggy";
-  body.classList.add(theme);
-};
-
-const moodFromWeather = (tempC, conditionText) => {
-  const t = (conditionText || "").toLowerCase();
-  if (/thunder|storm/.test(t)) return "intense";
-  if (/snow/.test(t)) return "peaceful";
-  if (/rain|drizzle/.test(t)) return "cozy";
-  if (/fog|mist|haze/.test(t)) return "mysterious";
-  if (tempC >= 30) return "upbeat";
-  if (tempC <= 15) return "chill";
-  return "balanced";
-};
-
-const postJSON = async (url, body) => {
-  const r = await fetch(url, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(body || {})
-  });
-  const text = await r.text();
-  let data;
-  try { data = JSON.parse(text); } catch { throw new Error(`Bad JSON ${text}`); }
-  if (!r.ok) throw new Error(data.error || "Server error");
-  return data;
-};
-
-// ---------- Auth UI ----------
-const updateUI = () => {
-  if (spotifyToken && spotifyUser) {
+// ============== UI UPDATE ==============
+function updateUI(){
+  if(token && user){
     loginBtn.classList.add("hidden");
     logoutBtn.classList.remove("hidden");
-    userName.textContent = `Hi, ${spotifyUser.display_name || spotifyUser.id}`;
-    createBtn.classList.remove("hidden");
+    userName.textContent = user.display_name;
   } else {
     loginBtn.classList.remove("hidden");
     logoutBtn.classList.add("hidden");
     userName.textContent = "";
-    createBtn.classList.add("hidden");
   }
-};
+}
+updateUI();
 
-// ---------- Login flow ----------
+// ============== LOGIN ==============
 loginBtn.onclick = async () => {
-  try {
-    const r = await fetch("/api/login");
-    const { authUrl, error } = await r.json();
-    if (error) throw new Error(error);
+  const res = await fetch("/api/login");
+  const { authUrl } = await res.json();
+  const popup = window.open(authUrl,"spotify","width=500,height=600");
 
-    const popup = window.open(authUrl, "spotifyLogin",
-      "width=520,height=720,menubar=no,toolbar=no,status=no");
-
-    // Fallback for blocked popups
-    setTimeout(() => {
-      if (!popup || popup.closed) showToast("If nothing opens, allow pop-ups and try again.");
-    }, 600);
-
-    const listener = (e) => {
-      if (e.data && e.data.type === "SPOTIFY_AUTH_SUCCESS") {
-        spotifyToken = e.data.token;
-        spotifyUser  = e.data.user;
-        localStorage.setItem("spotifyToken", spotifyToken);
-        localStorage.setItem("spotifyUser", JSON.stringify(spotifyUser));
-        window.removeEventListener("message", listener);
-        try { popup && popup.close(); } catch {}
-        updateUI();
-        showToast("Logged in!");
-      }
-    };
-    window.addEventListener("message", listener);
-  } catch (err) {
-    showToast(err.message);
-  }
-};
-
-logoutBtn.onclick = () => {
-  spotifyToken = null;
-  spotifyUser  = null;
-  localStorage.clear();
-  updateUI();
-  showToast("Logged out");
-};
-
-// ---------- Support modal ----------
-supportBtn.onclick = () => {
-  upiDeepLink.href = "upi://pay?pa=7040135660@fam&pn=WeatherTunes&tn=Support%20WeatherTunes&am=50&cu=INR";
-  supportModal.classList.remove("hidden");
-};
-closeSupport.onclick = () => supportModal.classList.add("hidden");
-supportModal.addEventListener("click", (e)=>{ if(e.target===supportModal) supportModal.classList.add("hidden"); });
-
-// ---------- Weather + Songs ----------
-const renderTracks = (tracks) => {
-  playlistGrid.innerHTML = "";
-  tracks.forEach(t => {
-    const div = document.createElement("div");
-    div.className = "tile";
-    div.innerHTML = `
-      <div class="cover" style="background-image:url('${(t.image || "").replace(/'/g,"%27")}')"></div>
-      <div class="meta">
-        <div class="name">${t.name}</div>
-        <div class="artist">${t.artist}</div>
-        <a class="chip" href="${t.url}" target="_blank" rel="noopener">Open in Spotify →</a>
-      </div>
-    `;
-    playlistGrid.appendChild(div);
+  window.addEventListener("message", e => {
+    if(e.data.type === "SPOTIFY_AUTH_SUCCESS"){
+      token = e.data.token;
+      user = e.data.user;
+      localStorage.setItem("spotifyToken", token);
+      localStorage.setItem("spotifyUser", JSON.stringify(user));
+      popup.close();
+      updateUI();
+      toast("✅ Logged in");
+    }
   });
 };
 
-searchBtn.onclick = async () => {
-  try {
-    if (!spotifyToken) { showToast("Login with Spotify first"); return; }
-
-    const city = (locationEl.value || "").trim();
-    if (!city) { showToast("Enter a city"); return; }
-
-    // 1) Weather
-    const weather = await postJSON("/api/get-weather", { city });
-    lastWeather = weather;
-    const cond = weather.condition || "—";
-    const temp = weather.temp;
-    const mood  = moodFromWeather(temp, cond);
-    lastMood = mood;
-
-    setThemeByCondition(cond);
-    wLocation.textContent = weather.location || city;
-    wTemp.textContent     = `${Math.round(temp)}°C`;
-    wMood.textContent     = mood[0].toUpperCase()+mood.slice(1);
-
-    // 2) Songs
-    const lang = languageSel.value || "english";
-    const data = await postJSON("/api/get-songs", {
-      token: spotifyToken,
-      language: lang,
-      mood
-    });
-
-    lastTracks = data.tracks || [];
-    if (!lastTracks.length) {
-      playlistGrid.innerHTML = `<div class="tile"><div class="meta"><div class="name">No songs found</div><div class="artist">Try nearby city or different language.</div></div></div>`;
-      createBtn.classList.add("hidden");
-      playlistLink.classList.add("hidden");
-      return;
-    }
-
-    renderTracks(lastTracks);
-    createBtn.classList.remove("hidden");
-    playlistLink.classList.add("hidden");
-    showToast(`Found ${lastTracks.length} tracks`);
-  } catch (err) {
-    showToast(err.message);
-  }
+// ============== LOGOUT ==============
+logoutBtn.onclick = () => {
+  localStorage.clear();
+  token=null; user=null;
+  updateUI();
 };
 
-// ---------- Create playlist ----------
-createBtn.onclick = async () => {
-  try {
-    if (!spotifyToken || !spotifyUser) { showToast("Login first"); return; }
-    if (!lastTracks.length) { showToast("No tracks"); return; }
+// ============== POST HELPER ==============
+async function post(url,data){
+  const r = await fetch(url,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(data)
+  });
+  return r.json();
+}
 
-    createBtn.disabled = true; createBtn.textContent = "Creating…";
-    const res = await postJSON("/api/create-playlist", {
-      token: spotifyToken,
-      userId: spotifyUser.id,
-      name: `WeatherTunes – ${lastMood}`,
-      description: `Auto-generated ${languageSel.value} mix for ${lastWeather?.condition || "your"} weather mood`,
-      uris: lastTracks.slice(0, 50).map(t=>t.uri)
-    });
+// ============== WEATHER FETCH + MOOD LOGIC ==============
+function detectMood(temp,condition){
+  if(condition.includes("Rain")) return "lofi";
+  if(temp < 18) return "sad";
+  if(temp > 30) return "summer";
+  return "chill";
+}
 
-    if (res.url) {
-      playlistLink.href = res.url;
+// ============== SEARCH ==============
+qs("searchBtn").onclick = async () => {
+  if(!token) return toast("Login first");
+
+  const city = qs("location").value.trim();
+  if(!city) return toast("Enter city");
+
+  const weather = await post("/api/get-weather",{ city });
+  if(weather.error) return toast(weather.error);
+
+  qs("wLocation").textContent = weather.location;
+  qs("wTemp").textContent = weather.temp+"°C";
+  const mood = detectMood(weather.temp, weather.condition);
+  qs("wMood").textContent = mood;
+
+  const lang = qs("language").value;
+
+  const songs = await post("/api/get-songs",{ token, mood, language:lang });
+  if(!songs.tracks?.length) return toast("No songs found. Try English");
+
+  playlistGrid.innerHTML = songs.tracks.map(t=>`
+    <div class="tile glass">
+      <div class="meta">
+        <p class="name">${t.name}</p>
+        <p class="artist">${t.artist}</p>
+      </div>
+    </div>`
+  ).join("");
+
+  createBtn.classList.remove("hidden");
+  createBtn.onclick = async () => {
+    const r = await post("/api/create-playlist",{ token, tracks:songs.tracks });
+    if(r.url){
+      playlistLink.href = r.url;
       playlistLink.classList.remove("hidden");
-      showToast("Playlist ready!");
+      toast("✅ Playlist created");
     }
-  } catch (e) {
-    showToast(e.message);
-  } finally {
-    createBtn.disabled = false; createBtn.textContent = "Create Playlist on Spotify";
-  }
+  };
 };
-
-// ---------- Init ----------
-updateUI();
