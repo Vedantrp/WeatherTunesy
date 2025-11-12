@@ -1,29 +1,31 @@
-const langProfiles = {
-  english: { market: "US", seeds: ["chill pop", "indie pop", "acoustic", "lofi", "sad pop"] },
-  hindi: { market: "IN", seeds: ["hindi chill", "bollywood", "arijit singh", "hindi lo-fi"] },
-  punjabi: { market: "IN", seeds: ["punjabi lo-fi", "punjabi chill", "ap dhillon"] },
-  tamil: { market: "IN", seeds: ["tamil chill", "anirudh", "tamil lo-fi"] },
-  telugu: { market: "IN", seeds: ["telugu chill", "sid sriram", "tollywood"] },
-  kannada: { market: "IN", seeds: ["kannada chill", "kannada hits"] },
-  malayalam: { market: "IN", seeds: ["malayalam chill", "malayalam indie"] },
-  bengali: { market: "IN", seeds: ["bengali chill", "bengali indie"] },
-  marathi: { market: "IN", seeds: ["marathi lo-fi", "marathi chill"] },
-  spanish: { market: "ES", seeds: ["latin chill", "latin pop", "reggaeton suave"] },
-  french: { market: "FR", seeds: ["french chill", "french pop"] },
-  german: { market: "DE", seeds: ["german chill", "german pop"] },
-  italian: { market: "IT", seeds: ["italian pop", "italian chill"] },
-  korean: { market: "KR", seeds: ["kpop chill", "lofi kpop"] },
-  japanese: { market: "JP", seeds: ["jpop chill", "anime lofi"] },
-  chinese: { market: "HK", seeds: ["c-pop chill", "mandarin lofi"] },
-  arabic: { market: "SA", seeds: ["arabic chill", "arab pop"] },
+// /api/get-songs.js
+import { dbConnect, Taste } from "./_db.js";
+
+const langGenres = {
+  english: ["indie-pop", "pop", "acoustic", "singer-songwriter", "chill"],
+  hindi: ["bollywood", "desi", "indian-pop"],
+  punjabi: ["desi", "indian-pop", "pop"],
+  tamil: ["indian-pop"],
+  telugu: ["indian-pop"],
+  kannada: ["indian-pop"],
+  malayalam: ["indian-pop"],
+  bengali: ["indian-pop"],
+  marathi: ["indian-pop"],
+  spanish: ["latin", "reggaeton", "latin-pop"],
+  french: ["french", "pop"],
+  german: ["german", "pop"],
+  italian: ["italian", "pop"],
+  korean: ["k-pop", "korean-pop"],
+  japanese: ["j-pop", "anime", "japanese"],
+  chinese: ["mandopop", "cantopop", "c-pop"],
+  arabic: ["arab", "pop"]
 };
 
-const moodTags = {
-  chill: ["chill", "lofi", "acoustic"],
-  sad: ["sad", "piano", "emotional"],
-  summer: ["summer", "happy", "feel good"],
-  lofi: ["lofi", "rain", "study"],
-  cozy: ["cozy", "calm", "warm"],
+const langMarket = {
+  english: "US", hindi: "IN", punjabi: "IN", tamil: "IN", telugu: "IN",
+  kannada: "IN", malayalam: "IN", bengali: "IN", marathi: "IN",
+  spanish: "ES", french: "FR", german: "DE", italian: "IT",
+  korean: "KR", japanese: "JP", chinese: "HK", arabic: "SA"
 };
 
 const sfetch = async (url, token) => {
@@ -34,60 +36,78 @@ const sfetch = async (url, token) => {
 
 export default async function handler(req, res) {
   try {
-    const { token, language = "english", mood = "chill" } = req.body;
+    await dbConnect().catch(() => null);
 
+    const { token, language = "english", aiMood, city, userId } = req.body || {};
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const prof = langProfiles[language] || langProfiles.english;
-    const terms = moodTags[mood] || moodTags.chill;
+    const market = langMarket[language] || "US";
+    const seeds = langGenres[language] || ["pop", "chill"];
 
-    const seeds = [];
+    // Determine targets from AI mood (or defaults)
+    const energy = aiMood?.targets?.energy ?? 0.55;
+    const valence = aiMood?.targets?.valence ?? 0.5;
 
-    prof.seeds.forEach(seed => {
-      terms.forEach(m => seeds.push(`${seed} ${m}`));
+    // Build recommendations call
+    const params = new URLSearchParams({
+      market,
+      limit: "50",
+      seed_genres: seeds.slice(0, 5).join(","),
+      target_energy: String(energy),
+      target_valence: String(valence)
     });
 
-    const market = prof.market || "US";
-    let tracks = [];
+    const rec = await sfetch(
+      `https://api.spotify.com/v1/recommendations?${params.toString()}`,
+      token
+    );
 
-    for (let i = 0; i < Math.min(6, seeds.length); i++) {
-      const q = encodeURIComponent(seeds[i]);
+    const tracks = (rec.tracks || []).map((t) => ({
+      id: t.id,
+      uri: t.uri,
+      name: t.name,
+      artist: t.artists?.[0]?.name,
+      url: t.external_urls?.spotify
+    }));
 
-      const search = await sfetch(
-        `https://api.spotify.com/v1/search?q=${q}&type=track&limit=10&market=${market}`,
-        token
-      );
-
-      const found = search.tracks?.items?.map(t => ({
-        id: t.id,
-        uri: t.uri,
-        name: t.name,
-        artist: t.artists?.[0]?.name,
-        url: t.external_urls.spotify
-      })) || [];
-
-      tracks.push(...found);
+    // Save taste (fire-and-forget)
+    if (userId) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/taste`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            city,
+            language,
+            mood: aiMood?.moodText || "auto",
+            energy,
+            valence
+          })
+        }).catch(() => {});
+      } catch (_) {}
     }
 
-    // dedupe + shuffle
-    const unique = [];
+    // Dedup + shuffle
     const seen = new Set();
-
-    tracks.forEach(t => {
+    const unique = [];
+    for (const t of tracks) {
       if (!seen.has(t.id)) {
         seen.add(t.id);
         unique.push(t);
       }
-    });
-
+    }
     for (let i = unique.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [unique[i], unique[j]] = [unique[j], unique[i]];
     }
 
-    res.json({ tracks: unique.slice(0, 30) });
-  } catch (err) {
-    console.error("SONG_FETCH_ERROR:", err.message);
-    res.status(500).json({ error: "Song fetch failed" });
+    return res.json({ tracks: unique.slice(0, 35) });
+  } catch (e) {
+    if (e.message === "UNAUTHORIZED") {
+      return res.status(401).json({ error: "Spotify token expired" });
+    }
+    console.error("GET-SONGS ERROR:", e);
+    return res.status(500).json({ error: "Song fetch failed" });
   }
 }
