@@ -2,7 +2,6 @@
   --bg1:#0e1220; --bg2:#121a2e;
   --glass:#ffffff22; --glassStroke:#ffffff33;
   --text:#e9edf3; --muted:#b8c1d9; --accent:#6ea8ff; --cta:#7dd3fc;
-  --ok:#52f09b; --danger:#ff7070;
 }
 
 *{box-sizing:border-box}
@@ -12,7 +11,7 @@ body{
   color:var(--text); background:#0b1220; overflow-x:hidden;
 }
 
-/* Animated gradient background */
+/* BG */
 .bg{
   position:fixed; inset:0; z-index:-2;
   background: radial-gradient(1200px 800px at 20% -10%, #6a5cff44, transparent 60%),
@@ -21,51 +20,46 @@ body{
   filter:saturate(1.1);
   animation:float 18s ease-in-out infinite alternate;
 }
-@keyframes float{ from{transform:translateY(0)} to{transform:translateY(-18px)} }
+@keyframes float{from{transform:translateY(0)} to{transform:translateY(-18px)}}
 
+.theme-sunny .bg{
+  background:radial-gradient(1000px 600px at 50% -10%, #ff9f3b55, transparent 60%),
+             radial-gradient(900px 700px at 110% 10%, #ffd16633, transparent 55%),
+             linear-gradient(180deg,#2a2112,#120c06);
+}
+.theme-cloudy .bg{
+  background:radial-gradient(1000px 600px at -10% -10%, #6b7a8f44, transparent 60%),
+             radial-gradient(900px 700px at 110% 10%, #44506644, transparent 55%),
+             linear-gradient(180deg,#141922,#0b1018);
+}
+.theme-rainy .bg{
+  background:radial-gradient(1000px 600px at 10% -10%, #4b82d877, transparent 60%),
+             radial-gradient(900px 700px at 110% 10%, #233a5f66, transparent 55%),
+             linear-gradient(180deg,#0c1530,#0a0f1e);
+}
+.theme-snowy .bg{
+  background:radial-gradient(1000px 600px at 0% -10%, #b8e6ff66, transparent 60%),
+             radial-gradient(900px 700px at 110% 10%, #e3f2ff44, transparent 55%),
+             linear-gradient(180deg,#16232d,#0a141b);
+}
+.theme-stormy .bg{
+  background:radial-gradient(1000px 600px at 10% -10%, #8b5cf699, transparent 60%),
+             radial-gradient(900px 700px at 110% 10%, #111827aa, transparent 55%),
+             linear-gradient(180deg,#0a0a16,#070710);
+}
+.theme-foggy .bg{
+  background:radial-gradient(1000px 600px at 10% -10%, #bfc6cf66, transparent 60%),
+             radial-gradient(900px 700px at 110% 10%, #a6b0bf33, transparent 55%),
+             linear-gradient(180deg,#161b20,#0c0f13);
+}
+
+/* tiny dust */
 .particles{
   position:fixed; inset:0; z-index:-1; pointer-events:none;
   background-image:radial-gradient(#ffffff22 1px, transparent 1px);
-  background-size: 40px 40px; opacity:.25; animation:drift 24s linear infinite;
+  background-size:40px 40px; opacity:.25; animation:drift 24s linear infinite;
 }
 @keyframes drift{from{background-position:0 0} to{background-position:200px 200px}}
-
-.theme-sunny .bg{
-  background:
-    radial-gradient(1000px 600px at 50% -10%, #ff9f3b55, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #ffd16633, transparent 55%),
-    linear-gradient(180deg,#2a2112,#120c06);
-}
-.theme-cloudy .bg{
-  background:
-    radial-gradient(1000px 600px at -10% -10%, #6b7a8f44, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #44506644, transparent 55%),
-    linear-gradient(180deg,#141922,#0b1018);
-}
-.theme-rainy .bg{
-  background:
-    radial-gradient(1000px 600px at 10% -10%, #4b82d877, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #233a5f66, transparent 55%),
-    linear-gradient(180deg,#0c1530,#0a0f1e);
-}
-.theme-snowy .bg{
-  background:
-    radial-gradient(1000px 600px at 0% -10%, #b8e6ff66, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #e3f2ff44, transparent 55%),
-    linear-gradient(180deg,#16232d,#0a141b);
-}
-.theme-stormy .bg{
-  background:
-    radial-gradient(1000px 600px at 10% -10%, #8b5cf699, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #111827aa, transparent 55%),
-    linear-gradient(180deg,#0a0a16,#070710);
-}
-.theme-foggy .bg{
-  background:
-    radial-gradient(1000px 600px at 10% -10%, #bfc6cf66, transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, #a6b0bf33, transparent 55%),
-    linear-gradient(180deg,#161b20,#0c0f13);
-}
 
 .header{
   display:flex; justify-content:space-between; align-items:center;
@@ -79,6 +73,7 @@ body{
 }
 .title h1{margin:0; font-size:20px; font-weight:800}
 .title p{margin:0; color:var(--muted); font-size:12px}
+
 .auth{display:flex; gap:10px; align-items:center}
 .user-name{color:var(--muted); margin-right:6px}
 
@@ -93,30 +88,18 @@ body{
 .hero h2{margin:6px 0 6px}
 .hero p{margin:0; color:var(--muted)}
 
-.query{display:grid; grid-template-columns:1.2fr 1fr auto; gap:12px; margin:22px 0}
+.query{display:grid; grid-template-columns:1.2fr 1fr auto auto; gap:12px; margin:22px 0}
 .query-group{padding:12px 14px; border-radius:16px}
 .query-group label{display:block; color:var(--muted); font-size:12px; margin-bottom:6px}
 .query-group input, .query-group select{
-  width:100%; background:transparent; border:none; outline:none; color:black;
+  width:100%; background:transparent; border:none; outline:none; color:var(--text);
   font-size:15px;
 }
 
-.select-wrap { position:relative; display:inline-block; width:100%;
-  padding: 2px; border-radius: 14px; background: rgba(255,255,255,0.12);
-  border:1px solid rgba(255,255,255,0.2); backdrop-filter: blur(10px);
+.weather-cards{
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin:10px 0 16px;
 }
-.nice-select{
-  width: 100%; padding: 10px 14px; background: transparent; border: none;
-  color: var(--text); font-size: 15px; font-weight: 600; appearance: none; cursor: pointer;
-}
-.select-wrap::after{
-  content:"▼"; position:absolute; right:14px; top:50%; transform:translateY(-50%);
-  font-size:12px; color:#9bb8ff; pointer-events:none; transition:.3s;
-}
-.select-wrap:hover::after{ transform:translateY(-50%) rotate(180deg); color:#fff; }
-
-.weather-cards{ display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin:10px 0 16px; }
-.card{ display:flex; gap:12px; padding:16px; border-radius:18px; align-items:center }
+.card{display:flex; gap:12px; padding:16px; border-radius:18px; align-items:center}
 .card-icon{
   width:52px; height:52px; display:grid; place-items:center;
   background:var(--glass); border:1px solid var(--glassStroke); border-radius:14px
@@ -128,22 +111,32 @@ body{
 .curation h3{margin:0 0 6px}
 .subtitle{color:var(--muted); margin:0 0 16px}
 
-.grid{ display:grid; gap:16px; grid-template-columns:repeat(4, minmax(0,1fr)); }
+.grid{
+  display:grid; gap:16px;
+  grid-template-columns:repeat(4, minmax(0,1fr));
+}
 .tile{
   border-radius:18px; overflow:hidden; background:linear-gradient(180deg,#141b2a,#0c111a);
   border:1px solid #ffffff16; position:relative; transition:transform .18s ease, box-shadow .18s ease;
 }
 .tile:hover{ transform:translateY(-4px); box-shadow:0 10px 24px #00000055}
-.cover{ height:170px; background:#0f1726 center/cover no-repeat; filter:saturate(0.9) contrast(1.05) brightness(0.9) }
+.cover{
+  height:170px; background:#0f1726 center/cover no-repeat;
+  filter:saturate(0.95) contrast(1.05) brightness(0.9)
+}
 .meta{ padding:14px}
 .meta .name{font-weight:700; margin:0 0 6px}
 .meta .artist{color:var(--muted); font-size:13px; margin:0 0 10px}
 .meta .chip{display:inline-flex; gap:6px; font-size:12px; color:#a9b8d9; background:#ffffff12; border:1px solid #ffffff1f; padding:6px 10px; border-radius:999px}
 
 .actions{display:flex; gap:12px; justify-content:center; margin:20px 0 0}
-.btn{ border:none; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:700; }
-.btn.glass{ background:var(--glass); border:1px solid var(--glassStroke); color:var(--text);
-  backdrop-filter:blur(8px); transition:transform .14s ease, background .2s ease, border-color .2s ease; }
+.btn{
+  border:none; cursor:pointer; padding:12px 16px; border-radius:14px; font-weight:700;
+}
+.btn.glass{
+  background:var(--glass); border:1px solid var(--glassStroke); color:var(--text);
+  backdrop-filter:blur(8px); transition:transform .14s ease, background .2s ease, border-color .2s ease;
+}
 .btn.glass:hover{ transform:translateY(-2px); background:#ffffff33; border-color:#ffffff55}
 .btn.btn-danger{ border-color:#ff7a7a55; }
 .btn.link{ background:transparent; color:var(--cta); text-decoration:none; font-weight:800 }
@@ -156,8 +149,6 @@ body{
 
 .glass{ background:var(--glass); border:1px solid var(--glassStroke); backdrop-filter: blur(10px); }
 
-.support{ display:flex; justify-content:center; margin:28px 0 0; }
-
 .toast{
   position:fixed; left:50%; transform:translateX(-50%);
   bottom:24px; background:#0b1322ee; padding:10px 14px; border-radius:12px;
@@ -165,12 +156,22 @@ body{
 }
 .hidden{display:none!important}
 
+/* Modal */
+.modal{position:fixed; inset:0; display:grid; place-items:center; background:#0009; z-index:20}
+.modal-panel{width:min(92vw,420px); background:#0f1624; border:1px solid #ffffff22; border-radius:16px; padding:18px}
+.modal h3{margin:0 0 6px}
+.modal p{margin:0 0 10px; color:var(--muted)}
+.qr-wrap{display:grid; place-items:center; gap:8px}
+.qr-img{width:220px; height:220px; object-fit:contain; border-radius:12px; border:1px solid #ffffff22; background:#0a1220}
+.modal-actions{display:flex; gap:12px; justify-content:center; margin-top:12px}
+
 /* Responsive */
 @media (max-width:1024px){
   .grid{grid-template-columns:repeat(3,1fr)}
-  .query{grid-template-columns:1fr; gap:10px}
+  .query{grid-template-columns:1fr 1fr auto auto; gap:10px}
   .weather-cards{grid-template-columns:1fr; gap:10px}
 }
 @media (max-width:640px){
   .grid{grid-template-columns:repeat(2,1fr)}
+  .query{grid-template-columns:1fr; }
 }
