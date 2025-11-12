@@ -1,3 +1,4 @@
+// /api/get-weather.js
 export default async function handler(req, res) {
   try {
     const { city } = req.body || {};
@@ -6,7 +7,9 @@ export default async function handler(req, res) {
     const apiKey = process.env.WEATHER_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
 
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+      city
+    )}&units=metric&appid=${apiKey}`;
 
     const r = await fetch(url);
     if (!r.ok) return res.status(400).json({ error: "Invalid city" });
@@ -14,12 +17,10 @@ export default async function handler(req, res) {
 
     const condition = d.weather?.[0]?.main || "Unknown";
     const temp = d.main?.temp ?? null;
-    const feels_like = d.main?.feels_like ?? null;
 
     res.json({
       city,
       temp,
-      feels_like,
       condition
     });
   } catch (err) {
