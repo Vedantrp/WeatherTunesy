@@ -81,20 +81,33 @@ async function post(url, body) {
 }
 
 // Auto-location on load
+// Accurate auto-location using reverse geocode
 window.onload = () => {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(async(pos) => {
-      const data = await post("/api/get-weather", {
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude
-      });
-      if (data.city) {
-        els.city.value = data.city;
+      try {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+
+        // Reverse geocoding (accurate city)
+        const geoRes = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+        );
+        const geo = await geoRes.json();
+
+        if (geo.city) {
+          els.city.value = geo.city; // ✅ sets Kolhapur correctly
+        }
+
+      } catch (err) {
+        console.log("Location error", err);
       }
     });
   }
+
   updateUI();
 };
+
 
 els.search.onclick = async () => {
   if (!token) return toast("Login required");
@@ -130,3 +143,4 @@ els.search.onclick = async () => {
     els.grid.appendChild(el);
   });
 };
+
