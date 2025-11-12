@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WeatherTunes</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="theme-default">
-  <!-- Motion gradient background -->
+  <!-- Background layers -->
   <div id="bg" class="bg"></div>
   <div id="particles" class="particles"></div>
 
+  <!-- Header -->
   <header class="header">
     <div class="brand">
       <div class="logo">♪</div>
       <div class="title">
         <h1>WeatherTunes</h1>
-        <p>Music that resonates with your atmosphere</p>
+        <p>Music that matches your weather</p>
       </div>
     </div>
-
     <div class="auth">
       <span id="userName" class="user-name"></span>
       <button id="loginBtn" class="btn glass">Login with Spotify</button>
@@ -33,15 +34,15 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-icon">♪</div>
-      <h2>Experience music that matches your weather</h2>
-      <p>We blend real-time weather, mood, and language to curate the perfect playlist.</p>
+      <h2>Experience music that resonates with your atmosphere</h2>
+      <p>Real-time weather + language + mood → the perfect playlist.</p>
     </section>
 
-    <!-- Query -->
+    <!-- Inputs -->
     <section class="query">
       <div class="query-group glass">
-        <label for="location">Location</label>
-        <input id="location" placeholder="Enter city (e.g., London)" />
+        <label for="location">City</label>
+        <input id="location" placeholder="Enter city (e.g., Kolhapur)" />
       </div>
 
       <div class="query-group glass">
@@ -67,7 +68,7 @@
         </select>
       </div>
 
-      <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
+      <button id="searchBtn" class="btn cta">Get Music</button>
     </section>
 
     <!-- Weather summary -->
@@ -83,7 +84,7 @@
       <div class="card glass">
         <div class="card-icon">🌡</div>
         <div class="card-body">
-          <div class="card-label">Temperature</div>
+          <div class="card-label">Temp</div>
           <div id="wTemp" class="card-value">—</div>
         </div>
       </div>
@@ -91,67 +92,83 @@
       <div class="card glass">
         <div class="card-icon">🎧</div>
         <div class="card-body">
-          <div class="card-label">Current Mood</div>
+          <div class="card-label">Mood</div>
           <div id="wMood" class="card-value">—</div>
         </div>
       </div>
     </section>
 
-    <!-- Curated section -->
+    <!-- Results -->
     <section class="curation">
-      <h3 id="curationTitle">Your Weather Collection</h3>
-      <p class="subtitle">Immersive playlists tailored to current conditions.</p>
+      <h3 id="curationTitle">Your Playlist</h3>
+      <p class="subtitle">Curated tracks for current conditions.</p>
 
       <div id="playlistGrid" class="grid"></div>
 
       <div class="actions">
+        <button id="shareBtn" class="btn glass hidden">Share your vibe</button>
         <button id="createBtn" class="btn glass hidden">Create Playlist on Spotify</button>
         <a id="playlistLink" class="btn link hidden" target="_blank" rel="noopener">Open Playlist →</a>
       </div>
     </section>
 
-    <!-- Share Card Zone -->
-    <section class="share-zone glass">
-      <div class="share-actions">
-        <button id="genCardBtn" class="btn glass">Generate Share Card</button>
-        <button id="downloadCardBtn" class="btn glass hidden">Download PNG</button>
-        <button id="nativeShareBtn" class="btn glass hidden">Share</button>
-      </div>
-      <div class="share-preview-wrap">
-        <!-- We render a canvas here -->
-        <canvas id="shareCanvas" width="1080" height="1350" class="share-canvas hidden"></canvas>
-      </div>
-    </section>
-
     <div id="toast" class="toast hidden"></div>
-    <!-- Share Card Overlay -->
-<div id="shareOverlay" class="share-overlay hidden">
-  <div id="shareCard" class="share-card">
-    <div class="neon-bg"></div>
-
-    <div class="sc-top">
-      <div id="scCity" class="sc-city">Mumbai</div>
-      <div id="scWeather" class="sc-badge">☁️ Cloudy · 27°C</div>
-      <div id="scMood" class="sc-tag">Chill / Hindi</div>
-    </div>
-
-    <div class="sc-album-section">
-      <img id="scMainCover" class="sc-main-cover" src="" alt="">
-      <div class="sc-mini-wrap">
-        <img id="scMini1" class="sc-mini" src="">
-        <img id="scMini2" class="sc-mini" src="">
-        <img id="scMini3" class="sc-mini" src="">
-      </div>
-    </div>
-
-    <h2 class="sc-title">WeatherTunes Mix</h2>
-    <button id="downloadCardBtn" class="btn glass sc-btn">Download</button>
-    <button id="closeCardBtn" class="btn glass sc-close">✕</button>
-  </div>
-</div>
-
   </main>
 
+  <!-- Share Modal (Style 2 – Sky/Cyan Frosted) -->
+  <div id="shareModal" class="share-modal hidden" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div class="share-wrap">
+      <div class="share-header">
+        <div class="share-pill"><span>🔗</span> Share your vibe</div>
+        <button id="shareClose" class="share-close" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Render target for image export -->
+      <div id="shareCard" class="share-card">
+        <div class="share-glow"></div>
+        <div class="share-inner">
+          <div class="share-cover">
+            <img id="shareCover" alt="cover"/>
+          </div>
+          <div class="share-meta">
+            <div class="share-tags">
+              <span id="shareWeather" class="tag"></span>
+              <span id="shareTemp" class="tag"></span>
+            </div>
+            <h4 id="shareTitle">—</h4>
+            <p id="shareSubtitle" class="share-sub">—</p>
+            <div class="share-bullets">
+              <span id="shareCount" class="dot">• 0 tracks</span>
+              <span id="shareVibe" class="dot">• —</span>
+            </div>
+            <div class="share-brand">
+              <div class="brand-badge">WT</div>
+              <div>
+                <div class="brand-name">WeatherTunes</div>
+                <div class="brand-tag">Music meets meteorology</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="share-actions">
+        <button id="btnSaveImage" class="btn cta">⬇ Save Image</button>
+        <button id="btnCopyLink" class="btn glass">🔗 Copy Link</button>
+        <button id="btnNativeShare" class="btn glass">📤 Share…</button>
+      </div>
+
+      <div class="share-social">
+        <button class="social-btn" data-network="twitter">𝕏</button>
+        <button class="social-btn" data-network="facebook">f</button>
+        <button class="social-btn" data-network="instagram">◎</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- html2canvas for image export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
