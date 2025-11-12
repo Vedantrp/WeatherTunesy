@@ -1,34 +1,73 @@
 :root{
-  --bg1:#0c1320; --bg2:#0e172b;
-  --glass:#ffffff1f; --glassStroke:#a6d7ff2b;
-  --text:#e9f1ff; --muted:#b9c8e6; --accent:#7dd3fc; --cta:#90e0ff;
-  --ok:#52f09b; --danger:#ff7d7d;
+  --bg1:#0e1220; --bg2:#121a2e;
+  --glass:#ffffff22; --glassStroke:#ffffff33;
+  --text:#e9edf3; --muted:#b8c1d9; --accent:#6ea8ff; --cta:#7dd3fc;
+  --ok:#52f09b; --danger:#ff7070;
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  color:var(--text); background:#08101d; overflow-x:hidden;
+  color:var(--text); background:#0b1220; overflow-x:hidden;
 }
 
-/* BG – Style 2: sky/cyan frosted */
+/* Animated gradient background */
 .bg{
   position:fixed; inset:0; z-index:-2;
-  background:
-    radial-gradient(1200px 700px at 80% -10%, #7dd3fc55, transparent 60%),
-    radial-gradient(1000px 600px at -20% 10%, #60a5fa45, transparent 55%),
-    linear-gradient(180deg, var(--bg1), var(--bg2));
+  background: radial-gradient(1200px 800px at 20% -10%, #6a5cff44, transparent 60%),
+              radial-gradient(900px 700px at 110% 10%, #00e5ff22, transparent 55%),
+              linear-gradient(180deg, var(--bg1), var(--bg2));
+  filter:saturate(1.1);
   animation:float 18s ease-in-out infinite alternate;
 }
-@keyframes float{from{transform:translateY(0)} to{transform:translateY(-16px)}}
+@keyframes float{from{transform:translateY(0)} to{transform:translateY(-18px)}}
 
+/* Weather themes */
+.theme-sunny .bg{
+  background:
+    radial-gradient(1000px 600px at 50% -10%, #ff9f3b55, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, #ffd16633, transparent 55%),
+    linear-gradient(180deg,#2a2112,#120c06);
+}
+.theme-cloudy .bg{
+  background:
+    radial-gradient(1000px 600px at -10% -10%, #6b7a8f44, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, #44506644, transparent 55%),
+    linear-gradient(180deg,#141922,#0b1018);
+}
+.theme-rainy .bg{
+  background:
+    radial-gradient(1000px 600px at 10% -10%, #4b82d877, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, #233a5f66, transparent 55%),
+    linear-gradient(180deg,#0c1530,#0a0f1e);
+}
+.theme-snowy .bg{
+  background:
+    radial-gradient(1000px 600px at 0% -10%, #b8e6ff66, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, #e3f2ff44, transparent 55%),
+    linear-gradient(180deg,#16232d,#0a141b);
+}
+.theme-stormy .bg{
+  background:
+    radial-gradient(1000px 600px at 10% -10%, #8b5cf699, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, #111827aa, transparent 55%),
+    linear-gradient(180deg,#0a0a16,#070710);
+}
+.theme-foggy .bg{
+  background:
+    radial-gradient(1000px 600px at 10% -10%, #bfc6cf66, transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, #a6b0bf33, transparent 55%),
+    linear-gradient(180deg,#161b20,#0c0f13);
+}
+
+/* tiny floating dust */
 .particles{
   position:fixed; inset:0; z-index:-1; pointer-events:none;
   background-image:radial-gradient(#ffffff22 1px, transparent 1px);
-  background-size:38px 38px; opacity:.22; animation:drift 25s linear infinite;
+  background-size: 40px 40px; opacity:.25; animation:drift 24s linear infinite;
 }
-@keyframes drift{from{background-position:0 0} to{background-position:220px 220px}}
+@keyframes drift{from{background-position:0 0} to{background-position:200px 200px}}
 
 .header{
   display:flex; justify-content:space-between; align-items:center;
@@ -38,7 +77,7 @@ body{
 .logo{
   width:44px; height:44px; display:grid; place-items:center;
   background:var(--glass); border:1px solid var(--glassStroke);
-  border-radius:14px; backdrop-filter:blur(10px)
+  border-radius:12px; backdrop-filter:blur(10px)
 }
 .title h1{margin:0; font-size:20px; font-weight:800}
 .title p{margin:0; color:var(--muted); font-size:12px}
@@ -61,9 +100,10 @@ body{
 .query-group{padding:12px 14px; border-radius:16px}
 .query-group label{display:block; color:var(--muted); font-size:12px; margin-bottom:6px}
 .query-group input, .query-group select{
-  width:100%; background:transparent; border:none; outline:none; color:black;
+  width:100%; background:transparent; border:none; outline:none; color:var(--text);
   font-size:15px;
 }
+.query-group select option{color:#0b1220} /* ensure contrast on mobile pickers */
 
 .weather-cards{
   display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin:10px 0 16px;
@@ -87,19 +127,17 @@ body{
   grid-template-columns:repeat(4, minmax(0,1fr));
 }
 .tile{
-  border-radius:18px; overflow:hidden; position:relative;
-  background:linear-gradient(180deg,#0f1726,#0a1220);
-  border:1px solid #a6d7ff22; transition:transform .18s ease, box-shadow .18s ease;
+  border-radius:18px; overflow:hidden; background:linear-gradient(180deg,#141b2a,#0c111a);
+  border:1px solid #ffffff16; position:relative; transition:transform .18s ease, box-shadow .18s ease;
 }
 .tile:hover{ transform:translateY(-4px); box-shadow:0 10px 24px #00000055}
 .cover{
   height:170px; background:#0f1726 center/cover no-repeat;
-  filter:saturate(.92) contrast(1.05) brightness(.92)
+  filter:saturate(0.9) contrast(1.05) brightness(0.9)
 }
 .meta{ padding:14px}
 .meta .name{font-weight:700; margin:0 0 6px}
 .meta .artist{color:var(--muted); font-size:13px; margin:0 0 10px}
-.meta .chip{display:inline-flex; gap:6px; font-size:12px; color:#a9d7ff; background:#a6d7ff1a; border:1px solid #a6d7ff33; padding:6px 10px; border-radius:999px}
 
 .actions{display:flex; gap:12px; justify-content:center; margin:20px 0 0}
 .btn{
@@ -109,15 +147,15 @@ body{
   background:var(--glass); border:1px solid var(--glassStroke); color:var(--text);
   backdrop-filter:blur(8px); transition:transform .14s ease, background .2s ease, border-color .2s ease;
 }
-.btn.glass:hover{ transform:translateY(-2px); background:#ffffff33; border-color:#a6d7ff66}
+.btn.glass:hover{ transform:translateY(-2px); background:#ffffff33; border-color:#ffffff55}
 .btn.btn-danger{ border-color:#ff7a7a55; }
 .btn.link{ background:transparent; color:var(--cta); text-decoration:none; font-weight:800 }
 
 .btn.cta{
-  background:linear-gradient(90deg,#38bdf8,#7dd3fc);
-  color:#04131b; border:0; box-shadow:0 8px 24px #38bdf833; transition:transform .14s ease, box-shadow .14s ease;
+  background:linear-gradient(90deg,#60a5fa,#22d3ee);
+  color:#00131a; border:0; box-shadow:0 8px 24px #1f9cf533; transition:transform .14s ease, box-shadow .14s ease;
 }
-.btn.cta:hover{ transform:translateY(-2px); box-shadow:0 12px 28px #38bdf855 }
+.btn.cta:hover{ transform:translateY(-2px); box-shadow:0 12px 28px #1f9cf555 }
 
 .glass{
   background:var(--glass); border:1px solid var(--glassStroke);
@@ -127,75 +165,23 @@ body{
 .toast{
   position:fixed; left:50%; transform:translateX(-50%);
   bottom:24px; background:#0b1322ee; padding:10px 14px; border-radius:12px;
-  border:1px solid #a6d7ff33; z-index:50
+  border:1px solid #ffffff22; z-index:5
 }
 .hidden{display:none!important}
 
-/* Share Modal – Style 2 */
-.share-modal{
-  position:fixed; inset:0; background:rgba(4,10,18,.6);
-  backdrop-filter: blur(8px);
-  display:grid; place-items:center; z-index:60;
-}
-.share-wrap{
-  width:min(920px,92vw); border-radius:22px; padding:22px;
-  background:linear-gradient(180deg,#0b1522,#0a1220);
-  border:1px solid #a6d7ff33; box-shadow:0 30px 120px #38bdf822;
-  position:relative;
-}
-.share-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px}
-.share-pill{
-  display:inline-flex; gap:8px; align-items:center; color:#bfe7ff;
-  background:#a6d7ff22; border:1px solid #a6d7ff44; padding:8px 12px; border-radius:999px; font-weight:700;
-}
-.share-close{
-  background:#a6d7ff1a; border:1px solid #a6d7ff44; color:#cfeaff; border-radius:10px; padding:8px 10px; cursor:pointer
-}
-
-.share-card{
-  position:relative; border-radius:20px; overflow:hidden;
-  background:radial-gradient(800px 600px at -10% -10%, #7dd3fc22, transparent 60%),
-             radial-gradient(800px 600px at 110% 10%, #38bdf833, transparent 60%),
-             linear-gradient(180deg,#0f1a27,#0b1421);
-  border:1px solid #a6d7ff33;
-}
-.share-glow{
-  position:absolute; inset:0; pointer-events:none;
-  background:radial-gradient(600px 300px at 40% 0%, #bfe7ff22, transparent 60%);
-  filter:blur(12px);
-}
-.share-inner{display:grid; grid-template-columns:300px 1fr; gap:18px; padding:18px}
-.share-cover{
-  height:240px; border-radius:16px; overflow:hidden; border:1px solid #a6d7ff33; background:#0e1725;
-}
-.share-cover img{width:100%; height:100%; object-fit:cover}
-.share-meta h4{margin:8px 0 6px; font-size:22px}
-.share-sub{margin:0 0 10px; color:var(--muted)}
-.share-tags{display:flex; gap:8px; flex-wrap:wrap}
-.tag{font-size:12px; color:#bfe7ff; background:#a6d7ff22; border:1px solid #a6d7ff44; padding:6px 10px; border-radius:999px}
-.dot{color:#bfe7ff; font-size:13px; margin-right:14px}
-.share-brand{display:flex; gap:10px; align-items:center; margin-top:8px}
-.brand-badge{width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:#a6d7ff26; border:1px solid #a6d7ff44; font-weight:800}
-.brand-name{font-weight:800}
-.brand-tag{color:#9fc6e8; font-size:12px}
-
-.share-actions{display:flex; gap:12px; justify-content:center; margin:14px 0 6px}
-.share-social{display:flex; gap:12px; justify-content:center; margin:6px 0 0}
-.social-btn{
-  width:44px; height:44px; border-radius:12px; border:1px solid #a6d7ff44; background:#a6d7ff22; color:#cfeaff;
-  font-weight:800; cursor:pointer
-}
+/* Modal */
+.modal{ position:fixed; inset:0; display:grid; place-items:center; background:#0008; z-index:20 }
+.modal-card{ width:min(720px, 92vw); border-radius:16px; padding:14px; border:1px solid #ffffff22 }
+.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:6px 8px 12px }
+.modal-body{ padding:10px; display:flex; flex-direction:column; align-items:center; gap:12px }
+.modal .sm{ padding:6px 10px; border-radius:10px }
 
 /* Responsive */
 @media (max-width:1024px){
   .grid{grid-template-columns:repeat(3,1fr)}
   .query{grid-template-columns:1fr; gap:10px}
   .weather-cards{grid-template-columns:1fr; gap:10px}
-  .share-inner{grid-template-columns:1fr}
-  .share-cover{height:220px}
 }
 @media (max-width:640px){
   .grid{grid-template-columns:repeat(2,1fr)}
-  .share-cover{height:200px}
 }
-
