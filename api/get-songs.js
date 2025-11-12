@@ -1,124 +1,93 @@
-const langProfiles = {
-  english: {
-    market:"US",
-    include:[/^[\u0000-\u024F\s'&(),.!?-]+$/],
-    exclude:[/[\u0900-\u097F\u0A00-\u0A7F\u0C00-\u0C7F\u0B80-\u0BFF]/]
-  },
-  hindi:{ market:"IN", include:[/[\u0900-\u097F]/, /(bollywood|arijit|atif|hind|india)/i] },
-  punjabi:{ market:"IN", include:[/[\u0A00-\u0A7F]/, /(punjabi|sidhu|ap dhillon)/i] },
-  tamil:{ market:"IN", include:[/[\u0B80-\u0BFF]/, /(tamil|kollywood|anirudh)/i] },
-  telugu:{ market:"IN", include:[/[\u0C00-\u0C7F]/, /(telugu|tollywood|sriram)/i] },
-  kannada:{ market:"IN", include:[/(kannada)/i] },
-  malayalam:{ market:"IN", include:[/(malayalam)/i] },
-  bengali:{ market:"IN", include:[/(bengali)/i] },
-  marathi:{ market:"IN", include:[/(marathi)/i] },
-  spanish:{ market:"ES", include:[/(latin|reggaeton|español|spanish)/i] },
-  french:{ market:"FR", include:[/(french|française)/i] },
-  german:{ market:"DE", include:[/(german|deutsch)/i] },
-  italian:{ market:"IT", include:[/(italian|italiano)/i] },
-  korean:{ market:"KR", include:[/(kpop|korean)/i, /[\uAC00-\uD7AF]/] },
-  japanese:{ market:"JP", include:[/(jpop|japanese|anime)/i, /[\u3040-\u30FF\u4E00-\u9FFF]/] },
-  chinese:{ market:"HK", include:[/(mandarin|c-pop|chinese)/i, /[\u4E00-\u9FFF]/] },
-  arabic:{ market:"SA", include:[/(arabic|arab)/i] },
-};
-
-const moodTerms = {
-  sad:["sad","acoustic","piano","lofi","emotional"],
-  cozy:["cozy","warm","soft","jazz","lofi","soul"],
-  party:["party","edm","dance","house","banger"],
-  workout:["gym","workout","energy","bass","boost"],
-  happy:["happy","pop","feel good","summer","vibes"],
-  chill:["chill","indie","soft","lofi","acoustic"],
-  rain:["rain","lofi","acoustic","soothing"],
-  winter:["warm","jazz","lofi","soft"]
-};
-
-function passesLang(profile, name, artist){
-  const blob = `${name} ${artist}`;
-  if (profile.include && !profile.include.some(rx => rx.test(blob))) return false;
-  if (profile.exclude && profile.exclude.some(rx => rx.test(blob))) return false;
-  return true;
-}
-
-async function sfetch(url, token){
-  const r = await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
-  return r.json();
-}
-
-export default async function handler(req, res){
+export default async function handler(req, res) {
   try {
-    const { token, language="english", mood="chill" } = req.body || {};
-    if (!token) return res.status(401).json({ error:"Missing token" });
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "POST only" });
+    }
+
+    const { token, language = "english", mood = "chill" } = req.body || {};
+    if (!token) return res.status(401).json({ error: "Missing token" });
+
+    const langProfiles = {
+      english: { market: "US", seeds: ["indie pop", "chill pop", "acoustic"] },
+      hindi: { market: "IN", seeds: ["arijit singh", "bollywood chill", "lofi india"] },
+      punjabi: { market: "IN", seeds: ["punjabi hits", "ap dhillon", "punjabi lofi"] },
+      tamil: { market: "IN", seeds: ["tamil hits", "anirudh", "tamil lofi"] },
+      telugu: { market: "IN", seeds: ["telugu hits", "sid sriram", "telugu lofi"] },
+      marathi: { market: "IN", seeds: ["marathi songs", "marathi love"] },
+      kannada: { market: "IN", seeds: ["kannada songs", "kannada lofi"] },
+      malayalam: { market: "IN", seeds: ["malayalam songs", "mollywood lofi"] },
+      bengali: { market: "IN", seeds: ["bengali songs", "bengali lofi"] },
+      spanish: { market: "ES", seeds: ["latin pop", "latin chill"] },
+      korean: { market: "KR", seeds: ["kpop chill", "k-indie"] },
+      japanese: { market: "JP", seeds: ["jpop chill", "city pop"] },
+      french: { market: "FR", seeds: ["french chill", "french pop"] },
+      german: { market: "DE", seeds: ["german pop", "german chill"] },
+      italian: { market: "IT", seeds: ["italian chill", "italian pop"] },
+      chinese: { market: "HK", seeds: ["mandopop", "chinese chill"] },
+      arabic: { market: "SA", seeds: ["arabic chill", "arab pop"] }
+    };
+
+    const moodTerms = {
+      chill: ["chill", "lofi", "acoustic"],
+      happy: ["happy", "summer", "feel good"],
+      cozy: ["romantic", "soft", "warm"],
+      intense: ["edm", "beats", "energy"],
+      relaxed: ["soft", "ambient", "calm"]
+    };
 
     const profile = langProfiles[language] || langProfiles.english;
-    const terms = moodTerms[mood] || ["chill"];
+    const terms = moodTerms[mood] || moodTerms.chill;
     const market = profile.market;
 
-    const searches = [
-      `${language} ${terms[0]}`,
-      `${language} ${terms[1] || ""}`,
-      `${language} top hits`,
-      `${mood} mix`,
-      `${language} vibe`,
-      `${language} chill`,
-    ];
-
-    let all = [];
-    for (const qRaw of searches) {
-      const q = encodeURIComponent(qRaw.trim());
-      const data = await sfetch(
-        `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=3`,
-        token
-      );
-
-      for (const pl of data?.playlists?.items || []) {
-        const tracks = await sfetch(
-          `https://api.spotify.com/v1/playlists/${pl.id}/tracks?market=${market}&limit=80`,
-          token
-        );
-
-        for (const i of tracks.items || []) {
-          const t = i.track;
-          if (!t || !t.id) continue;
-
-          all.push({
-            id: t.id,
-            uri: t.uri,
-            name: t.name,
-            artist: t.artists?.[0]?.name,
-            image: t.album?.images?.[1]?.url || t.album?.images?.[0]?.url,
-            url: t.external_urls?.spotify,
-            pop: t.popularity || 30
-          });
-        }
-      }
-
-      if (all.length >= 200) break;
+    async function spotify(url) {
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` }});
+      const d = await r.json();
+      return d;
     }
 
-    // Deduplicate + language + popularity >= 25 (earlier 35)
-    const seen = new Set();
-    const filtered = [];
-
-    for (const t of all) {
-      if (seen.has(t.id)) continue;
-      if (!passesLang(profile, t.name, t.artist)) continue;
-      if (t.pop < 25) continue;
-      seen.add(t.id);
-      filtered.push(t);
-      if (filtered.length >= 70) break;
+    let playlists = [];
+    for (let seed of profile.seeds) {
+      const q = encodeURIComponent(`${seed} ${terms[0]}`);
+      const data = await spotify(`https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`);
+      const item = data?.playlists?.items?.[0];
+      if (item) playlists.push(item);
+      if (playlists.length >= 3) break;
     }
 
-    // Shuffle
-    for (let i = filtered.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+    if (!playlists.length) {
+      return res.json({ tracks: [] });
     }
 
-    return res.json({ tracks: filtered.slice(0, 50) });
+    let tracks = [];
+    for (let pl of playlists) {
+      const data = await spotify(`https://api.spotify.com/v1/playlists/${pl.id}/tracks?market=${market}&limit=100`);
+      const arr = (data.items || [])
+        .map(i => i.track)
+        .filter(t => t?.id)
+        .map(t => ({
+          id: t.id,
+          uri: t.uri,
+          name: t.name,
+          artist: t.artists?.[0]?.name,
+          image: t.album?.images?.[1]?.url || t.album?.images?.[0]?.url,
+          url: t.external_urls?.spotify
+        }));
+      tracks = tracks.concat(arr);
+    }
 
-  } catch (e) {
-    console.error("GET-SONGS ERROR:", e);
-    return res.status(500).json({ error:"Song fetch failed" });
+    // filter wrong language for English
+    if (language === "english") {
+      tracks = tracks.filter(t => !/[ऀ-ॿ]/.test(t.name + t.artist));
+    }
+
+    // shuffle
+    tracks = [...new Map(tracks.map(t => [t.id, t])).values()];
+    tracks.sort(() => Math.random() - 0.5);
+
+    return res.json({ tracks: tracks.slice(0, 30) });
+
+  } catch (err) {
+    console.error("GET SONGS ERROR:", err);
+    return res.status(500).json({ error: "Song fetch failed" });
   }
 }
