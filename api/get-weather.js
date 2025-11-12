@@ -4,33 +4,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { city } = req.body;
-    if (!city) return res.status(400).json({ error: "City required" });
+    const { city, lat, lon } = req.body;
+    const key = process.env.WEATHER_API_KEY;
 
-    const apiKey = process.env.WEATHER_API_KEY;
+    let url;
 
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-      city
-    )}&units=metric&appid=${apiKey}`;
-
-    const weatherRes = await fetch(url);
-    const data = await weatherRes.json();
-
-    if (data.cod !== 200) {
-      return res.status(404).json({ error: "Weather not found" });
+    if (lat && lon) {
+      url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${key}`;
+    } else if (city) {
+      url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${key}`;
+    } else {
+      return res.status(400).json({ error: "City or coordinates required" });
     }
 
-    const condition = data.weather?.[0]?.main || "Clear";
+    const r = await fetch(url);
+    const d = await r.json();
 
-    return res.json({
-      city: data.name,
-      country: data.sys.country,
-      temp: Math.round(data.main.temp),
-      feels_like: Math.round(data.main.feels_like),
-      condition,
+    if (!d || !d.main) return res.status(404).json({ error: "Weather not found" });
+
+    res.json({
+      city: d.name,
+      country: d.sys.country,
+      temp: Math.round(d.main.temp),
+      feels_like: Math.round(d.main.feels_like),
+      condition: d.weather[0].main,
     });
-  } catch (err) {
-    console.error("WEATHER ERR", err);
-    res.status(500).json({ error: "Weather fetch failed" });
+  } catch (e) {
+    res.status(500).json({ error: "Weather error" });
   }
 }
