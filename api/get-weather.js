@@ -1,33 +1,35 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(400).json({ error: "POST only" });
-
-  const { city, lat, lon } = req.body || {};
-  const apiKey = process.env.WEATHER_API_KEY;
+  if (req.method !== "POST")
+    return res.status(400).json({ error: "POST only" });
 
   try {
-    let url;
-    if (lat && lon) {
-      url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-    } else if (city) {
-      url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
-    } else {
-      return res.status(400).json({ error: "Missing city or coordinates" });
-    }
+    const { city } = req.body;
+    if (!city) return res.status(400).json({ error: "Missing city" });
 
-    const r = await fetch(url);
-    const data = await r.json();
-    if (!r.ok || !data.weather) return res.status(404).json({ error: "Weather not found" });
+    const apiKey = process.env.WEATHER_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: "Missing API key" });
 
-    return res.json({
-      city: data.name,
+    // ✅ Add `units=metric` to get Celsius directly
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+      city
+    )}&appid=${apiKey}&units=metric`;
+
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!resp.ok || !data.main)
+      return res.status(404).json({ error: "Weather not found" });
+
+    // ✅ Return only clean, used info
+    res.status(200).json({
+      name: data.name,
       temp: data.main.temp,
-      feels: data.main.feels_like,
-      condition: data.weather[0].main,
-      icon: data.weather[0].icon,
-      country: data.sys.country
+      feels_like: data.main.feels_like,
+      condition: data.weather?.[0]?.main || "Clear",
+      icon: data.weather?.[0]?.icon || "01d",
     });
-  } catch (err) {
-    console.error("WEATHER ERROR:", err);
-    return res.status(500).json({ error: "Server error" });
+  } catch (e) {
+    console.error("WEATHER ERROR:", e);
+    res.status(500).json({ error: "Weather fetch failed" });
   }
 }
