@@ -1,35 +1,38 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(400).json({ error: "POST only" });
-  }
+  if (req.method !== "POST") return res.status(400).json({ error: "POST only" });
+
+  const { city, lat, lon } = req.body;
+  const apiKey = process.env.WEATHER_API_KEY;
 
   try {
-    const { city, lat, lon } = req.body;
-    const key = process.env.WEATHER_API_KEY;
-
     let url;
 
+    // Prefer GPS coordinates if available (accurate temp)
     if (lat && lon) {
-      url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${key}`;
-    } else if (city) {
-      url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${key}`;
+      url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
     } else {
-      return res.status(400).json({ error: "City or coordinates required" });
+      // fallback city search
+      url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
     }
 
     const r = await fetch(url);
-    const d = await r.json();
+    const data = await r.json();
 
-    if (!d || !d.main) return res.status(404).json({ error: "Weather not found" });
+    if (!data || !data.weather) {
+      return res.status(404).json({ error: "Weather not found" });
+    }
 
-    res.json({
-      city: d.name,
-      country: d.sys.country,
-      temp: Math.round(d.main.temp),
-      feels_like: Math.round(d.main.feels_like),
-      condition: d.weather[0].main,
+    return res.json({
+      city: data.name,
+      temp: data.main.temp,
+      feels: data.main.feels_like,
+      condition: data.weather[0].main,
+      icon: data.weather[0].icon,
+      country: data.sys.country
     });
-  } catch (e) {
-    res.status(500).json({ error: "Weather error" });
+
+  } catch (err) {
+    console.error("WEATHER ERROR:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 }
