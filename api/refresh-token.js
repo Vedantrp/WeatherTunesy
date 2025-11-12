@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
   try {
     const { refreshToken } = req.body || {};
@@ -17,12 +15,12 @@ export default async function handler(req, res) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body
     });
-
     const json = await r.json();
-    if (!json?.access_token) return res.status(400).json({ error: "Token refresh failed" });
+    if (!r.ok) return res.status(400).json({ error: json.error || "Refresh failed" });
+
     return res.status(200).json({ accessToken: json.access_token });
-  } catch (e) {
-    console.error("REFRESH ERROR:", e);
-    return res.status(500).json({ error: "Token refresh failed" });
+  } catch (err) {
+    console.error("REFRESH ERROR:", err);
+    res.status(500).json({ error: "Token refresh failed" });
   }
 }
