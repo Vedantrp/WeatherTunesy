@@ -1,126 +1,132 @@
-// ============== GLOBALS ==============
 let token = localStorage.getItem("spotifyToken");
 let user = JSON.parse(localStorage.getItem("spotifyUser") || "null");
 
-const qs = id => document.getElementById(id);
-const loginBtn = qs("loginBtn");
-const logoutBtn = qs("logoutBtn");
-const userName = qs("userName");
-const playlistGrid = qs("playlistGrid");
-const createBtn = qs("createBtn");
-const playlistLink = qs("playlistLink");
+const els = {
+  login: document.getElementById("loginBtn"),
+  logout: document.getElementById("logoutBtn"),
+  userName: document.getElementById("userName"),
+  city: document.getElementById("location"),
+  lang: document.getElementById("language"),
+  search: document.getElementById("searchBtn"),
+  wLoc: document.getElementById("wLocation"),
+  wTemp: document.getElementById("wTemp"),
+  wMood: document.getElementById("wMood"),
+  grid: document.getElementById("playlistGrid"),
+  toast: document.getElementById("toast")
+};
 
-// ============== TOAST ==============
-function toast(msg){
-  const t = qs("toast");
-  t.innerText = msg;
-  t.classList.remove("hidden");
-  setTimeout(()=>t.classList.add("hidden"),2500);
+function toast(t) {
+  els.toast.innerText = t;
+  els.toast.classList.remove("hidden");
+  setTimeout(() => els.toast.classList.add("hidden"), 2200);
 }
 
-// ============== UI UPDATE ==============
-function updateUI(){
-  if(token && user){
-    loginBtn.classList.add("hidden");
-    logoutBtn.classList.remove("hidden");
-    userName.textContent = user.display_name;
+function updateUI() {
+  if (token && user) {
+    els.login.classList.add("hidden");
+    els.logout.classList.remove("hidden");
+    els.userName.textContent = user.display_name;
   } else {
-    loginBtn.classList.remove("hidden");
-    logoutBtn.classList.add("hidden");
-    userName.textContent = "";
+    els.login.classList.remove("hidden");
+    els.logout.classList.add("hidden");
+    els.userName.textContent = "";
   }
 }
-updateUI();
 
-// ============== LOGIN ==============
-loginBtn.onclick = async () => {
-  const res = await fetch("/api/login");
-  const { authUrl } = await res.json();
-  const popup = window.open(authUrl,"spotify","width=500,height=600");
+els.login.onclick = async () => {
+  const r = await fetch("/api/login");
+  const j = await r.json();
+  const popup = window.open(j.authUrl, "_blank");
 
-  window.addEventListener("message", e => {
-    if(e.data.type === "SPOTIFY_AUTH_SUCCESS"){
+  window.addEventListener("message", (e) => {
+    if (e.data.type === "SPOTIFY_AUTH_SUCCESS") {
       token = e.data.token;
       user = e.data.user;
       localStorage.setItem("spotifyToken", token);
       localStorage.setItem("spotifyUser", JSON.stringify(user));
       popup.close();
       updateUI();
-      toast("✅ Logged in");
     }
   });
 };
 
-// ============== LOGOUT ==============
-logoutBtn.onclick = () => {
+els.logout.onclick = () => {
+  token = null;
+  user = null;
   localStorage.clear();
-  token=null; user=null;
   updateUI();
 };
 
-// ============== POST HELPER ==============
-async function post(url,data){
-  const r = await fetch(url,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(data)
+function getMood(weather) {
+  const { temp, condition } = weather;
+  const c = condition.toLowerCase();
+
+  if (temp >= 32) return "energetic";
+  if (temp <= 18) return "sad";
+  if (c.includes("rain")) return "lofi";
+  if (c.includes("fog") || c.includes("haze")) return "gloomy";
+  if (c.includes("cloud")) return "chill";
+  if (c.includes("clear") || c.includes("sun")) return "happy";
+
+  return "chill";
+}
+
+async function post(url, body) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)
   });
   return r.json();
 }
 
-// ============== WEATHER FETCH + MOOD LOGIC ==============
-function detectMood(temp,condition){
-  if(condition.includes("Rain")) return "lofi";
-  if(temp < 18) return "sad";
-  if(temp > 30) return "summer";
-  return "chill";
-}
-let mood = "chill";
-
-if (weather.temp > 32) mood = "summer";
-if (weather.temp < 18) mood = "sad";
-if (weather.condition.includes("Rain")) mood = "lofi";
-if (weather.condition.includes("Haze")) mood = "gloomy";
-if (weather.condition.includes("Clear")) mood = "happy";
-if (weather.condition.includes("Cloud")) mood = "chill";
-
-// ============== SEARCH ==============
-qs("searchBtn").onclick = async () => {
-  if(!token) return toast("Login first");
-
-  const city = qs("location").value.trim();
-  if(!city) return toast("Enter city");
-
-  const weather = await post("/api/get-weather",{ city });
-  if(weather.error) return toast(weather.error);
-
-  qs("wLocation").textContent = weather.location;
-  qs("wTemp").textContent = weather.temp+"°C";
-  const mood = detectMood(weather.temp, weather.condition);
-  qs("wMood").textContent = mood;
-
-  const lang = qs("language").value;
-
-  const songs = await post("/api/get-songs",{ token, mood, language:lang });
-  if(!songs.tracks?.length) return toast("No songs found. Try English");
-
-  playlistGrid.innerHTML = songs.tracks.map(t=>`
-    <div class="tile glass">
-      <div class="meta">
-        <p class="name">${t.name}</p>
-        <p class="artist">${t.artist}</p>
-      </div>
-    </div>`
-  ).join("");
-
-  createBtn.classList.remove("hidden");
-  createBtn.onclick = async () => {
-    const r = await post("/api/create-playlist",{ token, tracks:songs.tracks });
-    if(r.url){
-      playlistLink.href = r.url;
-      playlistLink.classList.remove("hidden");
-      toast("✅ Playlist created");
-    }
-  };
+// Auto-location on load
+window.onload = () => {
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(async(pos) => {
+      const data = await post("/api/get-weather", {
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude
+      });
+      if (data.city) {
+        els.city.value = data.city;
+      }
+    });
+  }
+  updateUI();
 };
 
+els.search.onclick = async () => {
+  if (!token) return toast("Login required");
+
+  const city = els.city.value.trim();
+  if (!city) return toast("Enter city");
+
+  const weather = await post("/api/get-weather", { city });
+  if (!weather.city) return toast("Weather not found");
+
+  els.wLoc.textContent = weather.city;
+  els.wTemp.textContent = weather.temp + "°C";
+
+  const mood = getMood(weather);
+  els.wMood.textContent = mood;
+
+  const songs = await post("/api/get-songs", {
+    token, language: els.lang.value, mood
+  });
+
+  els.grid.innerHTML = "";
+  if (!songs.tracks?.length) return toast("No songs");
+
+  songs.tracks.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.innerHTML = `
+      <div class="cover" style="background-image:url('${t.image}')"></div>
+      <div class="meta">
+        <div class="name">${t.name}</div>
+        <div class="artist">${t.artist}</div>
+      </div>`;
+    els.grid.appendChild(el);
+  });
+};
