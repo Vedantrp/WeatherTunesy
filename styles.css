@@ -192,3 +192,85 @@ body{
 @media (max-width:640px){
   .grid{grid-template-columns:repeat(2,1fr)}
 }
+
+/* Share Card System */
+.share-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+
+.share-card {
+  width: 340px; height: 520px;
+  border-radius: 22px;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  color: white;
+  display: flex; flex-direction: column;
+  backdrop-filter: blur(20px);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.neon-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, #ff00e1aa, transparent 60%),
+    radial-gradient(circle at 80% 80%, #00c3ffaa, transparent 60%);
+  filter: blur(80px);
+  z-index: -1;
+}
+
+.sc-city {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+}
+
+.sc-badge, .sc-tag {
+  font-size: 12px; opacity: 0.85;
+  margin-top: 2px;
+}
+
+.sc-album-section {
+  margin: 18px 0;
+  position: relative;
+}
+
+.sc-main-cover {
+  width: 100%; height: 240px; border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+}
+
+.sc-mini-wrap {
+  display: flex; gap: 6px;
+  margin-top: 8px;
+}
+
+.sc-mini {
+  flex: 1;
+  height: 60px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.sc-title {
+  font-size: 22px; font-weight: 800;
+  margin-top: auto; margin-bottom: 16px;
+}
+
+.sc-btn {
+  background: rgba(255,255,255,0.25);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.sc-close {
+  position: absolute; top: 8px; right: 8px;
+  width: 34px; height: 34px; border-radius: 50%;
+}
+.hidden { display: none !important; }
