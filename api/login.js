@@ -1,14 +1,12 @@
 export default function handler(req, res) {
   try {
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
+    if (req.method !== "GET") return res.status(405).json({ error: "Only GET allowed" });
 
-    if (!clientId || !redirectUri) {
-      return res.status(500).json({
-        error: "ENV VARS FAIL",
-        clientId: !!clientId,
-        redirectUri: !!redirectUri
-      });
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const redirect = process.env.SPOTIFY_REDIRECT_URI;
+
+    if (!clientId || !redirect) {
+      return res.status(500).json({ error: "Missing env", clientId: !!clientId, redirect: !!redirect });
     }
 
     const scope = [
@@ -19,11 +17,11 @@ export default function handler(req, res) {
 
     const authUrl =
       `https://accounts.spotify.com/authorize?client_id=${clientId}` +
-      `&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=code&redirect_uri=${encodeURIComponent(redirect)}` +
       `&scope=${scope}`;
 
-    res.status(200).json({ authUrl });
+    return res.status(200).json({ authUrl });
   } catch (e) {
-    res.status(500).json({ error: "Login crashed" });
+    return res.status(500).json({ error: "Login handler crash" });
   }
 }
