@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>WeatherTunes — Glass</title>
+  <title>WeatherTunes</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="theme-default">
-  <!-- Fog glass background & soft particles -->
+  <!-- Motion gradient background -->
   <div id="bg" class="bg"></div>
   <div id="particles" class="particles"></div>
 
@@ -18,7 +18,7 @@
       <div class="logo">♪</div>
       <div class="title">
         <h1>WeatherTunes</h1>
-        <p>Music that matches your weather</p>
+        <p>Music that resonates with your atmosphere</p>
       </div>
     </div>
 
@@ -30,16 +30,24 @@
   </header>
 
   <main class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-icon">♪</div>
+      <h2>Experience music that matches your weather</h2>
+      <p>We blend real-time weather, mood, and language to curate the perfect playlist.</p>
+    </section>
+
+    <!-- Query -->
     <section class="query">
       <div class="query-group glass">
         <label for="location">Location</label>
-        <input id="location" placeholder="Enter city (e.g., Kolhapur)"/>
+        <input id="location" placeholder="Enter city (e.g., London)" />
       </div>
 
       <div class="query-group glass">
         <label for="language">Language</label>
         <select id="language">
-          <option value="english" selected>English</option>
+          <option value="english">English</option>
           <option value="hindi">Hindi / Bollywood</option>
           <option value="punjabi">Punjabi</option>
           <option value="tamil">Tamil</option>
@@ -62,7 +70,7 @@
       <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
     </section>
 
-    <!-- Weather summary (auto background changes) -->
+    <!-- Weather summary -->
     <section class="weather-cards">
       <div class="card glass">
         <div class="card-icon">📍</div>
@@ -83,18 +91,18 @@
       <div class="card glass">
         <div class="card-icon">🎧</div>
         <div class="card-body">
-          <div class="card-label">Mood</div>
+          <div class="card-label">Current Mood</div>
           <div id="wMood" class="card-value">—</div>
         </div>
       </div>
     </section>
 
-    <!-- Playlist list (Spotify-style) -->
+    <!-- Curated section -->
     <section class="curation">
       <h3 id="curationTitle">Your Weather Collection</h3>
-      <p class="subtitle">Curated tracks for the current vibe. Tap create to save on Spotify.</p>
+      <p class="subtitle">Immersive playlists tailored to current conditions.</p>
 
-      <div id="playlistList" class="list"></div>
+      <div id="playlistGrid" class="grid"></div>
 
       <div class="actions">
         <button id="createBtn" class="btn glass hidden">Create Playlist on Spotify</button>
@@ -102,9 +110,17 @@
       </div>
     </section>
 
-    <!-- Footer actions -->
-    <section class="footer-actions">
-      <a class="btn glass" href="upi://pay?pa=7040135660@fam&pn=WeatherTunes&cu=INR" target="_blank" rel="noopener">☕ Support via UPI</a>
+    <!-- Share Card Zone -->
+    <section class="share-zone glass">
+      <div class="share-actions">
+        <button id="genCardBtn" class="btn glass">Generate Share Card</button>
+        <button id="downloadCardBtn" class="btn glass hidden">Download PNG</button>
+        <button id="nativeShareBtn" class="btn glass hidden">Share</button>
+      </div>
+      <div class="share-preview-wrap">
+        <!-- We render a canvas here -->
+        <canvas id="shareCanvas" width="1080" height="1350" class="share-canvas hidden"></canvas>
+      </div>
     </section>
 
     <div id="toast" class="toast hidden"></div>
