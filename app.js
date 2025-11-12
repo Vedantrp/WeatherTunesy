@@ -119,20 +119,37 @@ async function fetchSongs(language, mood) {
 }
 
 function renderTracks(tracks) {
-  playlistGrid.innerHTML = "";
+  const grid = document.getElementById("playlistGrid");
+  grid.innerHTML = "";
+
   tracks.forEach(t => {
-    const tile = document.createElement("div");
-    tile.className = "tile";
-    tile.innerHTML = `
-      <div class="cover" style="background-image:url('${(t.image || "").replace(/"/g,"&quot;")}')"></div>
-      <div class="meta">
-        <div class="name">${t.name}</div>
-        <div class="artist">${t.artist}</div>
+    const card = document.createElement("div");
+    card.className = "song-card";
+
+    card.innerHTML = `
+      <div class="song-img" style="background-image:url('${t.image}')">
+        <button class="fab share"><ion-icon name="share-social"></ion-icon></button>
+        <button class="fab play"><ion-icon name="play"></ion-icon></button>
+      </div>
+
+      <div class="song-meta">
+        <div class="song-icon">♪</div>
+
+        <div class="song-info">
+          <div class="song-title">${t.name}</div>
+          <div class="song-artist">${t.artist}</div>
+          <div class="song-count"><span>•</span> 50 tracks</div>
+        </div>
       </div>
     `;
-    playlistGrid.appendChild(tile);
+
+    card.querySelector(".play").onclick = () => window.open(t.url, "_blank");
+    card.querySelector(".share").onclick = () => showShareModal(t);
+
+    grid.appendChild(card);
   });
 }
+
 
 /* --------------------------------------------------
    MAIN SEARCH ACTION
@@ -334,3 +351,4 @@ function toast(msg){
  Init
 -------------------------------------------------- */
 updateUI();
+
