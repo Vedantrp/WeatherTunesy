@@ -58,11 +58,21 @@ async function postJSON(url, body) {
 // LOGIN
 // =============================
 loginBtn.onclick = async () => {
-  const res = await fetch("/api/login");
-  const data = await res.json();
-  const popup = window.open(data.authUrl, "_blank", "width=600,height=800");
-};
+  // open placeholder popup immediately (allowed by browser)
+  const popup = window.open("", "spotifyLogin", "width=600,height=700");
 
+  try {
+    const res = await fetch("/api/login");
+    const { authUrl } = await res.json();
+
+    if (!authUrl) throw Error("No auth URL returned");
+
+    popup.location.href = authUrl;
+  } catch (err) {
+    popup.close();
+    alert("Login failed: " + err.message);
+  }
+};
 window.addEventListener("message", (event) => {
   if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
     spotifyToken = event.data.token;
@@ -142,3 +152,4 @@ createBtn.onclick = async () => {
 
 // init
 updateUI();
+
