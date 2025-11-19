@@ -1,93 +1,85 @@
+// /api/get-songs.js
+import fetch from "node-fetch";
+
+// Language → Market + Seeds
+const langProfiles = {
+  english: { market: "US", seeds: ["english chill", "indie acoustic", "sad pop", "lofi english"] },
+  hindi: { market: "IN", seeds: ["bollywood chill", "arijit singh", "hindi acoustic", "lofi bollywood"] },
+  punjabi: { market: "IN", seeds: ["punjabi hits", "ap dhillon", "punjabi lo-fi"] },
+  tamil: { market: "IN", seeds: ["tamil hits", "anirudh", "tamil lo-fi"] },
+  telugu: { market: "IN", seeds: ["telugu hits", "sid sriram", "tollywood chill"] },
+  spanish: { market: "ES", seeds: ["latin chill", "reggaeton suave", "spanish pop"] },
+};
+
+// Time-based moods
+function getTimeMood(hour) {
+  if (hour >= 4 && hour < 8) return ["soft", "morning", "acoustic"];
+  if (hour >= 8 && hour < 12) return ["focus", "study", "instrumental"];
+  if (hour >= 12 && hour < 18) return ["energetic", "summer", "pop"];
+  if (hour >= 18 && hour < 23) return ["chill", "night", "indie"];
+  return ["moody", "dark", "deep"];
+}
+
+async function sfetch(url, token) {
+  const res = await fetch(url, { headers: { Authorization: Bearer ${token} } });
+  if (!res.ok) throw new Error("API Error");
+  return res.json();
+}
+
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "POST only" });
-    }
+    if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
-    const { token, language = "english", mood = "chill" } = req.body || {};
+    const { token, language = "english", hour = 14 } = req.body;
     if (!token) return res.status(401).json({ error: "Missing token" });
 
-    const langProfiles = {
-      english: { market: "US", seeds: ["indie pop", "chill pop", "acoustic"] },
-      hindi: { market: "IN", seeds: ["arijit singh", "bollywood chill", "lofi india"] },
-      punjabi: { market: "IN", seeds: ["punjabi hits", "ap dhillon", "punjabi lofi"] },
-      tamil: { market: "IN", seeds: ["tamil hits", "anirudh", "tamil lofi"] },
-      telugu: { market: "IN", seeds: ["telugu hits", "sid sriram", "telugu lofi"] },
-      marathi: { market: "IN", seeds: ["marathi songs", "marathi love"] },
-      kannada: { market: "IN", seeds: ["kannada songs", "kannada lofi"] },
-      malayalam: { market: "IN", seeds: ["malayalam songs", "mollywood lofi"] },
-      bengali: { market: "IN", seeds: ["bengali songs", "bengali lofi"] },
-      spanish: { market: "ES", seeds: ["latin pop", "latin chill"] },
-      korean: { market: "KR", seeds: ["kpop chill", "k-indie"] },
-      japanese: { market: "JP", seeds: ["jpop chill", "city pop"] },
-      french: { market: "FR", seeds: ["french chill", "french pop"] },
-      german: { market: "DE", seeds: ["german pop", "german chill"] },
-      italian: { market: "IT", seeds: ["italian chill", "italian pop"] },
-      chinese: { market: "HK", seeds: ["mandopop", "chinese chill"] },
-      arabic: { market: "SA", seeds: ["arabic chill", "arab pop"] }
-    };
+    const prof = langProfiles[language] || langProfiles.english;
+    const market = prof.market;
+    const timeTags = getTimeMood(hour);
 
-    const moodTerms = {
-      chill: ["chill", "lofi", "acoustic"],
-      happy: ["happy", "summer", "feel good"],
-      cozy: ["romantic", "soft", "warm"],
-      intense: ["edm", "beats", "energy"],
-      relaxed: ["soft", "ambient", "calm"]
-    };
-
-    const profile = langProfiles[language] || langProfiles.english;
-    const terms = moodTerms[mood] || moodTerms.chill;
-    const market = profile.market;
-
-    async function spotify(url) {
-      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` }});
-      const d = await r.json();
-      return d;
+    // Build queries: language + time mood
+    const queries = [];
+    for (const seed of prof.seeds) {
+      for (const tag of timeTags) queries.push(${seed} ${tag});
     }
 
-    let playlists = [];
-    for (let seed of profile.seeds) {
-      const q = encodeURIComponent(`${seed} ${terms[0]}`);
-      const data = await spotify(`https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`);
-      const item = data?.playlists?.items?.[0];
-      if (item) playlists.push(item);
-      if (playlists.length >= 3) break;
+    const tracks = [];
+    for (let i = 0; i < Math.min(6, queries.length); i++) {
+      const q = encodeURIComponent(queries[i]);
+      const search = await sfetch(
+        https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1,
+        token
+      );
+
+      const playlist = search?.playlists?.items?.[0];
+      if (!playlist) continue;
+
+      const data = await sfetch(
+        https://api.spotify.com/v1/playlists/${playlist.id}/tracks?limit=80&market=${market},
+        token
+      );
+
+      for (const item of data.items || []) {
+        const track = item.track;
+        if (!track || !track.id || !track.uri) continue;
+
+        tracks.push({
+          id: track.id,
+          uri: track.uri,
+          name: track.name,
+          artist: track.artists?.[0]?.name,
+          image: track.album?.images?.[1]?.url || track.album?.images?.[0]?.url,
+        });
+      }
     }
 
-    if (!playlists.length) {
-      return res.json({ tracks: [] });
-    }
+    // Dedupe + shuffle + return
+    const unique = [...new Map(tracks.map(t => [t.id, t])).values()];
+    const shuffled = unique.sort(() => Math.random() - 0.5);
 
-    let tracks = [];
-    for (let pl of playlists) {
-      const data = await spotify(`https://api.spotify.com/v1/playlists/${pl.id}/tracks?market=${market}&limit=100`);
-      const arr = (data.items || [])
-        .map(i => i.track)
-        .filter(t => t?.id)
-        .map(t => ({
-          id: t.id,
-          uri: t.uri,
-          name: t.name,
-          artist: t.artists?.[0]?.name,
-          image: t.album?.images?.[1]?.url || t.album?.images?.[0]?.url,
-          url: t.external_urls?.spotify
-        }));
-      tracks = tracks.concat(arr);
-    }
-
-    // filter wrong language for English
-    if (language === "english") {
-      tracks = tracks.filter(t => !/[ऀ-ॿ]/.test(t.name + t.artist));
-    }
-
-    // shuffle
-    tracks = [...new Map(tracks.map(t => [t.id, t])).values()];
-    tracks.sort(() => Math.random() - 0.5);
-
-    return res.json({ tracks: tracks.slice(0, 30) });
-
+    return res.json({ tracks: shuffled.slice(0, 35) });
   } catch (err) {
-    console.error("GET SONGS ERROR:", err);
+    console.error("GET-SONGS ERROR:", err);
     return res.status(500).json({ error: "Song fetch failed" });
   }
 }
