@@ -56,9 +56,15 @@ export default async function handler(req, res) {
     `);
   } catch (err) {
     console.error("CALLBACK ERROR:", err);
-    return res.status(500).send(`<script>
-      window.opener && window.opener.postMessage({ type:'SPOTIFY_AUTH_ERROR' }, '*');
-      window.close();
-    </script>`);
+    res.send(`
+<script>
+  window.opener.postMessage({
+    type: "SPOTIFY_AUTH_SUCCESS",
+    token: "${accessToken}",
+    user: ${JSON.stringify(user)}
+  }, "*");
+
+  window.close();
+</script>`);
   }
 }
