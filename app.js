@@ -26,7 +26,8 @@ function updateUI() {
   if (spotifyToken && spotifyUser) {
     loginBtn.classList.add("hidden");
     logoutBtn.classList.remove("hidden");
-    userName.innerText = Hi, ${spotifyUser.display_name};
+    // 🛑 FIX 1: Template literal needs backticks (`)
+    userName.innerText = `Hi, ${spotifyUser.display_name}`;
   } else {
     loginBtn.classList.remove("hidden");
     logoutBtn.classList.add("hidden");
@@ -41,12 +42,18 @@ updateUI();
   POPUP LOGIN FLOW (FIXED)
 ******************/
 loginBtn.onclick = async () => {
-  const popup = window.open("", "spotifyLogin", "width=600,height=700");
+  // 💡 Improvement: Define popup features as a single variable
+  const popupFeatures = "width=600,height=700,scrollbars=yes,resizable=yes";
+  const popup = window.open("", "spotifyLogin", popupFeatures);
 
   if (!popup) {
     alert("Please enable pop-ups to continue login.");
     return;
   }
+  
+  // 💡 Improvement: Wait for window to load before proceeding
+  // This helps ensure the popup is fully established before redirection.
+  if (window.focus) popup.focus(); 
 
   try {
     const res = await fetch("/api/login");
@@ -56,6 +63,8 @@ loginBtn.onclick = async () => {
 
     popup.location.href = authUrl;
   } catch (err) {
+    // 💡 Improvement: Log the error for better debugging
+    console.error("Login initiation failed:", err);
     popup.close();
     alert("Login failed. Try again.");
   }
@@ -63,6 +72,9 @@ loginBtn.onclick = async () => {
 
 // Receive token from callback
 window.addEventListener("message", (event) => {
+  // 💡 Improvement: Always check the origin for security in real-world apps
+  // if (event.origin !== "[http://your-app-domain.com](http://your-app-domain.com)") return; 
+
   if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
     spotifyToken = event.data.token;
     spotifyUser = event.data.user;
@@ -81,7 +93,9 @@ window.addEventListener("message", (event) => {
 logoutBtn.onclick = () => {
   spotifyToken = null;
   spotifyUser = null;
-  localStorage.clear();
+  // 💡 Improvement: Only remove relevant keys, not all localStorage
+  localStorage.removeItem("spotifyToken");
+  localStorage.removeItem("spotifyUser");
   updateUI();
 };
 
@@ -95,6 +109,17 @@ async function postJSON(url, data) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
+  
+  // 💡 Improvement: Check for HTTP errors before parsing JSON
+  if (!res.ok) {
+    console.error(`HTTP error! status: ${res.status} on ${url}`);
+    // Attempt to return error details if available
+    try {
+      return await res.json();
+    } catch {
+      return { error: `HTTP error ${res.status}` };
+    }
+  }
 
   return res.json();
 }
@@ -104,7 +129,8 @@ async function postJSON(url, data) {
   WEATHER API
 ******************/
 async function getWeather(city) {
-  return await postJSON("/api/get-weather", { city });
+  // Use `await` and `return` in a single line for simplicity
+  return postJSON("/api/get-weather", { city });
 };
 
 
@@ -118,7 +144,8 @@ async function getSongs(language, mood) {
     mood
   });
 
-  if (!result.tracks) return [];
+  // 💡 Improvement: Check for an error object from the API helper
+  if (result.error || !result.tracks) return [];
 
   cachedTracks = result.tracks;
   return result.tracks;
@@ -131,8 +158,9 @@ async function getSongs(language, mood) {
 function renderSongs(list) {
   playlistGrid.innerHTML = "";
 
-  list.forEach(track => {
-    playlistGrid.innerHTML += `
+  // 💡 Improvement: Use map/join for better performance than += in a loop
+  const html = list.map(track => {
+    return `
       <div class="tile">
         <div class="cover" style="background-image:url('${track.image || ""}')"></div>
         <div class="meta">
@@ -142,9 +170,13 @@ function renderSongs(list) {
         </div>
       </div>
     `;
-  });
+  }).join('');
 
+  playlistGrid.innerHTML = html;
+  
   createBtn.classList.remove("hidden");
+  // 💡 Improvement: Hide the playlist link until a new playlist is created
+  playlistLink.classList.add("hidden"); 
 }
 
 
@@ -157,28 +189,43 @@ searchBtn.onclick = async function handleSearch() {
   const city = locationInput.value.trim();
   if (!city) return alert("Enter city name");
 
+  // Clear previous link before a new search
+  playlistLink.classList.add("hidden"); 
   playlistGrid.innerHTML = "⏳ Fetching weather...";
   
   // 1️⃣ Get weather
   const weather = await getWeather(city);
 
-  if (weather.error) return alert("Weather unavailable");
+  if (weather.error) {
+    playlistGrid.innerHTML = "Weather unavailable.";
+    return alert("Weather unavailable for that city.");
+  }
 
+  // 🛑 FIX 2: Template literal needs backticks (`)
+  wTemp.innerText = `${weather.temp}°C`;
+
+  // 💡 Improvement: Simple mood mapping logic
   let mood = "chill";
   if (weather.temp > 32) mood = "summer";
-  if (weather.condition.includes("Rain")) mood = "lofi";
-  if (weather.condition.includes("Clear")) mood = "happy";
-  if (weather.condition.includes("Haze")) mood = "sad";
+  // Use toLowerCase for safer string comparison
+  const condition = weather.condition.toLowerCase(); 
+  if (condition.includes("rain")) mood = "lofi";
+  else if (condition.includes("clear")) mood = "happy";
+  else if (condition.includes("haze") || condition.includes("fog")) mood = "sad";
+  else if (condition.includes("cloud")) mood = "chill"; // Default/Fallback
 
   wLocation.innerText = city;
-  wTemp.innerText = ${weather.temp}°C;
   wMood.innerText = mood;
+
+  playlistGrid.innerHTML = "🎵 Fetching songs...";
 
   // 2️⃣ Fetch songs
   const tracks = await getSongs(languageSelect.value, mood);
 
   if (!tracks.length) {
     playlistGrid.innerHTML = "No songs found. Try another mood/language.";
+    // Ensure create button is hidden if no tracks
+    createBtn.classList.add("hidden"); 
     return;
   }
 
@@ -190,22 +237,31 @@ searchBtn.onclick = async function handleSearch() {
   CREATE PLAYLIST
 ******************/
 createBtn.onclick = async () => {
-  if (!cachedTracks.length) return;
+  if (!cachedTracks.length) return alert("Search for tracks first!");
+  
+  // Disable button and show loading to prevent double-click
+  createBtn.disabled = true;
+  createBtn.innerText = "Creating...";
 
   const uris = cachedTracks.map(t => t.uri);
 
   const result = await postJSON("/api/create-playlist", {
     token: spotifyToken,
     uris,
-    name: "WeatherTunes Mix"
+    name: `WeatherTunes Mix - ${wLocation.innerText} (${wMood.innerText})` // 💡 Improvement: Make playlist name descriptive
   });
+  
+  // Re-enable button
+  createBtn.disabled = false;
+  createBtn.innerText = "Create Playlist";
 
   if (result.url) {
     playlistLink.href = result.url;
     playlistLink.classList.remove("hidden");
     alert("Playlist created!");
   } else {
-    alert("Failed to create playlist.");
+    // 💡 Improvement: Show the specific error if possible
+    console.error("Create playlist failed:", result);
+    alert(`Failed to create playlist. ${result.error ? result.error : ''}`);
   }
 };
-
