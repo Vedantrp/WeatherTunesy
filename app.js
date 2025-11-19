@@ -105,7 +105,7 @@ async function postJSON(url, data) {
 ******************/
 async function getWeather(city) {
   return await postJSON("/api/get-weather", { city });
-}
+};
 
 
 /******************
@@ -208,3 +208,4 @@ createBtn.onclick = async () => {
     alert("Failed to create playlist.");
   }
 };
+
