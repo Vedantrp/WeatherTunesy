@@ -6,7 +6,7 @@
 }
 
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%} 
 body{
   margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
   color:var(--text); background:#0b1220; overflow-x:hidden;
@@ -244,3 +244,4 @@ body{
 }
 .song-artist{color:#b4c1dd;font-size:13px;margin-bottom:6px}
 .song-count{font-size:12px;color:#a8b2cc}
+
