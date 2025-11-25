@@ -25,8 +25,8 @@ const toast = document.getElementById("toast");
 // ===============================
 function showToast(msg) {
   toast.innerText = msg;
-  toast.style.display = "block";
-  setTimeout(() => (toast.style.display = "none"), 2000);
+  toast.classList.remove("hidden");
+  setTimeout(() => toast.classList.add("hidden"), 2000);
 }
 
 function updateUI() {
@@ -42,18 +42,17 @@ function updateUI() {
 }
 
 async function postJSON(url, data) {
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-
-  const text = await r.text();
-
   try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const text = await r.text();
     return JSON.parse(text);
   } catch (err) {
-    console.error("BAD JSON:", text);
+    console.error("BAD JSON:", err);
     return { error: true };
   }
 }
@@ -107,20 +106,19 @@ async function createPlaylist() {
 
 
 // ===============================
-// RENDER SONGS
+// RENDER SONGS (NO IMAGES)
 // ===============================
 function renderSongs(tracks) {
   playlistGrid.innerHTML = "";
 
   if (!tracks.length) {
-    playlistGrid.innerHTML = `<div class="empty">No songs found</div>`;
+    playlistGrid.innerHTML = `<div class="empty glass">No songs found</div>`;
     return;
   }
 
   tracks.forEach((t) => {
     playlistGrid.innerHTML += `
-      <div class="tile">
-        <img class="cover" src="${t.image}" />
+      <div class="tile glass">
         <div class="meta">
           <div class="name">${t.name}</div>
           <div class="artist">${t.artist}</div>
@@ -164,7 +162,7 @@ searchBtn.onclick = async () => {
 
 
 // ===============================
-// CREATE PLAYLIST BTN
+// CREATE PLAYLIST
 // ===============================
 createPlaylistBtn.onclick = async () => {
   if (!spotifyToken) return showToast("Login first!");
@@ -173,9 +171,9 @@ createPlaylistBtn.onclick = async () => {
 
   if (r.url) {
     window.open(r.url, "_blank");
-    showToast("Playlist Created!");
+    showToast("Playlist created!");
   } else {
-    showToast("Playlist Failed");
+    showToast("Playlist failed");
   }
 };
 
