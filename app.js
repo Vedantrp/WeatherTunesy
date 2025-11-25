@@ -124,6 +124,28 @@ function renderSongs(tracks) {
     playlistGrid.innerHTML = `<div class="empty">No songs found</div>`;
     return;
   }
+const createPlaylistBtn = document.getElementById("createPlaylistBtn");
+
+createPlaylistBtn.onclick = async () => {
+  if (!spotifyToken) return showToast("Login first!");
+
+  try {
+    const res = await postJSON("/api/create-playlist", {
+      token: spotifyToken
+    });
+
+    if (res.url) {
+      window.open(res.url, "_blank");
+      showToast("Playlist created!");
+    } else {
+      showToast("Playlist failed");
+    }
+
+  } catch (err) {
+    console.error(err);
+    showToast("Error creating playlist");
+  }
+};
 
   tracks.forEach((t) => {
     playlistGrid.innerHTML += `
@@ -188,3 +210,4 @@ searchBtn.onclick = async () => {
 // INIT
 // ===============================
 updateUI();
+
