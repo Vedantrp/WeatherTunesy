@@ -41,10 +41,14 @@ export default async function handler(req, res) {
 
     const playlist = await createRes.json();
 
-    if (!playlist.id) {
-      console.error("Playlist creation failed:", playlist);
-      return res.status(400).json({ error: "Couldn't create playlist" });
-    }
+   if (!playlist || playlist.error) {
+  console.error("Playlist creation failed:", playlist);
+  return res.status(400).json({
+    error: "Couldn't create playlist",
+    detail: playlist.error || playlist
+  });
+}
+
 
     const playlistId = playlist.id;
 
