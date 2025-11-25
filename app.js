@@ -1,3 +1,6 @@
+// ===============================
+// GLOBAL STATE
+// ===============================
 let spotifyToken = localStorage.getItem("spotifyToken") || null;
 let spotifyUser = JSON.parse(localStorage.getItem("spotifyUser") || "null");
 
@@ -49,8 +52,8 @@ async function postJSON(url, data) {
   try {
     return JSON.parse(text);
   } catch (err) {
-    console.error("Bad JSON:", text);
-    throw new Error("Bad JSON");
+    console.error("Bad JSON returned! Response was:", text);
+    throw new Error("Bad JSON from server");
   }
 }
 
@@ -118,7 +121,7 @@ function renderSongs(tracks) {
   playlistGrid.innerHTML = "";
 
   if (!tracks.length) {
-    playlistGrid.innerHTML = '<div class="empty">No songs found</div>';
+    playlistGrid.innerHTML = `<div class="empty">No songs found</div>`;
     return;
   }
 
@@ -138,7 +141,7 @@ function renderSongs(tracks) {
 
 
 // ===============================
-// MAIN SEARCH
+// MAIN SEARCH LOGIC
 // ===============================
 searchBtn.onclick = async () => {
   if (!spotifyToken) return showToast("Login first!");
@@ -154,7 +157,7 @@ searchBtn.onclick = async () => {
     }
 
     wLocation.innerText = city;
-    wTemp.innerText = ${weather.temp}°C;
+    wTemp.innerText = `${weather.temp}°C`;
     wMood.innerText = weather.condition;
 
     // Determine mood
@@ -185,4 +188,3 @@ searchBtn.onclick = async () => {
 // INIT
 // ===============================
 updateUI();
-
