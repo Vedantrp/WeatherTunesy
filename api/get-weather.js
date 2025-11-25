@@ -31,17 +31,16 @@ export default async function handler(req, res) {
     const main = j.main || {};
     const weather = (j.weather && j.weather[0]) || {};
 
-    const out = {
-      name: j.name,
-      country: j.sys?.country,
-      temp: main.temp,
-      tempC: main.temp ? main.temp - 273.15 : null,
-      feels_like: main.feels_like,
-      humidity: main.humidity,
-      condition: weather.main,
-      description: weather.description,
-      icon: weather.icon,
-    };
+const out = {
+  name: j.name,
+  country: j.sys?.country,
+  temp: Math.round(main.temp - 273.15),
+  feels_like: Math.round(main.feels_like - 273.15),
+  humidity: main.humidity,
+  condition: weather.main,
+  description: weather.description,
+  icon: weather.icon,
+};
 
     res.status(200).json(out);
   } catch (err) {
