@@ -131,3 +131,23 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Song fetch failed" });
   }
 }
+const strictFilters = {
+  english: [/english|uk|us|pop/i],
+  hindi: [/hindi|bollywood|arijit/i],
+  punjabi: [/punjabi|ap dhillon/i],
+  tamil: [/tamil|kollywood|anirudh/i],
+  telugu: [/telugu|tollywood|sid sriram/i],
+  kannada: [/kannada/i],
+  malayalam: [/malayalam/i],
+  bengali: [/bengali/i],
+  marathi: [/marathi/i],
+};
+
+const strictSet = strictFilters[language] || [];
+
+const filteredTracks = unique.filter((t) =>
+  strictSet.some((regex) => regex.test(t.artist) || regex.test(t.name))
+);
+
+// fallback if filtering removed too many
+const finalTracks = filteredTracks.length > 10 ? filteredTracks : unique;
