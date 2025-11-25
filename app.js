@@ -9,7 +9,7 @@ const locationInput = document.getElementById("location");
 const languageSelect = document.getElementById("language");
 const searchBtn = document.getElementById("searchBtn");
 const playlistGrid = document.getElementById("playlistGrid");
-const createBtn = document.getElementById("createBtn");
+const createBtn = document.getElementById("createBtn"); 
 const playlistLink = document.getElementById("playlistLink");
 
 const wTemp = document.getElementById("wTemp");
@@ -265,3 +265,4 @@ createBtn.onclick = async () => {
     alert(`Failed to create playlist. ${result.error ? result.error : ''}`);
   }
 };
+
