@@ -1,112 +1,113 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WeatherTunes</title>
-  <link rel="stylesheet" href="/styles.css" />
+
+  <style>
+    body {
+      margin: 0;
+      background: #0e0e0e;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .row { display: flex; gap: 10px; }
+    .btn { padding: 10px 15px; background: #1db954; border-radius: 6px; cursor: pointer; }
+    .hidden { display: none; }
+
+    #playlistGrid {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px;
+    }
+
+    .tile {
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 10px;
+      transition: 0.2s;
+    }
+    .tile:hover { transform: scale(1.03); }
+
+    .cover {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .meta {
+      margin-top: 7px;
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 5px 10px;
+      background: #1db954;
+      border-radius: 20px;
+      margin-top: 7px;
+      color: black;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff4444;
+      padding: 12px 20px;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
 </head>
-<body class="theme-default">
-  <div id="bg" class="bg"></div>
-  <div id="particles" class="particles"></div>
 
-  <header class="header">
-    <div class="brand">
-      <div class="logo">♪</div>
-      <div class="title">
-        <h1>WeatherTunes</h1>
-        <p>Music that resonates with your atmosphere</p>
-      </div>
-    </div>
+<body>
 
-    <div class="auth">
-      <span id="userName" class="user-name"></span>
-      <button id="loginBtn" class="btn glass">Login with Spotify</button>
-      <button id="logoutBtn" class="btn glass btn-danger hidden">Logout</button>
-    </div>
-  </header>
+  <h1>WeatherTunes</h1>
 
-  <main class="container">
-    <section class="hero">
-      <div class="hero-icon">♪</div>
-      <h2>Experience music that matches your weather</h2>
-      <p>We blend real-time weather, mood, and language to curate the perfect playlist.</p>
-    </section>
+  <div class="row">
+    <button id="loginBtn" class="btn">Login with Spotify</button>
+    <button id="logoutBtn" class="btn hidden">Logout</button>
+    <div id="userName"></div>
+  </div>
 
-    <section class="query">
-      <div class="query-group glass">
-        <label for="location">Location</label>
-        <input id="location" placeholder="Enter city (e.g., London)" />
-      </div>
+  <br />
 
-      <div class="query-group glass">
-        <label for="language">Language</label>
-        <select id="language">
-          <!-- 15+ languages included -->
-          <option value="english">English</option>
-          <option value="hindi">Hindi / Bollywood</option>
-          <option value="punjabi">Punjabi</option>
-          <option value="tamil">Tamil</option>
-          <option value="telugu">Telugu</option>
-          <option value="kannada">Kannada</option>
-          <option value="malayalam">Malayalam</option>
-          <option value="bengali">Bengali</option>
-          <option value="marathi">Marathi</option>
-          <option value="spanish">Spanish</option>
-          <option value="french">French</option>
-          <option value="german">German</option>
-          <option value="italian">Italian</option>
-          <option value="korean">Korean</option>
-          <option value="japanese">Japanese</option>
-          <option value="chinese">Chinese</option>
-          <option value="arabic">Arabic</option>
-        </select>
-      </div>
+  <div class="row">
+    <input id="location" placeholder="Enter city..." style="padding:10px; width:200px;" />
+    <select id="language" style="padding:10px;">
+      <option value="english">English</option>
+      <option value="hindi">Hindi</option>
+      <option value="punjabi">Punjabi</option>
+      <option value="tamil">Tamil</option>
+      <option value="telugu">Telugu</option>
+      <option value="kannada">Kannada</option>
+      <option value="malayalam">Malayalam</option>
+      <option value="marathi">Marathi</option>
+      <option value="bengali">Bengali</option>
+    </select>
+    <button id="searchBtn" class="btn">Search</button>
+  </div>
 
-      <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
-    </section>
+  <br />
 
-    <section class="weather-cards">
-      <div class="card glass">
-        <div class="card-icon">📍</div>
-        <div class="card-body">
-          <div class="card-label">Location</div>
-          <div id="wLocation" class="card-value">—</div>
-        </div>
-      </div>
+  <h2>
+    Weather: <span id="wLocation"></span>
+    | <span id="wTemp"></span>
+    | <span id="wMood"></span>
+  </h2>
 
-      <div class="card glass">
-        <div class="card-icon">🌡</div>
-        <div class="card-body">
-          <div class="card-label">Temperature</div>
-          <div id="wTemp" class="card-value">—</div>
-        </div>
-      </div>
+  <button id="createPlaylistBtn" class="btn">Create Spotify Playlist</button>
 
-      <div class="card glass">
-        <div class="card-icon">🎧</div>
-        <div class="card-body">
-          <div class="card-label">Mood</div>
-          <div id="wMood" class="card-value">—</div>
-        </div>
-      </div>
-    </section>
+  <div id="playlistGrid"></div>
 
-    <section class="curation">
-      <h3 id="curationTitle">Your Weather Collection</h3>
-      <p class="subtitle">Immersive playlists tailored to current conditions.</p>
+  <div id="toast"></div>
 
-      <div id="playlistGrid" class="grid"></div>
-
-      <div class="actions">
-        <button id="createBtn" class="btn glass hidden">Create Playlist on Spotify</button>
-        <a id="playlistLink" class="btn link hidden" target="_blank" rel="noopener">Open Playlist →</a>
-      </div>
-    </section>
-
-    <div id="toast" class="toast hidden"></div>
-  </main>
-
-  <script src="/app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
