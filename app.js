@@ -11,6 +11,7 @@ const userName = document.getElementById("userName");
 const locationInput = document.getElementById("location");
 const languageSelect = document.getElementById("language");
 const searchBtn = document.getElementById("searchBtn");
+const createPlaylistBtn = document.getElementById("createPlaylistBtn");
 
 const wLocation = document.getElementById("wLocation");
 const wTemp = document.getElementById("wTemp");
@@ -24,8 +25,8 @@ const toast = document.getElementById("toast");
 // ===============================
 function showToast(msg) {
   toast.innerText = msg;
-  toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 2500);
+  toast.style.display = "block";
+  setTimeout(() => (toast.style.display = "none"), 2000);
 }
 
 function updateUI() {
@@ -44,73 +45,64 @@ async function postJSON(url, data) {
   const r = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
   });
 
-  let text = await r.text();
+  const text = await r.text();
 
   try {
     return JSON.parse(text);
   } catch (err) {
-    console.error("Bad JSON returned! Response was:", text);
-    throw new Error("Bad JSON from server");
+    console.error("BAD JSON:", text);
+    return { error: true };
   }
 }
 
 
 // ===============================
-// LOGIN FLOW
+// LOGIN
 // ===============================
 loginBtn.onclick = async () => {
-  try {
-    const res = await fetch("/api/login");
-    const { authUrl } = await res.json();
+  const res = await fetch("/api/login");
+  const { authUrl } = await res.json();
 
-    const popup = window.open(authUrl, "_blank", "width=600,height=700");
+  const popup = window.open(authUrl, "_blank", "width=600,height=700");
 
-    window.addEventListener("message", (event) => {
-      if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
-        spotifyToken = event.data.token;
-        spotifyUser = event.data.user;
+  window.addEventListener("message", (event) => {
+    if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
+      spotifyToken = event.data.token;
+      spotifyUser = event.data.user;
 
-        localStorage.setItem("spotifyToken", spotifyToken);
-        localStorage.setItem("spotifyUser", JSON.stringify(spotifyUser));
+      localStorage.setItem("spotifyToken", spotifyToken);
+      localStorage.setItem("spotifyUser", JSON.stringify(spotifyUser));
 
-        popup.close();
-        updateUI();
-      }
-    });
-  } catch (err) {
-    console.error(err);
-    showToast("Login failed");
-  }
+      popup.close();
+      updateUI();
+    }
+  });
 };
 
 logoutBtn.onclick = () => {
   localStorage.clear();
-  spotifyUser = null;
   spotifyToken = null;
+  spotifyUser = null;
   updateUI();
 };
 
 
 // ===============================
-// WEATHER FETCH
+// API CALLS
 // ===============================
 async function getWeather(city) {
   return postJSON("/api/get-weather", { city });
 }
 
-
-// ===============================
-// SONG FETCH
-// ===============================
 async function getSongs(language, mood) {
-  return postJSON("/api/get-songs", {
-    token: spotifyToken,
-    language,
-    mood
-  });
+  return postJSON("/api/get-songs", { token: spotifyToken, language, mood });
+}
+
+async function createPlaylist() {
+  return postJSON("/api/create-playlist", { token: spotifyToken });
 }
 
 
@@ -124,28 +116,6 @@ function renderSongs(tracks) {
     playlistGrid.innerHTML = `<div class="empty">No songs found</div>`;
     return;
   }
-const createPlaylistBtn = document.getElementById("createPlaylistBtn");
-
-createPlaylistBtn.onclick = async () => {
-  if (!spotifyToken) return showToast("Login first!");
-
-  try {
-    const res = await postJSON("/api/create-playlist", {
-      token: spotifyToken
-    });
-
-    if (res.url) {
-      window.open(res.url, "_blank");
-      showToast("Playlist created!");
-    } else {
-      showToast("Playlist failed");
-    }
-
-  } catch (err) {
-    console.error(err);
-    showToast("Error creating playlist");
-  }
-};
 
   tracks.forEach((t) => {
     playlistGrid.innerHTML += `
@@ -163,45 +133,49 @@ createPlaylistBtn.onclick = async () => {
 
 
 // ===============================
-// MAIN SEARCH LOGIC
+// MAIN SEARCH
 // ===============================
 searchBtn.onclick = async () => {
   if (!spotifyToken) return showToast("Login first!");
 
-  let city = locationInput.value.trim();
+  const city = locationInput.value.trim();
   if (!city) return showToast("Enter a city");
 
-  try {
-    const weather = await getWeather(city);
-    if (!weather || weather.error) {
-      showToast("Weather not found");
-      return;
-    }
+  const weather = await getWeather(city);
+  if (!weather || weather.error) return showToast("Weather not found");
 
-    wLocation.innerText = city;
-    wTemp.innerText = `${weather.temp}°C`;
-    wMood.innerText = weather.condition;
+  wLocation.innerText = city;
+  wTemp.innerText = `${weather.temp}°C`;
+  wMood.innerText = weather.condition;
 
-    // Determine mood
-    let mood = "chill";
-    if (weather.temp > 32) mood = "energetic";
-    if (weather.temp < 20) mood = "cozy";
-    if (weather.condition.includes("Rain")) mood = "lofi";
-    if (weather.condition.includes("Haze")) mood = "mellow";
+  // Determine mood
+  let mood = "chill";
+  if (weather.temp > 32) mood = "energetic";
+  if (weather.temp < 20) mood = "cozy";
+  if (weather.condition.includes("Rain")) mood = "lofi";
+  if (weather.condition.includes("Haze")) mood = "mellow";
 
-    const songs = await getSongs(languageSelect.value, mood);
+  const songs = await getSongs(languageSelect.value, mood);
 
-    if (!songs.tracks) {
-      showToast("No tracks found");
-      playlistGrid.innerHTML = "";
-      return;
-    }
+  if (!songs.tracks) return showToast("No tracks found");
 
-    renderSongs(songs.tracks);
+  renderSongs(songs.tracks);
+};
 
-  } catch (err) {
-    console.error(err);
-    showToast("Error");
+
+// ===============================
+// CREATE PLAYLIST BTN
+// ===============================
+createPlaylistBtn.onclick = async () => {
+  if (!spotifyToken) return showToast("Login first!");
+
+  const r = await createPlaylist();
+
+  if (r.url) {
+    window.open(r.url, "_blank");
+    showToast("Playlist Created!");
+  } else {
+    showToast("Playlist Failed");
   }
 };
 
@@ -210,4 +184,3 @@ searchBtn.onclick = async () => {
 // INIT
 // ===============================
 updateUI();
-
