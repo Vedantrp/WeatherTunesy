@@ -1,113 +1,73 @@
-// api/callback.js
-// Node / Next serverless handler for Spotify OAuth callback.
-// It exchanges code => tokens, fetches /v1/me, posts message to opener.
-
-export default async function handler(req, res) {
+export default async function handler(req, res){
   try {
-    // Only GET (Spotify will redirect with ?code=)
-    if (req.method !== "GET") {
-      return res.status(405).send("Method Not Allowed");
+    const { code } = req.query;
+    if (!code) return res.status(400).send("Missing code");
+
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
+
+    if (!clientId || !clientSecret || !redirectUri){
+      console.error("Missing env in callback");
+      return res.status(500).send("Server misconfigured");
     }
 
-    const code = req.query.code;
-    if (!code) {
-      console.error("CALLBACK: missing code query param", req.query);
-      return res.status(400).send("Missing code");
-    }
-
-    const client_id = process.env.SPOTIFY_CLIENT_ID;
-    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
-
-    if (!client_id || !client_secret || !redirect_uri) {
-      console.error("CALLBACK: missing envs", {
-        client_id: !!client_id,
-        client_secret: !!client_secret,
-        redirect_uri: !!redirect_uri
-      });
-      return res.status(500).send("Server env configuration error");
-    }
-
-    // Exchange code for tokens
-    const body = new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri
-    });
-
-    const tokenResp = await fetch("https://accounts.spotify.com/api/token", {
+    // exchange code for token
+    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
       headers: {
-        "Authorization": "Basic " + Buffer.from(${client_id}:${client_secret}).toString("base64"),
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type":"application/x-www-form-urlencoded",
+        "Authorization":"Basic " + Buffer.from(${clientId}:${clientSecret}).toString("base64")
       },
-      body: body.toString()
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri
+      })
     });
 
-    const tokenData = await tokenResp.json();
-    if (!tokenResp.ok) {
-      console.error("CALLBACK: token exchange failed", tokenData);
-      // Send a minimal postMessage to the opener so the popup doesn't hang
-      return res.status(502).send(`
-        <script>
-          window.opener && window.opener.postMessage({ type: 'SPOTIFY_AUTH_ERROR', error: ${JSON.stringify(tokenData)} }, "*");
-          window.close();
-        </script>
-      `);
+    const tokenJson = await tokenRes.json();
+    if (!tokenRes.ok) {
+      console.error("Token error", tokenJson);
+      const errMsg = tokenJson.error_description || tokenJson.error || "Token exchange failed";
+      // send a front-end message if opened as popup
+      return res.status(400).send(<script>window.opener && window.opener.postMessage({ type:'SPOTIFY_AUTH_ERROR', error:${JSON.stringify(errMsg)} }, '*'); window.close();</script>);
     }
 
-    // tokenData has access_token, refresh_token, expires_in
-    const access_token = tokenData.access_token;
+    const accessToken = tokenJson.access_token;
+    const refreshToken = tokenJson.refresh_token;
 
-    // Get user's profile
-    const userResp = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: Bearer ${access_token} }
+    // fetch user profile
+    const profileRes = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: Bearer ${accessToken} }
     });
-    const userData = await userResp.json();
-    if (!userResp.ok) {
-      console.error("CALLBACK: user fetch failed", userData);
-      return res.status(502).send(`
-        <script>
-          window.opener && window.opener.postMessage({ type: 'SPOTIFY_AUTH_ERROR', error: ${JSON.stringify(userData)} }, "*");
-          window.close();
-        </script>
-      `);
-    }
+    const profileJson = await profileRes.json();
 
-    // Successful — post to opener and close popup
-    // Escape tokens & user safely into the HTML string
-    const safe = (v) => JSON.stringify(v).replace(/</g, "\\u003c");
+    // post message to opener window and close
+    const payload = {
+      type: "SPOTIFY_AUTH_SUCCESS",
+      accessToken,
+      refreshToken,
+      user: profileJson
+    };
 
-    return res.status(200).send(`
-      <html>
-        <body>
-          <script>
-            try {
-              window.opener && window.opener.postMessage({
-                type: 'SPOTIFY_AUTH_SUCCESS',
-                token: ${safe(tokenData.access_token)},
-                refreshToken: ${safe(tokenData.refresh_token)},
-                expiresIn: ${safe(tokenData.expires_in)},
-                user: ${safe(userData)}
-              }, '*');
-            } catch (e) {
-              console.error('postMessage error', e);
-            }
-            window.close();
-          </script>
-          <div style="font-family:sans-serif;padding:20px">Logging in... you can close this window.</div>
-        </body>
-      </html>
-    `);
-  } catch (err) {
-    console.error("CALLBACK ERROR:", err);
-    // Log full error and return a short page so user knows to check server logs
-    return res.status(500).send(`
+    // return tiny html that posts message to opener window
+    const html = `
       <html><body>
-        <h3>Server error during Spotify callback</h3>
-        <pre>${String(err.message || err)}</pre>
-        <p>Check server logs for details.</p>
+        <script>
+          try {
+            window.opener && window.opener.postMessage(${JSON.stringify(payload)}, "*");
+          } catch(e){ console.error(e) }
+          // close after a small timeout
+          setTimeout(()=> window.close(), 600);
+        </script>
+        <p>Logging you in... If nothing happens, close this window and retry.</p>
       </body></html>
-    `);
+    `;
+    res.setHeader("content-type","text/html");
+    res.status(200).send(html);
+  } catch (err){
+    console.error("CALLBACK ERROR", err);
+    res.status(500).send("Callback failed");
   }
 }
