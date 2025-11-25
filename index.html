@@ -9,45 +9,97 @@
 
 <body>
 
-  <h1>WeatherTunes</h1>
+  <div class="bg"></div>
+  <div class="particles"></div>
 
-  <div class="row">
-    <button id="loginBtn" class="btn">Login with Spotify</button>
-    <button id="logoutBtn" class="btn hidden">Logout</button>
-    <div id="userName"></div>
+  <div class="header">
+    <div class="brand">
+      <div class="logo">🎵</div>
+      <div class="title">
+        <h1>WeatherTunes</h1>
+        <p>Music that matches the sky.</p>
+      </div>
+    </div>
+
+    <div class="auth">
+      <span id="userName" class="user-name"></span>
+      <button id="loginBtn" class="btn glass">Login with Spotify</button>
+      <button id="logoutBtn" class="btn glass hidden">Logout</button>
+    </div>
   </div>
 
-  <br />
+  <div class="container">
 
-  <div class="row">
-    <input id="location" placeholder="Enter city..." style="padding:10px; width:200px;" />
-    <select id="language" style="padding:10px;">
-      <option value="english">English</option>
-      <option value="hindi">Hindi</option>
-      <option value="punjabi">Punjabi</option>
-      <option value="tamil">Tamil</option>
-      <option value="telugu">Telugu</option>
-      <option value="kannada">Kannada</option>
-      <option value="malayalam">Malayalam</option>
-      <option value="marathi">Marathi</option>
-      <option value="bengali">Bengali</option>
-    </select>
-    <button id="searchBtn" class="btn">Search</button>
+    <div class="hero">
+      <div class="hero-icon">☁️</div>
+      <h2>Weather Based Music Curator</h2>
+      <p>Enter a city and vibe instantly based on the sky above it.</p>
+    </div>
+
+    <div class="query">
+      <div class="query-group glass">
+        <label>Location</label>
+        <input id="location" placeholder="Enter city..." />
+      </div>
+
+      <div class="query-group glass">
+        <label>Language</label>
+        <select id="language">
+          <option value="english">English</option>
+          <option value="hindi">Hindi</option>
+          <option value="punjabi">Punjabi</option>
+          <option value="tamil">Tamil</option>
+          <option value="telugu">Telugu</option>
+          <option value="kannada">Kannada</option>
+          <option value="malayalam">Malayalam</option>
+          <option value="marathi">Marathi</option>
+          <option value="bengali">Bengali</option>
+        </select>
+      </div>
+
+      <button id="searchBtn" class="btn cta">Search</button>
+    </div>
+
+    <div class="weather-cards">
+      <div class="card glass">
+        <div class="card-icon">📍</div>
+        <div>
+          <div class="card-label">Location</div>
+          <div id="wLocation" class="card-value"></div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-icon">🌡️</div>
+        <div>
+          <div class="card-label">Temperature</div>
+          <div id="wTemp" class="card-value"></div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-icon">🌤️</div>
+        <div>
+          <div class="card-label">Condition</div>
+          <div id="wMood" class="card-value"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="createPlaylistBtn" class="btn glass">Create Spotify Playlist</button>
+    </div>
+
+    <div class="curation">
+      <h3>Your Curated Tracks</h3>
+      <p class="subtitle">Generated based on weather + language mood match</p>
+
+      <div id="playlistGrid" class="grid"></div>
+    </div>
+
   </div>
 
-  <br />
-
-  <h2>
-    Weather: <span id="wLocation"></span>
-    | <span id="wTemp"></span>
-    | <span id="wMood"></span>
-  </h2>
-
-  <button id="createPlaylistBtn" class="btn">Create Spotify Playlist</button>
-
-  <div id="playlistGrid"></div>
-
-  <div id="toast"></div>
+  <div id="toast" class="toast hidden"></div>
 
   <script src="./app.js"></script>
 </body>
