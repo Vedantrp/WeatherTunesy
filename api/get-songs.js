@@ -15,6 +15,12 @@ export default async function handler(req, res) {
       english: { market: "US", keywords: ["english chill", "indie pop"] },
       hindi: { market: "IN", keywords: ["hindi chill", "arijit singh"] },
       punjabi: { market: "IN", keywords: ["punjabi chill", "ap dhillon"] },
+      tamil: { market: "IN", keywords: ["tamil chill", "anirudh"] },
+      telugu: { market: "IN", keywords: ["telugu chill", "sid sriram"] },
+      marathi: { market: "IN", keywords: ["marathi hits", "marathi lo-fi"] },
+      kannada: { market: "IN", keywords: ["kannada hits"] },
+      malayalam: { market: "IN", keywords: ["malayalam chill"] },
+      bengali: { market: "IN", keywords: ["bengali indie"] },
     };
 
     const lang = langProfiles[language] || langProfiles.english;
@@ -119,35 +125,42 @@ export default async function handler(req, res) {
       return true;
     });
 
-    // shuffle
-    for (let i = unique.length - 1; i > 0; i--) {
+    // -----------------------------
+    // STRICT LANGUAGE FILTERING
+    // -----------------------------
+    const strictFilters = {
+      english: [/english|uk|us|pop/i],
+      hindi: [/hindi|bollywood|arijit/i],
+      punjabi: [/punjabi|ap dhillon/i],
+      tamil: [/tamil|anirudh|kollywood/i],
+      telugu: [/telugu|sid sriram|tollywood/i],
+      kannada: [/kannada/i],
+      malayalam: [/malayalam/i],
+      bengali: [/bengali/i],
+      marathi: [/marathi/i],
+    };
+
+    const strictSet = strictFilters[language] || [];
+
+    const filteredTracks = unique.filter((t) =>
+      strictSet.some((regex) => regex.test(t.artist) || regex.test(t.name))
+    );
+
+    const finalTracks =
+      filteredTracks.length > 10 ? filteredTracks : unique.slice(0, 40);
+
+    // -----------------------------
+    // SHUFFLE
+    // -----------------------------
+    for (let i = finalTracks.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [unique[i], unique[j]] = [unique[j], unique[i]];
+      [finalTracks[i], finalTracks[j]] = [finalTracks[j], finalTracks[i]];
     }
 
-    return res.status(200).json({ tracks: unique.slice(0, 40) });
+    return res.status(200).json({ tracks: finalTracks.slice(0, 40) });
+
   } catch (err) {
     console.error("SONG FETCH ERROR:", err);
     return res.status(500).json({ error: "Song fetch failed" });
   }
 }
-const strictFilters = {
-  english: [/english|uk|us|pop/i],
-  hindi: [/hindi|bollywood|arijit/i],
-  punjabi: [/punjabi|ap dhillon/i],
-  tamil: [/tamil|kollywood|anirudh/i],
-  telugu: [/telugu|tollywood|sid sriram/i],
-  kannada: [/kannada/i],
-  malayalam: [/malayalam/i],
-  bengali: [/bengali/i],
-  marathi: [/marathi/i],
-};
-
-const strictSet = strictFilters[language] || [];
-
-const filteredTracks = unique.filter((t) =>
-  strictSet.some((regex) => regex.test(t.artist) || regex.test(t.name))
-);
-
-// fallback if filtering removed too many
-const finalTracks = filteredTracks.length > 10 ? filteredTracks : unique;
