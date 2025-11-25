@@ -1,33 +1,34 @@
-// api/login.js
-export default function handler(req, res) {
+// /api/login.js
+export default function handler(req, res){
   try {
-    if (req.method !== "GET") return res.status(405).json({ error: "Only GET allowed" });
+    if (req.method !== "GET") return res.status(405).json({ error: "GET only" });
 
     const clientId = process.env.SPOTIFY_CLIENT_ID;
     const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
 
     if (!clientId || !redirectUri) {
-      console.error("LOGIN: Missing envs", { clientId: !!clientId, redirectUri: !!redirectUri });
-      return res.status(500).json({ error: "ENV VARS FAIL", clientId: !!clientId, redirectUri: !!redirectUri });
+      return res.status(500).json({
+        error: "ENV VARS FAIL",
+        clientId: !!clientId,
+        redirectUri: !!redirectUri
+      });
     }
 
     const scope = [
       "playlist-modify-private",
       "playlist-modify-public",
-      "user-read-email",
-      "user-read-private"
-    ].join("%20");
+      "user-read-email"
+    ].join(" ");
 
-    const authUrl =
-      https://accounts.spotify.com/authorize +
-      ?client_id=${encodeURIComponent(clientId)} +
-      &response_type=code +
-      &redirect_uri=${encodeURIComponent(redirectUri)} +
-      &scope=${scope};
+    const authUrl = "https://accounts.spotify.com/authorize" +
+      "?response_type=code" +
+      &client_id=${encodeURIComponent(clientId)} +
+      &scope=${encodeURIComponent(scope)} +
+      &redirect_uri=${encodeURIComponent(redirectUri)};
 
-    return res.status(200).json({ authUrl });
-  } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    return res.status(500).json({ error: "Login handler crash" });
+    res.status(200).json({ authUrl });
+  } catch (err){
+    console.error("LOGIN ERROR", err);
+    res.status(500).json({ error: "Login handler crash" });
   }
 }
