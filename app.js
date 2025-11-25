@@ -2,6 +2,7 @@
 // GLOBAL STATE
 // ===============================
 let spotifyToken = localStorage.getItem("spotifyToken") || null;
+let refreshToken = localStorage.getItem("refreshToken") || null;
 let spotifyUser = JSON.parse(localStorage.getItem("spotifyUser") || "null");
 
 // UI refs
@@ -59,7 +60,30 @@ async function postJSON(url, data) {
 
 
 // ===============================
-// LOGIN
+// REFRESH TOKEN FLOW
+// ===============================
+async function refreshSpotifyToken() {
+  if (!refreshToken) return null;
+
+  try {
+    const r = await postJSON("/api/refresh-token", {
+      refresh_token: refreshToken,
+    });
+
+    if (r.access_token) {
+      spotifyToken = r.access_token;
+      localStorage.setItem("spotifyToken", spotifyToken);
+      return spotifyToken;
+    }
+  } catch (err) {
+    console.error("Refresh token error:", err);
+  }
+  return null;
+}
+
+
+// ===============================
+// LOGIN FLOW
 // ===============================
 loginBtn.onclick = async () => {
   const res = await fetch("/api/login");
@@ -71,8 +95,10 @@ loginBtn.onclick = async () => {
     if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
       spotifyToken = event.data.token;
       spotifyUser = event.data.user;
+      refreshToken = event.data.refresh_token; // STORE REFRESH TOKEN
 
       localStorage.setItem("spotifyToken", spotifyToken);
+      localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("spotifyUser", JSON.stringify(spotifyUser));
 
       popup.close();
@@ -84,9 +110,24 @@ loginBtn.onclick = async () => {
 logoutBtn.onclick = () => {
   localStorage.clear();
   spotifyToken = null;
+  refreshToken = null;
   spotifyUser = null;
   updateUI();
 };
+
+
+// ===============================
+// AUTO-LOGIN ON PAGE LOAD
+// ===============================
+(async function autoLogin() {
+  if (!refreshToken) return;
+
+  const newToken = await refreshSpotifyToken();
+  if (newToken) {
+    console.log("Auto-login with refreshed token");
+    updateUI();
+  }
+})();
 
 
 // ===============================
@@ -97,11 +138,32 @@ async function getWeather(city) {
 }
 
 async function getSongs(language, mood) {
-  return postJSON("/api/get-songs", { token: spotifyToken, language, mood });
+  const r = await postJSON("/api/get-songs", {
+    token: spotifyToken,
+    language,
+    mood,
+  });
+
+  // If token expired → auto refresh → retry ONCE
+  if (r.error === "Spotify token expired") {
+    const newToken = await refreshSpotifyToken();
+    if (newToken) {
+      return postJSON("/api/get-songs", {
+        token: newToken,
+        language,
+        mood,
+      });
+    }
+  }
+
+  return r;
 }
 
-async function createPlaylist() {
-  return postJSON("/api/create-playlist", { token: spotifyToken });
+async function createPlaylist(tracks) {
+  return postJSON("/api/create-playlist", {
+    token: spotifyToken,
+    tracks,
+  });
 }
 
 
@@ -115,6 +177,8 @@ function renderSongs(tracks) {
     playlistGrid.innerHTML = `<div class="empty glass">No songs found</div>`;
     return;
   }
+
+  window.currentTracks = tracks; // Store for playlist creation
 
   tracks.forEach((t) => {
     playlistGrid.innerHTML += `
@@ -146,7 +210,6 @@ searchBtn.onclick = async () => {
   wTemp.innerText = `${weather.temp}°C`;
   wMood.innerText = weather.condition;
 
-  // Determine mood
   let mood = "chill";
   if (weather.temp > 32) mood = "energetic";
   if (weather.temp < 20) mood = "cozy";
@@ -166,8 +229,9 @@ searchBtn.onclick = async () => {
 // ===============================
 createPlaylistBtn.onclick = async () => {
   if (!spotifyToken) return showToast("Login first!");
+  if (!window.currentTracks) return showToast("Search songs first!");
 
-  const r = await createPlaylist();
+  const r = await createPlaylist(window.currentTracks);
 
   if (r.url) {
     window.open(r.url, "_blank");
