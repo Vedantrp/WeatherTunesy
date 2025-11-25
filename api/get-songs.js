@@ -102,13 +102,14 @@ export default async function handler(req, res) {
         const arr = (j.items || [])
           .map((i) => i.track)
           .filter(Boolean)
-          .map((t) => ({
-            id: t.id,
-            name: t.name,
-            artist: t.artists?.[0]?.name || "Unknown",
-            image: t.album?.images?.[0]?.url,
-            url: t.external_urls?.spotify,
-          }));
+         .map((t) => ({
+  id: t.id,
+  uri: t.uri,               // REQUIRED to add songs to playlist
+  name: t.name,
+  artist: t.artists?.[0]?.name || "Unknown",
+  url: t.external_urls?.spotify
+}));
+
 
         tracks.push(...arr);
         if (tracks.length > 200) break;
