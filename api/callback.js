@@ -1,65 +1,113 @@
-import fetch from "node-fetch";
+// api/callback.js
+// Node / Next serverless handler for Spotify OAuth callback.
+// It exchanges code => tokens, fetches /v1/me, posts message to opener.
 
 export default async function handler(req, res) {
   try {
+    // Only GET (Spotify will redirect with ?code=)
     if (req.method !== "GET") {
-      return res.status(405).json({ error: "GET only" });
+      return res.status(405).send("Method Not Allowed");
     }
- 
+
     const code = req.query.code;
     if (!code) {
-      return res.status(400).send("No code provided");
+      console.error("CALLBACK: missing code query param", req.query);
+      return res.status(400).send("Missing code");
     }
 
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirectUri = process.env.SPOTIFY_REDIRECT_URI;
+    const client_id = process.env.SPOTIFY_CLIENT_ID;
+    const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
+    const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
-    if (!clientId || !clientSecret || !redirectUri) {
-      return res.status(500).send("Missing environment variables");
+    if (!client_id || !client_secret || !redirect_uri) {
+      console.error("CALLBACK: missing envs", {
+        client_id: !!client_id,
+        client_secret: !!client_secret,
+        redirect_uri: !!redirect_uri
+      });
+      return res.status(500).send("Server env configuration error");
     }
 
-    // 1️⃣ Exchange CODE ➜ ACCESS TOKEN
-    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+    // Exchange code for tokens
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri
+    });
+
+    const tokenResp = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectUri,
-        client_id: clientId,
-        client_secret: clientSecret
-      }),
+      headers: {
+        "Authorization": "Basic " + Buffer.from(${client_id}:${client_secret}).toString("base64"),
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: body.toString()
     });
 
-    const tokenData = await tokenRes.json();
-
-    if (tokenData.error) {
-      return res.status(400).send("Token error: " + tokenData.error_description);
+    const tokenData = await tokenResp.json();
+    if (!tokenResp.ok) {
+      console.error("CALLBACK: token exchange failed", tokenData);
+      // Send a minimal postMessage to the opener so the popup doesn't hang
+      return res.status(502).send(`
+        <script>
+          window.opener && window.opener.postMessage({ type: 'SPOTIFY_AUTH_ERROR', error: ${JSON.stringify(tokenData)} }, "*");
+          window.close();
+        </script>
+      `);
     }
 
-    // 2️⃣ Get user profile
-    const userRes = await fetch("https://api.spotify.com/v1/me", {
-      headers: { Authorization: Bearer ${tokenData.access_token} },
+    // tokenData has access_token, refresh_token, expires_in
+    const access_token = tokenData.access_token;
+
+    // Get user's profile
+    const userResp = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: Bearer ${access_token} }
     });
+    const userData = await userResp.json();
+    if (!userResp.ok) {
+      console.error("CALLBACK: user fetch failed", userData);
+      return res.status(502).send(`
+        <script>
+          window.opener && window.opener.postMessage({ type: 'SPOTIFY_AUTH_ERROR', error: ${JSON.stringify(userData)} }, "*");
+          window.close();
+        </script>
+      `);
+    }
 
-    const userData = await userRes.json();
+    // Successful — post to opener and close popup
+    // Escape tokens & user safely into the HTML string
+    const safe = (v) => JSON.stringify(v).replace(/</g, "\\u003c");
 
-    // 3️⃣ Return a small HTML page to send data back to opener
-    return res.send(`
-      <script>
-        window.opener.postMessage({
-          type: "SPOTIFY_AUTH_SUCCESS",
-          token: "${tokenData.access_token}",
-          refreshToken: "${tokenData.refresh_token || ""}",
-          user: ${JSON.stringify(userData)}
-        }, "*");
-        window.close();
-      </script>
+    return res.status(200).send(`
+      <html>
+        <body>
+          <script>
+            try {
+              window.opener && window.opener.postMessage({
+                type: 'SPOTIFY_AUTH_SUCCESS',
+                token: ${safe(tokenData.access_token)},
+                refreshToken: ${safe(tokenData.refresh_token)},
+                expiresIn: ${safe(tokenData.expires_in)},
+                user: ${safe(userData)}
+              }, '*');
+            } catch (e) {
+              console.error('postMessage error', e);
+            }
+            window.close();
+          </script>
+          <div style="font-family:sans-serif;padding:20px">Logging in... you can close this window.</div>
+        </body>
+      </html>
     `);
-
-  } catch (e) {
-    console.error("CALLBACK ERROR:", e);
-    return res.status(500).send("Callback failed");
+  } catch (err) {
+    console.error("CALLBACK ERROR:", err);
+    // Log full error and return a short page so user knows to check server logs
+    return res.status(500).send(`
+      <html><body>
+        <h3>Server error during Spotify callback</h3>
+        <pre>${String(err.message || err)}</pre>
+        <p>Check server logs for details.</p>
+      </body></html>
+    `);
   }
 }
