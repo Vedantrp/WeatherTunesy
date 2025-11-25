@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     if (req.method !== "GET") {
       return res.status(405).json({ error: "GET only" });
     }
-
+ 
     const code = req.query.code;
     if (!code) {
       return res.status(400).send("No code provided");
