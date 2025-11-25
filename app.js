@@ -118,7 +118,7 @@ function renderSongs(tracks) {
   playlistGrid.innerHTML = "";
 
   if (!tracks.length) {
-    playlistGrid.innerHTML = <div class="empty">No songs found</div>;
+    playlistGrid.innerHTML = '<div class="empty">No songs found</div>';
     return;
   }
 
@@ -185,3 +185,4 @@ searchBtn.onclick = async () => {
 // INIT
 // ===============================
 updateUI();
+
