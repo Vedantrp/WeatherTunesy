@@ -1,18 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/> 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>WeatherTunes</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css"/>
-  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body class="theme-default">
-  <!-- Motion gradient background -->
   <div id="bg" class="bg"></div>
   <div id="particles" class="particles"></div>
 
@@ -33,23 +27,22 @@
   </header>
 
   <main class="container">
-    <!-- Hero -->
     <section class="hero">
       <div class="hero-icon">♪</div>
       <h2>Experience music that matches your weather</h2>
       <p>We blend real-time weather, mood, and language to curate the perfect playlist.</p>
     </section>
 
-    <!-- Query row -->
     <section class="query">
       <div class="query-group glass">
         <label for="location">Location</label>
-        <input id="location" placeholder="Enter city (e.g., London)"/>
+        <input id="location" placeholder="Enter city (e.g., London)" />
       </div>
 
       <div class="query-group glass">
         <label for="language">Language</label>
         <select id="language">
+          <!-- 15+ languages included -->
           <option value="english">English</option>
           <option value="hindi">Hindi / Bollywood</option>
           <option value="punjabi">Punjabi</option>
@@ -73,7 +66,6 @@
       <button id="searchBtn" class="btn cta">Get Weather & Playlist</button>
     </section>
 
-    <!-- Weather summary -->
     <section class="weather-cards">
       <div class="card glass">
         <div class="card-icon">📍</div>
@@ -94,13 +86,12 @@
       <div class="card glass">
         <div class="card-icon">🎧</div>
         <div class="card-body">
-          <div class="card-label">Current Mood</div>
+          <div class="card-label">Mood</div>
           <div id="wMood" class="card-value">—</div>
         </div>
       </div>
     </section>
 
-    <!-- Curated section -->
     <section class="curation">
       <h3 id="curationTitle">Your Weather Collection</h3>
       <p class="subtitle">Immersive playlists tailored to current conditions.</p>
@@ -110,29 +101,12 @@
       <div class="actions">
         <button id="createBtn" class="btn glass hidden">Create Playlist on Spotify</button>
         <a id="playlistLink" class="btn link hidden" target="_blank" rel="noopener">Open Playlist →</a>
-        <button id="shareBtn" class="btn glass hidden">Share Card</button>
       </div>
     </section>
-
-    <!-- Share Card Modal -->
-    <div id="shareModal" class="modal hidden">
-      <div class="modal-card glass">
-        <div class="modal-head">
-          <h4>Share Preview</h4>
-          <button id="closeShare" class="btn glass btn-danger sm">✕</button>
-        </div>
-        <div class="modal-body">
-          <canvas id="shareCanvas" width="1080" height="1350"></canvas>
-          <div class="modal-actions">
-            <button id="downloadShare" class="btn cta">Download PNG</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div id="toast" class="toast hidden"></div>
   </main>
 
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>
