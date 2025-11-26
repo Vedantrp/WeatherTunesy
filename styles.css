@@ -1,225 +1,30 @@
-body {
-  margin: 0;
-  font-family: "Inter", sans-serif;
-  background: #f5f6ff;
-}
+/* basic */
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#111;background:linear-gradient(180deg,#f0f4ff,#fdf6fb);}
 
-/* Navbar */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 22px 34px;
-  background: white;
-}
+/* navbar */
+.navbar{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;background:transparent}
+.left{display:flex;align-items:center;gap:10px}.logo{font-size:26px}.brand{font-weight:600;font-size:18px}
+.right{display:flex;align-items:center;gap:12px}.login-btn{padding:10px 16px;border-radius:12px;border:1px solid #e6e6e6;background:#fff;cursor:pointer}.hidden{display:none}
+.language-select{padding:8px 12px;border-radius:10px}
 
-.logo {
-  font-size: 26px;
-}
+/* search */
+.search-section{padding:18px 28px}.search-box{display:flex;background:#fff;border-radius:22px;border:1px solid #e9e9f0;overflow:hidden;align-items:center}
+.search-box input{flex:1;padding:14px;border:0;outline:none;font-size:15px}.search-icon{padding:12px;border:0;background:#f0efff;cursor:pointer}
 
-.brand {
-  font-size: 20px;
-  font-weight: 600;
-  margin-left: 10px;
-}
+/* chips */
+.city-chips{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}.chip{background:#fff;border:1px solid #eee;padding:8px 14px;border-radius:18px}
 
-.left {
-  display: flex;
-  align-items: center;
-}
+/* weather */
+.weather-card{margin:22px 28px;padding:26px;border-radius:22px;background:linear-gradient(135deg,#6a7da7,#4a5570);color:#fff;display:flex;justify-content:space-between;align-items:center;box-shadow:0 8px 26px rgba(38,48,66,0.08)}
+.left-side{display:flex;align-items:center;gap:16px}.weather-icon{font-size:56px}.weather-title{margin:0;font-size:22px}.weather-desc{margin:6px 0}.temp-tag{background:rgba(255,255,255,.15);padding:6px 12px;border-radius:18px;font-size:13px}
+.right-side{text-align:right}.temp-value{margin:0;font-size:48px}
 
-.right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+/* playlists */
+.section-title{padding-left:28px;margin-bottom:0;font-size:20px;font-weight:600}.section-subtitle{padding-left:28px;margin-top:6px;color:#666}
+.playlist-grid{padding:20px 28px 60px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.playlist-card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 8px 18px rgba(17,24,39,0.06)}
+.playlist-card img{width:100%;height:160px;object-fit:cover}.card-content{padding:14px}.card-title{font-weight:600;font-size:16px}.card-desc{color:#666;margin:6px 0}.track-count{font-size:13px;opacity:.85}
 
-.login-btn {
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: 1px solid #ddd;
-  background: white;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-.user-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-}
-
-.username {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.language-select {
-  padding: 10px 16px;
-  border-radius: 12px;
-}
-
-/* Search Bar */
-.search-section {
-  padding: 26px 34px;
-}
-
-.search-box {
-  display: flex;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  overflow: hidden;
-  align-items: center;
-  padding-left: 14px;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  outline: none;
-  font-size: 16px;
-}
-
-.search-icon {
-  background: #ececff;
-  padding: 14px 18px;
-  border: none;
-  cursor: pointer;
-  font-size: 17px;
-}
-
-/* City chips */
-.city-chips {
-  margin-top: 14px;
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.chip {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 18px;
-  padding: 8px 16px;
-}
-
-/* Weather Card */
-.weather-card {
-  margin: 24px 34px;
-  padding: 30px;
-  border-radius: 26px;
-  background: linear-gradient(135deg, #6a7da7, #4a5570);
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.left-side {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.weather-icon {
-  font-size: 60px;
-}
-
-.weather-title {
-  font-size: 26px;
-  margin: 0;
-}
-
-.weather-desc {
-  margin: 4px 0;
-}
-
-.temp-tag {
-  padding: 6px 16px;
-  background: rgba(255,255,255,0.2);
-  border-radius: 20px;
-  font-size: 14px;
-}
-
-.right-side {
-  text-align: right;
-}
-
-.temp-value {
-  margin: 0;
-  font-size: 52px;
-}
-
-/* Playlists */
-.section-title {
-  padding-left: 34px;
-  margin-bottom: 0;
-  font-size: 22px;
-  font-weight: 600;
-}
-
-.section-subtitle {
-  padding-left: 34px;
-  margin-top: 6px;
-  color: #555;
-}
-
-.playlist-grid {
-  padding: 30px 34px 80px;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-}
-
-.playlist-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-}
-
-.playlist-card img {
-  width: 100%;
-  height: 170px;
-  object-fit: cover;
-}
-
-.card-content {
-  padding: 16px;
-}
-
-.card-title {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.card-desc {
-  font-size: 14px;
-  color: #6a6a6a;
-  margin: 6px 0;
-}
-
-.track-count {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-/* Mobile Responsive */
-@media(max-width: 900px) {
-  .playlist-grid { grid-template-columns: 1fr 1fr; }
-  .weather-card { flex-direction: column; text-align: center; gap: 20px; }
-}
-
-@media(max-width: 600px) {
-  .playlist-grid { grid-template-columns: 1fr; }
-  .weather-card { padding: 45px 20px; }
-  .temp-value { font-size: 44px; }
-}
+/* responsive */
+@media(max-width:900px){.playlist-grid{grid-template-columns:repeat(2,1fr)}.weather-card{flex-direction:column;text-align:center;gap:16px}.right-side{text-align:center}}
+@media(max-width:600px){.playlist-grid{grid-template-columns:1fr}.temp-value{font-size:42px}}
