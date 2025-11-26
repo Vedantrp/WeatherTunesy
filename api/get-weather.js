@@ -1,57 +1,29 @@
 export default async function handler(req, res) {
   try {
-    // parse body safely
-    let body = req.body;
+    if (req.method !== "POST")
+      return res.status(405).json({ error: "POST only" });
 
-    if (!body) {
-      let raw = "";
-      await new Promise((resolve) => {
-        req.on("data", (chunk) => (raw += chunk));
-        req.on("end", resolve);
-      });
+    if (!process.env.WEATHER_API_KEY)
+      return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
 
-      try {
-        body = JSON.parse(raw || "{}");
-      } catch (e) {
-        return res.status(400).json({ error: "Invalid JSON Body" });
-      }
-    }
+    const { city } = req.body || {};
+    if (!city) return res.status(400).json({ error: "City required" });
 
-    const { city } = body;
-    if (!city) {
-      return res.status(400).json({ error: "City missing" });
-    }
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+      city
+    )}&appid=${process.env.WEATHER_API_KEY}&units=metric`;
 
-    const url =
-      `https://api.weatherapi.com/v1/current.json?key=${process.env.WEATHER_API_KEY}` +
-      `&q=${encodeURIComponent(city)}`;
+    const r = await fetch(url);
+    const data = await r.json();
 
-    const weatherRes = await fetch(url);
-    const dataText = await weatherRes.text();
+    if (!data.main)
+      return res.status(404).json({ error: "City not found" });
 
-    let data;
-    try {
-      data = JSON.parse(dataText);
-    } catch {
-      return res.status(400).json({
-        error: "Weather API returned non-JSON",
-        raw: dataText
-      });
-    }
-
-    if (data.error) {
-      return res.status(400).json({
-        error: data.error.message || "Weather error",
-        code: data.error.code
-      });
-    }
-
-    return res.status(200).json({
-      temp: data.current.temp_c,
-      condition: data.current.condition.text
+    res.json({
+      temp: data.main.temp,
+      condition: data.weather?.[0]?.main || "Clear",
     });
   } catch (err) {
-    console.error("Weather Server Error:", err);
-    return res.status(500).json({ error: "Server crashed", message: err.message });
+    res.status(500).json({ error: err.message || "Server crashed" });
   }
 }
