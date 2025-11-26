@@ -174,6 +174,19 @@ createBtn.onclick = async () => {
   showToast("Playlist created!");
   window.open(r.url, "_blank");
 };
+function renderSongs(tracks) {
+  playlistGrid.innerHTML = tracks.map(t => `
+    <div class="playlist-card">
+      <img src="${t.image}">
+      <div class="content">
+        <div class="title">${t.name}</div>
+        <div class="desc">${t.artist}</div>
+        <div class="track-count">🎵 Track</div>
+      </div>
+    </div>
+  `).join("");
+}
 
 // INIT
 updateUI();
+
