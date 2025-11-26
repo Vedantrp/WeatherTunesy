@@ -1,10 +1,8 @@
-import { NextResponse } from "next/server";
-
-export async function POST(req) {
-  const { refresh } = await req.json();
+module.exports = async (req, res) => {
+  const { refresh } = req.body;
 
   if (!refresh) {
-    return NextResponse.json({ error: "No refresh token" }, { status: 400 });
+    return res.status(400).json({ error: "Missing refresh token" });
   }
 
   const body = new URLSearchParams({
@@ -14,17 +12,17 @@ export async function POST(req) {
     client_secret: process.env.SPOTIFY_CLIENT_SECRET
   });
 
-  const res = await fetch("https://accounts.spotify.com/api/token", {
+  const r = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body
   });
 
-  const data = await res.json();
+  const token = await r.json();
 
-  if (!data.access_token) {
-    return NextResponse.json({ error: "Refresh failed" }, { status: 400 });
+  if (!token.access_token) {
+    return res.status(400).json({ error: "Failed to refresh token" });
   }
 
-  return NextResponse.json({ token: data.access_token });
-}
+  res.status(200).json({ token: token.access_token });
+};
