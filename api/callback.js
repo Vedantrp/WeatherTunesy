@@ -1,44 +1,56 @@
-module.exports = async (req, res) => {
-  const code = req.query.code;
+// /api/callback.js
+export default async function handler(req, res) {
+  try {
+    const code = req.query.code;
+    if (!code) return res.status(400).send("Missing code");
 
-  if (!code) return res.status(400).json({ error: "Missing code" });
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+      client_id: process.env.SPOTIFY_CLIENT_ID,
+      client_secret: process.env.SPOTIFY_CLIENT_SECRET
+    });
 
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
-    client_id: process.env.SPOTIFY_CLIENT_ID,
-    client_secret: process.env.SPOTIFY_CLIENT_SECRET
-  });
+    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params
+    });
 
-  const r = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body
-  });
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      const body = JSON.stringify(tokenData);
+      res.setHeader("Content-Type", "text/html");
+      return res.status(400).send(`<pre>Token exchange failed: ${body}</pre>`);
+    }
 
-  const token = await r.json();
+    const userRes = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+    const user = await userRes.json();
 
-  if (!token.access_token) {
-    return res.status(400).json({ error: "Invalid Token Response", token });
+    // Send token back to opener and close popup
+    res.setHeader("Content-Type", "text/html");
+    res.send(`
+      <script>
+        try {
+          window.opener.postMessage(
+            {
+              type: "SPOTIFY_AUTH_SUCCESS",
+              token: "${tokenData.access_token}",
+              refresh: "${tokenData.refresh_token}",
+              user: ${JSON.stringify(user)}
+            },
+            "*"
+          );
+        } catch(e) {
+          // ignore
+        }
+        window.close();
+      </script>
+    `);
+  } catch (err) {
+    res.status(500).send("Callback crashed: " + (err.message || err));
   }
-
-  const userRes = await fetch("https://api.spotify.com/v1/me", {
-    headers: { Authorization: `Bearer ${token.access_token}` }
-  });
-
-  const user = await userRes.json();
-
-  // Return JSON to frontend popup
-  return res.status(200).send(`
-    <script>
-      window.opener.postMessage({
-        type: "SPOTIFY_AUTH_SUCCESS",
-        token: "${token.access_token}",
-        refresh: "${token.refresh_token}",
-        user: ${JSON.stringify(user)}
-      }, "*");
-      window.close();
-    </script>
-  `);
-};
+}
