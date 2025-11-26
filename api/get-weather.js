@@ -1,48 +1,67 @@
 module.exports = async (req, res) => {
   try {
-    // Parse body safely
+    // READ RAW BODY (Vercel sometimes fails to parse req.body)
     let body = req.body;
 
-    // If Vercel did not parse it, parse manually
     if (!body) {
-      const text = await new Promise((resolve) => {
-        let data = "";
-        req.on("data", (chunk) => (data += chunk));
-        req.on("end", () => resolve(data));
+      let raw = "";
+      await new Promise((resolve) => {
+        req.on("data", (chunk) => (raw += chunk));
+        req.on("end", resolve);
       });
-      body = JSON.parse(text || "{}");
+
+      try {
+        body = JSON.parse(raw || "{}");
+      } catch (e) {
+        return res.status(400).json({ error: "Invalid JSON Body" });
+      }
     }
 
-    const { city } = body;
-
+    const city = body.city;
     if (!city) {
-      return res.status(400).json({ error: "City missing" });
+      return res.status(400).json({ error: "City missing in request" });
     }
 
-    // Call weather API
-    const response = await fetch(
-      `https://api.weatherapi.com/v1/current.json?key=${process.env.WEATHER_API_KEY}&q=${encodeURIComponent(
-        city
-      )}`
-    );
+    // Make API request
+    const url =
+      `https://api.weatherapi.com/v1/current.json` +
+      `?key=${process.env.WEATHER_API_KEY}` +
+      `&q=${encodeURIComponent(city)}`;
 
-    const data = await response.json();
+    const weatherRes = await fetch(url);
+    const dataText = await weatherRes.text();
 
-    // If weather API failed
+    // TRY TO PARSE JSON
+    let data;
+    try {
+      data = JSON.parse(dataText);
+    } catch (e) {
+      return res.status(400).json({
+        error: "Weather API returned invalid response",
+        raw: dataText
+      });
+    }
+
+    // Detect WeatherAPI errors
     if (data.error) {
       return res.status(400).json({
-        error: data.error.message || "Invalid city"
+        error: data.error.message || "Weather API error",
+        code: data.error.code
       });
     }
 
-    // Success
+    // SUCCESS
     return res.status(200).json({
       temp: data.current.temp_c,
       condition: data.current.condition.text
     });
 
   } catch (err) {
-    console.error("WEATHER ERROR:", err);
-    return res.status(500).json({ error: "Server failed", details: err.message });
+    console.error("WEATHER SERVER ERROR:", err);
+
+    return res.status(500).json({
+      error: "Server crashed",
+      message: err.message
+    });
   }
 };
