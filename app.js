@@ -1,192 +1,143 @@
 // ===============================
-// LOCAL STORAGE STATE
-// ===============================
-let spotifyToken = localStorage.getItem("spotifyToken") || null;
-let spotifyRefresh = localStorage.getItem("spotifyRefresh") || null;
-let tokenExpiry = Number(localStorage.getItem("tokenExpiry") || 0);
-let spotifyUser = JSON.parse(localStorage.getItem("spotifyUser") || "null");
-let lastTracks = [];
-
-// ===============================
-// ELEMENTS
+// ELEMENT REFERENCES
 // ===============================
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const userBox = document.getElementById("userBox");
+const userAvatar = document.getElementById("userAvatar");
 const userName = document.getElementById("userName");
-const locationInput = document.getElementById("location");
 const languageSelect = document.getElementById("language");
+
+const locationInput = document.getElementById("location");
 const searchBtn = document.getElementById("searchBtn");
+
 const wLocation = document.getElementById("wLocation");
-const wTemp = document.getElementById("wTemp");
 const wMood = document.getElementById("wMood");
-const createBtn = document.getElementById("createPlaylistBtn");
+const wTemp = document.getElementById("wTemp");
+
 const playlistGrid = document.getElementById("playlistGrid");
-const toast = document.getElementById("toast");
+
 
 // ===============================
-function showToast(msg) {
-  toast.innerText = msg;
-  toast.classList.remove("hidden");
-  setTimeout(() => toast.classList.add("hidden"), 2500);
-}
-
+// TEMP USER SESSION (UI ONLY)
 // ===============================
-async function postJSON(url, body) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  return res.json();
-}
+let loggedInUser = null;
 
-// ===============================
-// TOKEN REFRESH
-async function getValidToken() {
-  const now = Date.now();
-
-  if (spotifyToken && now < tokenExpiry) return spotifyToken;
-
-  const r = await postJSON("/api/refresh", { refresh: spotifyRefresh });
-
-  if (!r.token) {
-    localStorage.clear();
-    location.reload();
-    return;
-  }
-
-  spotifyToken = r.token;
-  tokenExpiry = now + 3500 * 1000;
-
-  localStorage.setItem("spotifyToken", spotifyToken);
-  localStorage.setItem("tokenExpiry", tokenExpiry);
-
-  return spotifyToken;
-}
-
-// ===============================
-// UI UPDATE
 function updateUI() {
-  if (spotifyToken && spotifyUser) {
-    loginBtn.classList.add("hidden");
-    logoutBtn.classList.remove("hidden");
-    userName.innerText = spotifyUser.display_name || "User";
-  } else {
-    loginBtn.classList.remove("hidden");
-    logoutBtn.classList.add("hidden");
-    userName.innerText = "";
-  }
-}
+    if (loggedInUser) {
+        loginBtn.classList.add("hidden");
+        logoutBtn.classList.remove("hidden");
+        userBox.classList.remove("hidden");
 
-// ===============================
-// LOGIN
-loginBtn.onclick = async () => {
-  const r = await fetch("/api/login");
-  const { authUrl } = await r.json();
-
-  const popup = window.open(authUrl, "_blank", "width=600,height=700");
-
-  window.addEventListener("message", (event) => {
-    if (event.data.type === "SPOTIFY_AUTH_SUCCESS") {
-      spotifyToken = event.data.token;
-      spotifyRefresh = event.data.refresh;
-      spotifyUser = event.data.user;
-      tokenExpiry = Date.now() + 3500 * 1000;
-
-      localStorage.setItem("spotifyToken", spotifyToken);
-      localStorage.setItem("spotifyRefresh", spotifyRefresh);
-      localStorage.setItem("spotifyUser", JSON.stringify(spotifyUser));
-      localStorage.setItem("tokenExpiry", tokenExpiry);
-
-      popup.close();
-      updateUI();
-      showToast("Logged in!");
+        userAvatar.src = loggedInUser.avatar;
+        userName.textContent = loggedInUser.name;
+    } else {
+        loginBtn.classList.remove("hidden");
+        logoutBtn.classList.add("hidden");
+        userBox.classList.add("hidden");
+        userName.textContent = "";
     }
-  });
-};
-
-// LOGOUT
-logoutBtn.onclick = () => {
-  localStorage.clear();
-  location.reload();
-};
-
-// ===============================
-// SEARCH WEATHER + SONGS
-searchBtn.onclick = async () => {
-  if (!spotifyToken) return showToast("Login first!");
-
-  const city = locationInput.value.trim();
-  if (!city) return showToast("Enter a city!");
-
-  const weather = await postJSON("/api/get-weather", { city });
-
-  if (weather.error) return showToast("City not found!");
-
-  wLocation.innerText = city;
-  wTemp.innerText = `${weather.temp}°C`;
-  wMood.innerText = weather.condition;
-
-  let mood = "chill";
-  if (weather.temp > 32) mood = "energetic";
-  if (weather.temp < 20) mood = "cosy";
-  if (weather.condition.includes("Rain")) mood = "lofi";
-
-  const songs = await postJSON("/api/get-songs", {
-    token: await getValidToken(),
-    language: languageSelect.value,
-    mood
-  });
-
-  lastTracks = songs.tracks || [];
-
-  playlistGrid.innerHTML = lastTracks
-    .map(
-      (t) => `
-      <div class="tile">
-        <img src="${t.image}">
-        <div class="meta">
-          <div class="name">${t.name}</div>
-          <div class="artist">${t.artist}</div>
-        </div>
-      </div>
-    `
-    )
-    .join("");
-
-  createBtn.classList.remove("hidden");
-};
-
-// ===============================
-// CREATE PLAYLIST
-createBtn.onclick = async () => {
-  const ids = lastTracks.map((t) => t.id);
-
-  const r = await postJSON("/api/create-playlist", {
-    token: await getValidToken(),
-    userId: spotifyUser.id,
-    name: `WeatherTunes – ${wMood.innerText}`,
-    trackIds: ids
-  });
-
-  if (!r.url) return showToast("Failed to create playlist");
-
-  showToast("Playlist created!");
-  window.open(r.url, "_blank");
-};
-function renderSongs(tracks) {
-  playlistGrid.innerHTML = tracks.map(t => `
-    <div class="playlist-card">
-      <img src="${t.image}">
-      <div class="content">
-        <div class="title">${t.name}</div>
-        <div class="desc">${t.artist}</div>
-        <div class="track-count">🎵 Track</div>
-      </div>
-    </div>
-  `).join("");
 }
 
-// INIT
-updateUI();
 
+// ===============================
+// LOGIN BUTTON (DEMO MODE)
+// ===============================
+loginBtn.onclick = () => {
+    // Fake login user
+    loggedInUser = {
+        name: "Vedant",
+        avatar: "https://i.pravatar.cc/40"
+    };
+    updateUI();
+};
+
+logoutBtn.onclick = () => {
+    loggedInUser = null;
+    updateUI();
+};
+
+
+// ===============================
+// SEARCH WEATHER (DEMO DATA)
+// ===============================
+searchBtn.onclick = () => {
+    let city = locationInput.value.trim();
+    if (!city) city = "New York";
+
+    // Fake weather conditions
+    const weatherExamples = {
+        "New York": { temp: 15, mood: "Overcast" },
+        "London": { temp: 10, mood: "Cloudy" },
+        "Mumbai": { temp: 31, mood: "Sunny" },
+        "Tokyo": { temp: 19, mood: "Rainy" },
+        "Los Angeles": { temp: 26, mood: "Clear Sky" }
+    };
+
+    const data = weatherExamples[city] || {
+        temp: 20,
+        mood: "Clear"
+    };
+
+    // Update weather card UI
+    wLocation.textContent = city;
+    wMood.textContent = data.mood;
+    wTemp.textContent = data.temp + "°";
+
+    // Render recommended playlists
+    renderPlaylists(city, data.mood);
+};
+
+
+// ===============================
+// RENDER PLAYLISTS (DEMO DATA)
+// ===============================
+function renderPlaylists(city, mood) {
+    const demoPlaylists = [
+        {
+            title: "Chill Vibes",
+            desc: "Relaxed beats for cloudy days",
+            tracks: 46,
+            image: "https://images.unsplash.com/photo-1507878866276-a947ef722fee"
+        },
+        {
+            title: "Lo-fi Study",
+            desc: "Focus music for gray weather",
+            tracks: 52,
+            image: "https://images.unsplash.com/photo-1507878866276-a947ef722fee"
+        },
+        {
+            title: "Ambient Clouds",
+            desc: "Atmospheric soundscapes",
+            tracks: 41,
+            image: "https://images.unsplash.com/photo-1507878866276-a947ef722fee"
+        },
+        {
+            title: "Indie Chill",
+            desc: "Laid-back indie tracks",
+            tracks: 38,
+            image: "https://images.unsplash.com/photo-1507878866276-a947ef722fee"
+        }
+    ];
+
+    playlistGrid.innerHTML = demoPlaylists
+        .map(
+            (p) => `
+        <div class="playlist-card">
+            <img src="${p.image}">
+            <div class="card-content">
+                <div class="card-title">${p.title}</div>
+                <div class="card-desc">${p.desc}</div>
+                <div class="track-count">🎵 ${p.tracks} tracks</div>
+            </div>
+        </div>
+    `
+        )
+        .join("");
+}
+
+
+// ===============================
+// INITIAL UI
+// ===============================
+updateUI();
