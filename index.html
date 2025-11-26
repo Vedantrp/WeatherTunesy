@@ -9,7 +9,7 @@
 
 <body>
 
-  <!-- TOP NAVBAR -->
+  <!-- NAVBAR -->
   <header class="navbar">
     <div class="left">
       <div class="logo">🎵</div>
@@ -19,7 +19,10 @@
     <div class="right">
       <button id="loginBtn" class="login-btn">Login</button>
 
+      <div id="logoutBtn" class="login-btn hidden">Logout</div>
+
       <div id="userBox" class="user-box hidden">
+        <img id="userAvatar" class="avatar" src="">
         <span id="userName" class="username"></span>
       </div>
 
@@ -31,12 +34,11 @@
     </div>
   </header>
 
+  <!-- SEARCH -->
   <main>
-
-    <!-- SEARCH BAR -->
     <div class="search-section">
       <div class="search-box">
-        <input id="location" placeholder="Search for a city... (Current: New York)">
+        <input id="location" placeholder="Search for a city...">
         <button id="searchBtn" class="search-icon">🔍</button>
       </div>
 
@@ -55,21 +57,21 @@
       <div class="left-side">
         <div class="weather-icon">☁</div>
         <div>
-          <h2 id="wLocation" class="weather-title">New York</h2>
-          <p id="wMood" class="weather-desc">Overcast</p>
+          <h2 id="wLocation" class="weather-title">City</h2>
+          <p id="wMood" class="weather-desc">Condition</p>
           <span class="temp-tag">🌡 Temperature</span>
         </div>
       </div>
 
       <div class="right-side">
-        <h1 id="wTemp" class="temp-value">15°</h1>
+        <h1 id="wTemp" class="temp-value">0°</h1>
         <p>Celsius</p>
       </div>
     </div>
 
-    <!-- RECOMMENDED PLAYLISTS -->
+    <!-- PLAYLISTS -->
     <h2 class="section-title">Recommended Playlists</h2>
-    <p class="section-subtitle">Curated music based on the current weather</p>
+    <p class="section-subtitle">Curated music based on current weather</p>
 
     <div id="playlistGrid" class="playlist-grid"></div>
 
