@@ -1,9 +1,7 @@
-import { NextResponse } from "next/server";
+module.exports = async (req, res) => {
+  const { token, userId, name, trackIds } = req.body;
 
-export async function POST(req) {
-  const { token, userId, name, trackIds } = await req.json();
-
-  // Create playlist
+  // 1. Create playlist
   const r1 = await fetch(
     `https://api.spotify.com/v1/users/${userId}/playlists`,
     {
@@ -23,9 +21,10 @@ export async function POST(req) {
   const playlist = await r1.json();
 
   if (!playlist.id) {
-    return NextResponse.json({ error: "Failed to create playlist" }, { status: 400 });
+    return res.status(400).json({ error: "Playlist creation failed", playlist });
   }
 
+  // 2. Add tracks
   const uris = trackIds.map((id) => `spotify:track:${id}`);
 
   await fetch(
@@ -40,8 +39,8 @@ export async function POST(req) {
     }
   );
 
-  return NextResponse.json({
+  res.status(200).json({
     id: playlist.id,
     url: playlist.external_urls.spotify
   });
-}
+};
