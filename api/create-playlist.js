@@ -14,7 +14,7 @@ export async function POST(req) {
       },
       body: JSON.stringify({
         name,
-        description: "WeatherTunes Auto Playlist",
+        description: "WeatherTunes playlist",
         public: false
       })
     }
@@ -26,7 +26,6 @@ export async function POST(req) {
     return NextResponse.json({ error: "Failed to create playlist" }, { status: 400 });
   }
 
-  // Add tracks
   const uris = trackIds.map((id) => `spotify:track:${id}`);
 
   await fetch(
