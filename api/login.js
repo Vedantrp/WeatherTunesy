@@ -1,6 +1,4 @@
-import { NextResponse } from "next/server";
-
-export async function GET() {
+module.exports = async (req, res) => {
   const scope = [
     "user-read-email",
     "playlist-modify-public",
@@ -14,5 +12,5 @@ export async function GET() {
     `&scope=${encodeURIComponent(scope)}` +
     `&redirect_uri=${encodeURIComponent(process.env.SPOTIFY_REDIRECT_URI)}`;
 
-  return NextResponse.json({ authUrl });
-}
+  res.status(200).json({ authUrl });
+};
