@@ -1,4 +1,4 @@
-module.exports = async (req, res) => {
+module.exports = (req, res) => {
   const scope = [
     "user-read-email",
     "playlist-modify-public",
