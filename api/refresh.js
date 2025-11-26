@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   const { refresh } = await req.json();
 
+  if (!refresh) {
+    return NextResponse.json({ error: "No refresh token" }, { status: 400 });
+  }
+
   const body = new URLSearchParams({
     grant_type: "refresh_token",
     refresh_token: refresh,
@@ -17,6 +21,10 @@ export async function POST(req) {
   });
 
   const data = await res.json();
+
+  if (!data.access_token) {
+    return NextResponse.json({ error: "Refresh failed" }, { status: 400 });
+  }
 
   return NextResponse.json({ token: data.access_token });
 }
