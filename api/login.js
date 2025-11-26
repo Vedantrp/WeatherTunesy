@@ -1,35 +1,18 @@
-// /api/login.js
+import { NextResponse } from "next/server";
 
-export default async function handler(req, res) {
-  try {
-    if (req.method !== "GET") {
-      return res.status(405).json({ error: "Only GET allowed" });
-    }
+export async function GET() {
+  const scope = [
+    "user-read-email",
+    "playlist-modify-public",
+    "playlist-modify-private"
+  ].join(" ");
 
-    const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-    const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
+  const authUrl =
+    "https://accounts.spotify.com/authorize" +
+    `?response_type=code` +
+    `&client_id=${process.env.SPOTIFY_CLIENT_ID}` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&redirect_uri=${encodeURIComponent(process.env.SPOTIFY_REDIRECT_URI)}`;
 
-    if (!CLIENT_ID || !REDIRECT_URI) {
-      console.error("Missing env vars");
-      return res.status(500).json({ error: "Missing env vars" });
-    }
-
-    const scope =
-      "user-read-email user-read-private playlist-read-private playlist-read-collaborative";
-
-    const params = new URLSearchParams({
-      response_type: "code",
-      client_id: CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
-      scope,
-    }).toString();
-
-    return res.status(200).json({
-      authUrl: `https://accounts.spotify.com/authorize?${params}`
-    });
-
-  } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    return res.status(500).json({ error: "Login failed" });
-  }
+  return NextResponse.json({ authUrl });
 }
