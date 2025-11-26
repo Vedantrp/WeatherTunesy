@@ -3,104 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="styles.css" rel="stylesheet" />
   <title>WeatherTunes</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-
-  <div class="bg"></div>
-  <div class="particles"></div>
-
-  <div class="header">
-    <div class="brand">
+  <header class="header">
+    <div class="left">
       <div class="logo">🎵</div>
-      <div class="title">
-        <h1>WeatherTunes</h1>
-        <p>Music that matches the sky.</p>
+      <h1 class="brand">WeatherTunes</h1>
+    </div>
+    <div class="right">
+      <select class="lang">
+        <option>GB English</option>
+        <option>US English</option>
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <div class="search-section">
+      <input id="location" class="search-box" placeholder="Search for a city... (Current: New York)" />
+
+      <div class="city-chips">
+        <button class="chip">New York</button>
+        <button class="chip">Los Angeles</button>
+        <button class="chip">London</button>
+        <button class="chip">Tokyo</button>
+        <button class="chip">Mumbai</button>
+        <button class="chip">Sydney</button>
       </div>
     </div>
 
-    <div class="auth">
-      <span id="userName" class="user-name"></span>
-      <button id="loginBtn" class="btn glass">Login with Spotify</button>
-      <button id="logoutBtn" class="btn glass hidden">Logout</button>
-    </div>
-  </div>
-
-  <div class="container">
-
-    <div class="hero">
-      <div class="hero-icon">☁️</div>
-      <h2>Weather Based Music Curator</h2>
-      <p>Enter a city and vibe instantly based on the sky above it.</p>
-    </div>
-
-    <div class="query">
-      <div class="query-group glass">
-        <label>Location</label>
-        <input id="location" placeholder="Enter city..." />
-      </div>
-
-      <div class="query-group glass">
-        <label>Language</label>
-        <select id="language">
-          <option value="english">English</option>
-          <option value="hindi">Hindi</option>
-          <option value="punjabi">Punjabi</option>
-          <option value="tamil">Tamil</option>
-          <option value="telugu">Telugu</option>
-          <option value="kannada">Kannada</option>
-          <option value="malayalam">Malayalam</option>
-          <option value="marathi">Marathi</option>
-          <option value="bengali">Bengali</option>
-        </select>
-      </div>
-
-      <button id="searchBtn" class="btn cta">Search</button>
-    </div>
-
-    <div class="weather-cards">
-      <div class="card glass">
-        <div class="card-icon">📍</div>
+    <div class="weather-card">
+      <div class="weather-left">
+        <div class="weather-icon">☁</div>
         <div>
-          <div class="card-label">Location</div>
-          <div id="wLocation" class="card-value"></div>
+          <h2 id="wLocation" class="weather-city">New York</h2>
+          <p id="wMood" class="weather-desc">Overcast</p>
+          <span class="temp-chip">🌡 Temperature</span>
         </div>
       </div>
 
-      <div class="card glass">
-        <div class="card-icon">🌡️</div>
-        <div>
-          <div class="card-label">Temperature</div>
-          <div id="wTemp" class="card-value"></div>
-        </div>
-      </div>
-
-      <div class="card glass">
-        <div class="card-icon">🌤️</div>
-        <div>
-          <div class="card-label">Condition</div>
-          <div id="wMood" class="card-value"></div>
-        </div>
+      <div class="weather-temp">
+        <h1 id="wTemp">15°</h1>
+        <p>Celsius</p>
       </div>
     </div>
 
-    <div class="actions">
-      <button id="createPlaylistBtn" class="btn glass">Create Spotify Playlist</button>
+    <h2 class="section-title">Recommended Playlists</h2>
+    <p class="section-subtitle">Curated music based on the current weather in New York</p>
+
+    <div id="playlistGrid" class="playlist-grid">
+      <!-- JS will inject cards here -->
     </div>
+  </main>
 
-    <div class="curation">
-      <h3>Your Curated Tracks</h3>
-      <p class="subtitle">Generated based on weather + language mood match</p>
-
-      <div id="playlistGrid" class="grid"></div>
-    </div>
-
-  </div>
-
-  <div id="toast" class="toast hidden"></div>
-
-  <script src="./app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
