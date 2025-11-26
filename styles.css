@@ -1,55 +1,104 @@
-/* ---- GENERAL ---- */
 body {
   margin: 0;
-  font-family: Inter, system-ui, sans-serif;
-  background: linear-gradient(180deg, #f0f4ff, #f8f3ff);
-  color: #1c1c1c;
+  font-family: "Inter", sans-serif;
+  background: #f5f6ff;
 }
 
-/* ---- HEADER ---- */
-.header {
+/* Navbar */
+.navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22px 30px;
+  padding: 22px 34px;
+  background: white;
 }
 
 .logo {
   font-size: 26px;
 }
 
+.brand {
+  font-size: 20px;
+  font-weight: 600;
+  margin-left: 10px;
+}
+
 .left {
   display: flex;
   align-items: center;
-  gap: 12px;
 }
 
-.brand {
-  font-weight: 600;
-  font-size: 20px;
+.right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-.right .lang {
-  padding: 8px 12px;
-  border-radius: 10px;
+.login-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  font-size: 15px;
 }
 
-/* ---- SEARCH SECTION ---- */
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.language-select {
+  padding: 10px 16px;
+  border-radius: 12px;
+}
+
+/* Search Bar */
 .search-section {
-  padding: 20px 30px;
+  padding: 26px 34px;
 }
 
 .search-box {
-  width: 100%;
-  padding: 18px;
-  border-radius: 22px;
+  display: flex;
+  background: white;
   border: 1px solid #ddd;
-  font-size: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  margin-bottom: 18px;
+  border-radius: 20px;
+  overflow: hidden;
+  align-items: center;
+  padding-left: 14px;
 }
 
+.search-box input {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+.search-icon {
+  background: #ececff;
+  padding: 14px 18px;
+  border: none;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+/* City chips */
 .city-chips {
+  margin-top: 14px;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
@@ -57,81 +106,75 @@ body {
 
 .chip {
   background: white;
-  padding: 8px 20px;
-  border-radius: 20px;
-  border: 1px solid #e5e5e5;
-  cursor: pointer;
-  font-size: 15px;
+  border: 1px solid #ddd;
+  border-radius: 18px;
+  padding: 8px 16px;
 }
 
-/* ---- WEATHER CARD ---- */
+/* Weather Card */
 .weather-card {
-  margin: 30px;
+  margin: 24px 34px;
   padding: 30px;
-  background: linear-gradient(135deg, #7280a8, #4e5877);
+  border-radius: 26px;
+  background: linear-gradient(135deg, #6a7da7, #4a5570);
   color: white;
-  border-radius: 25px;
   display: flex;
   justify-content: space-between;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  align-items: center;
+}
+
+.left-side {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .weather-icon {
   font-size: 60px;
-  margin-right: 18px;
 }
 
-.weather-left {
-  display: flex;
-  align-items: center;
-}
-
-.weather-city {
-  font-size: 24px;
+.weather-title {
+  font-size: 26px;
   margin: 0;
 }
 
 .weather-desc {
-  margin: 4px 0 6px 0;
-  opacity: 0.9;
+  margin: 4px 0;
 }
 
-.temp-chip {
+.temp-tag {
+  padding: 6px 16px;
   background: rgba(255,255,255,0.2);
-  padding: 6px 14px;
   border-radius: 20px;
   font-size: 14px;
-  display: inline-block;
 }
 
-.weather-temp h1 {
-  font-size: 48px;
-  margin: 0;
+.right-side {
   text-align: right;
 }
 
-.weather-temp p {
+.temp-value {
   margin: 0;
-  opacity: 0.9;
+  font-size: 52px;
 }
 
-/* ---- PLAYLIST SECTION ---- */
+/* Playlists */
 .section-title {
-  padding: 16px 30px 0 30px;
+  padding-left: 34px;
+  margin-bottom: 0;
   font-size: 22px;
   font-weight: 600;
 }
 
 .section-subtitle {
-  padding-left: 30px;
-  margin-top: 4px;
-  color: #777;
+  padding-left: 34px;
+  margin-top: 6px;
+  color: #555;
 }
 
-/* ---- PLAYLIST CARDS ---- */
 .playlist-grid {
+  padding: 30px 34px 80px;
   display: grid;
-  padding: 10px 30px 40px;
   grid-template-columns: repeat(4, 1fr);
   gap: 22px;
 }
@@ -140,7 +183,7 @@ body {
   background: white;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
 }
 
 .playlist-card img {
@@ -149,44 +192,34 @@ body {
   object-fit: cover;
 }
 
-.playlist-card .content {
+.card-content {
   padding: 16px;
 }
 
-.playlist-card .title {
+.card-title {
   font-size: 17px;
   font-weight: 600;
 }
 
-.playlist-card .desc {
-  color: #6d6d6d;
+.card-desc {
+  font-size: 14px;
+  color: #6a6a6a;
   margin: 6px 0;
 }
 
 .track-count {
   font-size: 14px;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
-/* ---- MOBILE RESPONSIVE ---- */
+/* Mobile Responsive */
 @media(max-width: 900px) {
-  .playlist-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .weather-card {
-    flex-direction: column;
-    text-align: center;
-    gap: 20px;
-  }
+  .playlist-grid { grid-template-columns: 1fr 1fr; }
+  .weather-card { flex-direction: column; text-align: center; gap: 20px; }
 }
 
 @media(max-width: 600px) {
-  .playlist-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .weather-temp h1 {
-    font-size: 42px;
-  }
+  .playlist-grid { grid-template-columns: 1fr; }
+  .weather-card { padding: 45px 20px; }
+  .temp-value { font-size: 44px; }
 }
