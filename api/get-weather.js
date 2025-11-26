@@ -1,50 +1,22 @@
-export const dynamic = "force-dynamic";
+import { NextResponse } from "next/server";
 
-export default async function handler(req, res) {
-  try {
-    if (req.method !== "POST")
-      return res.status(405).json({ error: "POST only" });
+export async function POST(req) {
+  const { city } = await req.json();
 
-    const { city, lat, lon } = req.body || {};
-    const key = process.env.WEATHER_API_KEY;
+  const key = process.env.WEATHER_API_KEY;
 
-    if (!key) return res.status(500).json({ error: "Missing WEATHER_API_KEY" });
+  const r = await fetch(
+    `https://api.weatherapi.com/v1/current.json?key=${key}&q=${city}`
+  );
 
-    let url;
+  const w = await r.json();
 
-    if (city) {
-      url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${key}`;
-    } else if (lat && lon) {
-      url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&appid=${key}`;
-    } else {
-      return res.status(400).json({ error: "city or lat/lon required" });
-    }
-
-    const r = await fetch(url);
-    const j = await r.json();
-
-    if (!r.ok) {
-      console.error("OWM error", j);
-      return res.status(400).json({ error: "Weather not found", raw: j });
-    }
-
-    const main = j.main || {};
-    const weather = (j.weather && j.weather[0]) || {};
-
-const out = {
-  name: j.name,
-  country: j.sys?.country,
-  temp: Math.round(main.temp - 273.15),
-  feels_like: Math.round(main.feels_like - 273.15),
-  humidity: main.humidity,
-  condition: weather.main,
-  description: weather.description,
-  icon: weather.icon,
-};
-
-    res.status(200).json(out);
-  } catch (err) {
-    console.error("get-weather error", err);
-    res.status(500).json({ error: "Weather fetch failed" });
+  if (!w.current) {
+    return NextResponse.json({ error: "Not found" }, { status: 400 });
   }
+
+  return NextResponse.json({
+    temp: w.current.temp_c,
+    condition: w.current.condition.text
+  });
 }
