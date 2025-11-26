@@ -1,21 +1,17 @@
-import { NextResponse } from "next/server";
-
-export async function POST(req) {
-  const { token, language, mood } = await req.json();
+module.exports = async (req, res) => {
+  const { token, language, mood } = req.body;
 
   const q = `${mood} ${language} songs`;
 
-  const res = await fetch(
+  const r = await fetch(
     `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=15`,
-    {
-      headers: { Authorization: `Bearer ${token}` }
-    }
+    { headers: { Authorization: `Bearer ${token}` } }
   );
 
-  const data = await res.json();
+  const data = await r.json();
 
   if (!data.tracks) {
-    return NextResponse.json({ tracks: [] });
+    return res.status(200).json({ tracks: [] });
   }
 
   const tracks = data.tracks.items.map((t) => ({
@@ -26,5 +22,5 @@ export async function POST(req) {
     image: t.album.images[0]?.url
   }));
 
-  return NextResponse.json({ tracks });
-}
+  res.status(200).json({ tracks });
+};
