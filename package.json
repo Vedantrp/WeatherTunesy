@@ -1,12 +1,5 @@
 {
   "name": "weathertunes",
   "version": "1.0.0",
-  "type": "module",                      
-  "scripts": {
-    "start": "vercel dev"               
-  },
-  "dependencies": {
-    "node-fetch": "^3.0.0",     
-    "url": "^0.11.0"                     
-  }
+  "main": "index.js"
 }
