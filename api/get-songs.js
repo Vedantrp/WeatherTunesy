@@ -1,24 +1,33 @@
-module.exports = async (req, res) => {
-  const { token, language, mood } = req.body;
+export default async function handler(req, res) {
+  try {
+    if (req.method !== "POST")
+      return res.status(405).json({ error: "POST only" });
 
-  const q = `${mood} ${language} songs`;
+    const { token, language, mood } = req.body || {};
+    if (!token) return res.status(400).json({ error: "Missing token" });
 
-  const r = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=18`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+    const q = `${mood} ${language} songs`;
 
-  const data = await r.json();
+    const r = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=15`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-  if (!data.tracks) return res.status(200).json({ tracks: [] });
+    const data = await r.json();
 
-  const tracks = data.tracks.items.map(t => ({
-    id: t.id,
-    name: t.name,
-    artist: t.artists[0].name,
-    url: t.external_urls.spotify,
-    image: t.album.images[0]?.url
-  }));
+    if (!data.tracks)
+      return res.status(400).json({ error: "No tracks" });
 
-  res.status(200).json({ tracks });
-};
+    const tracks = data.tracks.items.map((t) => ({
+      id: t.id,
+      name: t.name,
+      artist: t.artists[0].name,
+      url: t.external_urls.spotify,
+      image: t.album.images[0]?.url,
+    }));
+
+    res.json({ tracks });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Server crashed" });
+  }
+}
