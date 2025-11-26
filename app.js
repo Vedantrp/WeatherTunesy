@@ -1,58 +1,85 @@
 // ===============================
-// GLOBAL STATE
+// LOCAL STORAGE STATE
 // ===============================
 let spotifyToken = localStorage.getItem("spotifyToken") || null;
 let spotifyRefresh = localStorage.getItem("spotifyRefresh") || null;
-let tokenExpiry = Number(localStorage.getItem("tokenExpiry") || "0");
+let tokenExpiry = Number(localStorage.getItem("tokenExpiry") || 0);
 let spotifyUser = JSON.parse(localStorage.getItem("spotifyUser") || "null");
-
 let lastTracks = [];
 
 // ===============================
-// AUTO REFRESH TOKEN
+// ELEMENTS
 // ===============================
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const userName = document.getElementById("userName");
+const locationInput = document.getElementById("location");
+const languageSelect = document.getElementById("language");
+const searchBtn = document.getElementById("searchBtn");
+const wLocation = document.getElementById("wLocation");
+const wTemp = document.getElementById("wTemp");
+const wMood = document.getElementById("wMood");
+const createBtn = document.getElementById("createPlaylistBtn");
+const playlistGrid = document.getElementById("playlistGrid");
+const toast = document.getElementById("toast");
+
+// ===============================
+function showToast(msg) {
+  toast.innerText = msg;
+  toast.classList.remove("hidden");
+  setTimeout(() => toast.classList.add("hidden"), 2500);
+}
+
+// ===============================
+async function postJSON(url, body) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// ===============================
+// TOKEN REFRESH
 async function getValidToken() {
   const now = Date.now();
 
   if (spotifyToken && now < tokenExpiry) return spotifyToken;
 
-  const r = await fetch("/api/refresh", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh: spotifyRefresh })
-  });
+  const r = await postJSON("/api/refresh", { refresh: spotifyRefresh });
 
-  const data = await r.json();
-
-  if (data.token) {
-    spotifyToken = data.token;
-    tokenExpiry = now + 3500 * 1000;
-
-    localStorage.setItem("spotifyToken", spotifyToken);
-    localStorage.setItem("tokenExpiry", tokenExpiry);
-
-    return spotifyToken;
+  if (!r.token) {
+    localStorage.clear();
+    location.reload();
+    return;
   }
 
-  localStorage.clear();
-  location.reload();
+  spotifyToken = r.token;
+  tokenExpiry = now + 3500 * 1000;
+
+  localStorage.setItem("spotifyToken", spotifyToken);
+  localStorage.setItem("tokenExpiry", tokenExpiry);
+
+  return spotifyToken;
 }
 
 // ===============================
-// HELPERS
-// ===============================
-async function postJSON(url, data) {
-  const r = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
-  return r.json();
+// UI UPDATE
+function updateUI() {
+  if (spotifyToken && spotifyUser) {
+    loginBtn.classList.add("hidden");
+    logoutBtn.classList.remove("hidden");
+    userName.innerText = spotifyUser.display_name || "User";
+  } else {
+    loginBtn.classList.remove("hidden");
+    logoutBtn.classList.add("hidden");
+    userName.innerText = "";
+  }
 }
 
 // ===============================
 // LOGIN
-// ===============================
 loginBtn.onclick = async () => {
   const r = await fetch("/api/login");
   const { authUrl } = await r.json();
@@ -73,54 +100,80 @@ loginBtn.onclick = async () => {
 
       popup.close();
       updateUI();
+      showToast("Logged in!");
     }
   });
 };
 
+// LOGOUT
 logoutBtn.onclick = () => {
   localStorage.clear();
   location.reload();
 };
 
 // ===============================
-// WEATHER → SONGS
-// ===============================
-async function searchSongs() {
-  const city = locationInput.value.trim();
-  if (!city) return alert("Enter city!");
+// SEARCH WEATHER + SONGS
+searchBtn.onclick = async () => {
+  if (!spotifyToken) return showToast("Login first!");
 
-  const weather = await postJSON("/api/getWeather", { city });
+  const city = locationInput.value.trim();
+  if (!city) return showToast("Enter a city!");
+
+  const weather = await postJSON("/api/get-weather", { city });
+
+  if (weather.error) return showToast("City not found!");
+
+  wLocation.innerText = city;
+  wTemp.innerText = `${weather.temp}°C`;
+  wMood.innerText = weather.condition;
 
   let mood = "chill";
   if (weather.temp > 32) mood = "energetic";
-  if (weather.temp < 20) mood = "cozy";
+  if (weather.temp < 20) mood = "cosy";
   if (weather.condition.includes("Rain")) mood = "lofi";
 
-  const token = await getValidToken();
-
-  const songs = await postJSON("/api/getSongs", {
-    token,
+  const songs = await postJSON("/api/get-songs", {
+    token: await getValidToken(),
     language: languageSelect.value,
     mood
   });
 
-  lastTracks = songs.tracks;
+  lastTracks = songs.tracks || [];
 
-  renderTracks(lastTracks);
-}
+  playlistGrid.innerHTML = lastTracks
+    .map(
+      (t) => `
+      <div class="tile">
+        <img src="${t.image}">
+        <div class="meta">
+          <div class="name">${t.name}</div>
+          <div class="artist">${t.artist}</div>
+        </div>
+      </div>
+    `
+    )
+    .join("");
 
-createPlaylistBtn.onclick = async () => {
+  createBtn.classList.remove("hidden");
+};
+
+// ===============================
+// CREATE PLAYLIST
+createBtn.onclick = async () => {
   const ids = lastTracks.map((t) => t.id);
 
-  const token = await getValidToken();
-
-  const r = await postJSON("/api/createPlaylist", {
-    token,
+  const r = await postJSON("/api/create-playlist", {
+    token: await getValidToken(),
     userId: spotifyUser.id,
     name: `WeatherTunes – ${wMood.innerText}`,
     trackIds: ids
   });
 
+  if (!r.url) return showToast("Failed to create playlist");
+
+  showToast("Playlist created!");
   window.open(r.url, "_blank");
 };
 
+// INIT
+updateUI();
