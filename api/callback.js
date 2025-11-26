@@ -19,10 +19,13 @@ export async function GET(req) {
 
   const token = await tokenRes.json();
 
+  if (!token.access_token) {
+    return NextResponse.json({ error: "Invalid Code" }, { status: 400 });
+  }
+
   const userRes = await fetch("https://api.spotify.com/v1/me", {
     headers: { Authorization: `Bearer ${token.access_token}` }
   });
-
   const user = await userRes.json();
 
   return NextResponse.json({
