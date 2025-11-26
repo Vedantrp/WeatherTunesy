@@ -4,17 +4,15 @@ module.exports = async (req, res) => {
   const q = `${mood} ${language} songs`;
 
   const r = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=15`,
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=18`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
 
   const data = await r.json();
 
-  if (!data.tracks) {
-    return res.status(200).json({ tracks: [] });
-  }
+  if (!data.tracks) return res.status(200).json({ tracks: [] });
 
-  const tracks = data.tracks.items.map((t) => ({
+  const tracks = data.tracks.items.map(t => ({
     id: t.id,
     name: t.name,
     artist: t.artists[0].name,
