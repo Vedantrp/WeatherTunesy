@@ -1,4 +1,4 @@
-/* basic */
+ /* basic */
 body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#111;background:linear-gradient(180deg,#f0f4ff,#fdf6fb);}
 
 /* navbar */
@@ -28,3 +28,4 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helveti
 /* responsive */
 @media(max-width:900px){.playlist-grid{grid-template-columns:repeat(2,1fr)}.weather-card{flex-direction:column;text-align:center;gap:16px}.right-side{text-align:center}}
 @media(max-width:600px){.playlist-grid{grid-template-columns:1fr}.temp-value{font-size:42px}}
+
