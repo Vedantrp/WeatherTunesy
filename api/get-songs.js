@@ -1,149 +1,243 @@
 // /api/get-songs.js
-// POST only
-// Body: { token: string, language?: string, mood?: string, limit?: number }
-// Response: { tracks: [ { id, uri, name, artist, album, image, url } ], sourceCount: number }
+// POST body: { token: string, language?: string, mood?: string, limit?: number }
+// Returns: { tracks: [...], sourceCount, note }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "POST only" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
   try {
-    const body = (req.body && typeof req.body === "object") ? req.body : JSON.parse(await bufferToString(req));
-    const { token, language = "english", mood = "chill", limit = 35 } = body || {};
+    // parse body (supports raw stream fallback)
+    const rawBody = req.body && typeof req.body === "object" ? req.body : JSON.parse(await bufferToString(req));
+    const token = rawBody.token;
+    const language = (rawBody.language || "english").toLowerCase();
+    const mood = (rawBody.mood || "chill").toLowerCase();
+    const limit = Math.min(Math.max(1, parseInt(rawBody.limit, 10) || 35), 120);
 
     if (!token) return res.status(401).json({ error: "Missing Spotify token" });
 
-    // --- Language profiles (playlist seeds & basic include/exclude checks) ---
-    const langProfiles = {
-      english: {
-        market: "US",
-        playlistTerms: ["english pop", "feel good pop", "indie pop", "acoustic pop", "lofi english"],
-        include: [/^[\u0000-\u024F\s'&().,!\-:]+$/i], // latin script
-      },
-      hindi: {
-        market: "IN",
-        playlistTerms: ["bollywood", "hindi hits", "arijit singh", "bollywood acoustic", "hindi chill"],
-        include: [/[\u0900-\u097F]/, /\b(hindi|bollywood)\b/i],
-      },
-      punjabi: {
-        market: "IN",
-        playlistTerms: ["punjabi hits", "punjabi pop", "ap dhillon"],
-        include: [/[\u0A00-\u0A7F]/, /\bpunjabi\b/i],
-      },
-      tamil: {
-        market: "IN",
-        playlistTerms: ["tamil hits", "kollywood", "tamil lo-fi"],
-        include: [/[\u0B80-\u0BFF]/, /\btamil\b/i],
-      },
-      telugu: {
-        market: "IN",
-        playlistTerms: ["telugu hits", "tollywood", "telugu lo-fi"],
-        include: [/[\u0C00-\u0C7F]/, /\btelugu\b/i],
-      },
-      kannada: {
-        market: "IN",
-        playlistTerms: ["kannada hits", "kannada chill", "sandalwood"],
-        include: [/[\u0C80-\u0CFF]/, /\bkannada\b/i],
-      },
-      malayalam: {
-        market: "IN",
-        playlistTerms: ["malayalam hits", "mollywood", "malayalam chill"],
-        include: [/[\u0D00-\u0D7F]/, /\b(malayalam|mollywood)\b/i],
-      },
-      bengali: {
-        market: "IN",
-        playlistTerms: ["bengali hits", "bengali indie", "bangla hits"],
-        include: [/[\u0980-\u09FF]/, /\b(bengali|bangla)\b/i],
-      },
-      marathi: {
-        market: "IN",
-        playlistTerms: ["marathi hits", "marathi pop"],
-        include: [/\bmarathi\b/i],
-      },
-      spanish: {
-        market: "ES",
-        playlistTerms: ["latin hits", "reggaeton", "latin pop", "musica en español"],
-        include: [/\b(spanish|español|latina?|reggaeton)\b/i],
-      },
-      portuguese: {
-        market: "BR",
-        playlistTerms: ["brazilian pop", "brazilian hits", "mpb"],
-        include: [/\b(portuguese|brazil|brasil)\b/i],
-      },
-      french: {
-        market: "FR",
-        playlistTerms: ["chanson française", "french pop", "francophone"],
-        include: [/\b(fr(?:ench)?|française|francophone)\b/i],
-      },
-      german: {
-        market: "DE",
-        playlistTerms: ["german pop", "deutsche pop"],
-        include: [/\b(deutsch|german|deutsche)\b/i],
-      },
-      italian: {
-        market: "IT",
-        playlistTerms: ["italian pop", "italiano", "canzoni italiane"],
-        include: [/\b(italian|italiano)\b/i],
-      },
-      korean: {
-        market: "KR",
-        playlistTerms: ["k-pop", "korean pop", "kpop chill"],
-        include: [/[\uAC00-\uD7AF]/, /\b(kpop|k-pop|korean)\b/i],
-      },
-      japanese: {
-        market: "JP",
-        playlistTerms: ["j-pop", "anime songs", "city pop", "japanese pop"],
-        include: [/[\u3040-\u30FF\u4E00-\u9FFF]/, /\b(jpop|j-pop|japanese)\b/i],
-      },
-      chinese: {
-        market: "HK",
-        playlistTerms: ["c-pop", "mandarin pop", "cantopop", "mandarin hits"],
-        include: [/[\u4E00-\u9FFF]/, /\b(mandarin|c-pop|cantopop)\b/i],
-      },
-      arabic: {
-        market: "SA",
-        playlistTerms: ["arabic pop", "arabic hits", "arab pop"],
-        include: [/\b(arabic|arab|arabia)\b/i],
-      },
+    // language profiles (only essential parts shown; you can expand)
+    const profiles = {
+      english: { market: "US", playlistTerms: ["english pop", "indie pop", "acoustic pop", "lofi english"] },
+      hindi:  { market: "IN", playlistTerms: ["hindi hits", "bollywood", "bollywood classics", "arijit singh", "hindi chill"] },
+      punjabi:{ market: "IN", playlistTerms: ["punjabi hits", "punjabi pop"] },
+      // ... other languages (keep your existing map if you have it)
     };
-
-    const profile = langProfiles[language.toLowerCase()] || langProfiles.english;
+    const profile = profiles[language] || profiles.english;
     const market = profile.market || "US";
 
+    // mood map (keeps searches relevant)
     const moodMap = {
-      chill: ["chill", "acoustic", "lofi"],
-      relaxed: ["chill", "acoustic", "soft"],
-      cozy: ["lofi", "acoustic", "rainy day"],
-      upbeat: ["happy", "feel good", "summer"],
-      romantic: ["romantic", "love", "ballad"],
-      party: ["party", "dance", "bangers"],
-      workout: ["workout", "gym", "energy"],
-      focus: ["focus", "study", "instrumental", "ambient"],
-      sleep: ["sleep", "calm", "ambient"],
-      energetic: ["edm", "dance", "boost"],
-      mysterious: ["ambient", "synthwave", "mysterious"],
-      tropical: ["tropical", "beach", "latin"],
-      winter: ["cozy", "soft piano", "winter"],
-      default: ["chill", "easy"],
+      chill: ["chill","acoustic","lofi"],
+      cozy: ["lofi","rain","acoustic"],
+      upbeat: ["happy","feel good","summer"],
+      mysterious: ["ambient","synthwave"],
+      default: ["chill"]
     };
-
     const moodTerms = moodMap[mood] || moodMap.default;
 
-    // Helper: fetch with Authorization header and JSON parsing + basic errors
+    // Strong Hindi heuristics: Devanagari script OR common Hindi words
+    const hindiScriptRx = /[\u0900-\u097F]/;
+    const commonHindiWords = ["pyaar","pyar","dil","jaan","mera","meri","tum","teri","tere","kab","kaise","hai","ho","chaha","chahat","kabhi","zindagi","duniya","saath","sajna","sajan","yaar","yaari","bollywood","filmi","ishq","arijit"];
+
+    function looksHindi(text) {
+      if (!text) return false;
+      if (hindiScriptRx.test(text)) return true;
+      const lower = text.toLowerCase();
+      // check for presence of any common Hindi word
+      for (const w of commonHindiWords) if (lower.includes(w)) return true;
+      return false;
+    }
+
+    // Helper fetch Json with auth
     async function fetchJson(url, opts = {}) {
       const headers = { Authorization: `Bearer ${token}`, ...(opts.headers || {}) };
       const r = await fetch(url, { ...opts, headers });
       if (r.status === 401) throw new Error("UNAUTHORIZED");
       if (r.status === 429) throw new Error("RATE_LIMIT");
-      const txt = await r.text();
-      try {
-        return JSON.parse(txt);
-      } catch {
-        // return text as fallback in error case
-        return { raw: txt, status: r.status };
+      const text = await r.text();
+      try { return JSON.parse(text); } catch { return { raw: text, status: r.status }; }
+    }
+
+    // Build prioritized playlist queries — if language is hindi append keywords
+    const queries = [];
+    for (const seed of profile.playlistTerms) {
+      for (const m of moodTerms) {
+        if (language === "hindi") queries.push(`${seed} ${m} hindi bollywood`);
+        else queries.push(`${seed} ${m}`);
       }
     }
+    // add seeds without mood (again prefer language keyword for Hindi)
+    for (const seed of profile.playlistTerms) queries.push(language === "hindi" ? `${seed} bollywood hindi` : seed);
+
+    const playlists = [];
+    const maxPlaylistSearches = Math.min(6, queries.length);
+    for (let i = 0; i < maxPlaylistSearches; i++) {
+      const q = encodeURIComponent(queries[i]);
+      const url = `https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`;
+      try {
+        const data = await fetchJson(url);
+        const item = data?.playlists?.items?.[0];
+        if (item) playlists.push(item);
+      } catch (err) {
+        if (err.message === "UNAUTHORIZED") return res.status(401).json({ error: "Spotify token expired" });
+        console.warn("playlist search error", err.message || err);
+      }
+    }
+
+    // If no playlist found, try a fallback language-specific search (Hindi gets explicit 'bollywood')
+    if (!playlists.length) {
+      for (const seed of profile.playlistTerms.slice(0, 4)) {
+        const q = encodeURIComponent(language === "hindi" ? `${seed} bollywood hindi` : seed);
+        try {
+          const d = await fetchJson(`https://api.spotify.com/v1/search?q=${q}&type=playlist&market=${market}&limit=1`);
+          const item = d?.playlists?.items?.[0];
+          if (item) playlists.push(item);
+          if (playlists.length >= 3) break;
+        } catch (e) { /* ignore */ }
+      }
+    }
+
+    // collect track pool from playlists
+    let pool = [];
+    for (const pl of playlists) {
+      try {
+        const turl = `https://api.spotify.com/v1/playlists/${pl.id}/tracks?market=${market}&limit=100`;
+        const td = await fetchJson(turl);
+        const items = td?.items || [];
+        for (const it of items) {
+          const tr = it?.track;
+          if (!tr || !tr.id) continue;
+          pool.push({
+            id: tr.id,
+            uri: tr.uri,
+            name: tr.name,
+            artist: (tr.artists && tr.artists[0]?.name) || "Unknown",
+            album: tr.album?.name || "",
+            image: tr.album?.images?.[0]?.url || null,
+            url: tr.external_urls?.spotify || null,
+            raw: tr
+          });
+        }
+      } catch (err) {
+        if (err.message === "UNAUTHORIZED") return res.status(401).json({ error: "Spotify token expired" });
+        console.warn("playlist tracks fetch err", err.message || err);
+      }
+      if (pool.length >= 200) break;
+    }
+
+    // Language filter: prefer tracks that match language heuristics
+    function matchesLanguageCandidate(t) {
+      if (!t) return false;
+      // If Hindi requested -> check Devanagari OR common Hindi words in title/artist/album
+      if (language === "hindi") {
+        if (looksHindi(`${t.name} ${t.artist} ${t.album}`)) return true;
+        // also prefer tracks where album or artist includes 'bollywood' or 'filmi'
+        const lower = `${t.name} ${t.artist} ${t.album}`.toLowerCase();
+        if (lower.includes("bollywood") || lower.includes("filmi")) return true;
+        return false;
+      }
+      // For other languages you can use script checks or keywords; basic fallback:
+      if (language === "english") {
+        // ensure not containing Devanagari (avoid Hindi bleed into English)
+        if (hindiScriptRx.test(`${t.name} ${t.artist} ${t.album}`)) return false;
+        return true; // accept by default for english
+      }
+      // default: accept
+      return true;
+    }
+
+    // Filter pool
+    let filtered = pool.filter(matchesLanguageCandidate);
+
+    // If insufficient filtered results for Hindi, run direct track searches with explicit "hindi" keywords
+    if (language === "hindi" && filtered.length < Math.max(12, Math.floor(limit / 2))) {
+      const trackSearchQueries = [];
+      for (const seed of profile.playlistTerms.slice(0, 4)) {
+        for (const m of moodTerms.slice(0, 3)) trackSearchQueries.push(`${seed} ${m} bollywood hindi`);
+      }
+      for (let i = 0; i < Math.min(6, trackSearchQueries.length); i++) {
+        const q = encodeURIComponent(trackSearchQueries[i]);
+        try {
+          const data = await fetchJson(`https://api.spotify.com/v1/search?q=${q}&type=track&market=${market}&limit=50`);
+          const items = data?.tracks?.items || [];
+          for (const tr of items) {
+            if (!tr || !tr.id) continue;
+            const candidate = {
+              id: tr.id,
+              uri: tr.uri,
+              name: tr.name,
+              artist: (tr.artists && tr.artists[0]?.name) || "Unknown",
+              album: tr.album?.name || "",
+              image: tr.album?.images?.[0]?.url || null,
+              url: tr.external_urls?.spotify || null,
+              raw: tr
+            };
+            if (matchesLanguageCandidate(candidate)) filtered.push(candidate);
+            else pool.push(candidate);
+          }
+        } catch (e) {
+          if (e.message === "UNAUTHORIZED") return res.status(401).json({ error: "Spotify token expired" });
+          console.warn("track search error", e.message || e);
+        }
+        if (filtered.length >= 200) break;
+      }
+    }
+
+    // final fallback: if filtered empty, use pool (but mark note)
+    if (!filtered.length) filtered = pool.slice();
+
+    // dedupe
+    const seen = new Set();
+    const unique = [];
+    for (const t of filtered) {
+      if (!t.id || seen.has(t.id)) continue;
+      seen.add(t.id);
+      unique.push(t);
+    }
+
+    // shuffle
+    for (let i = unique.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [unique[i], unique[j]] = [unique[j], unique[i]];
+    }
+
+    const results = unique.slice(0, limit).map(t => ({
+      id: t.id, uri: t.uri, name: t.name, artist: t.artist, album: t.album, image: t.image, url: t.url
+    }));
+
+    if (!results.length) {
+      return res.status(200).json({ tracks: [], note: "No Hindi-like tracks found. Try nearby city or different mood." });
+    }
+
+    // If some returned items aren't strongly Hindi but overall language requested was Hindi, include a note
+    let note = `Returned ${results.length} tracks for language=${language} mood=${mood}`;
+    if (language === "hindi") {
+      const hindiCount = results.filter(r => looksHindi(`${r.name} ${r.artist} ${r.album}`)).length;
+      if (hindiCount < Math.ceil(results.length * 0.6)) {
+        note += `. Only ${hindiCount}/${results.length} look strongly Hindi — consider retrying with 'bollywood' mood or different city.`;
+      }
+    }
+
+    return res.status(200).json({ tracks: results, sourceCount: playlists.length, note });
+  } catch (err) {
+    console.error("get-songs error:", err && err.stack ? err.stack : err);
+    if (err.message === "UNAUTHORIZED") return res.status(401).json({ error: "Spotify token expired" });
+    if (err.message === "RATE_LIMIT") return res.status(429).json({ error: "Spotify rate limit" });
+    return res.status(500).json({ error: "Song fetch failed", details: String(err && err.message ? err.message : err) });
+  }
+}
+
+// fallback helper to read raw body if necessary (serverless)
+async function bufferToString(req) {
+  return new Promise((resolve, reject) => {
+    try {
+      let data = "";
+      req.on("data", chunk => data += chunk.toString());
+      req.on("end", () => resolve(data || "{}"));
+      req.on("error", reject);
+    } catch (e) { resolve("{}"); }
+  });
+    }    }
 
     // --- Build queries: combine playlistTerms + moodTerms (prioritize language seeds) ---
     const queries = [];
