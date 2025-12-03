@@ -1,4 +1,4 @@
-// /public/app.js
+ // /public/app.js
 // ELEMENTS
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -245,3 +245,4 @@ function escapeHtml(s = "") {
 
 // INITIALIZE UI state
 updateAuthUI();
+
